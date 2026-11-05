@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "sync:once": "tsx scripts/sync-once.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
