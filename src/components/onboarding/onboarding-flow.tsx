@@ -37,7 +37,11 @@ export function riotIdIssue(gameName: string, tagLine: string): string | null {
   return null;
 }
 
-export function OnboardingFlow() {
+/**
+ * `next`: where to go after linking (already sanitised by the page), e.g. back
+ * to a group invite. Defaults to the dashboard.
+ */
+export function OnboardingFlow({ next = "/me" }: { next?: string }) {
   const [step, setStep] = useState<Step>({ kind: "form" });
   const current = stepIndex(step);
 
@@ -93,8 +97,8 @@ export function OnboardingFlow() {
             onLinked={() => void runImport(step.preview, 0, 0)}
           />
         ) : null}
-        {step.kind === "importing" || step.kind === "import-error" ? <ImportProgress step={step} onRetry={() => void runImport(step.preview, step.page, step.imported)} /> : null}
-        {step.kind === "done" ? <ImportDone preview={step.preview} imported={step.imported} /> : null}
+        {step.kind === "importing" || step.kind === "import-error" ? <ImportProgress step={step} next={next} onRetry={() => void runImport(step.preview, step.page, step.imported)} /> : null}
+        {step.kind === "done" ? <ImportDone preview={step.preview} imported={step.imported} next={next} /> : null}
       </div>
     </div>
   );
@@ -270,9 +274,11 @@ function ConfirmAccount({
 
 function ImportProgress({
   step,
+  next,
   onRetry,
 }: {
   step: Extract<Step, { kind: "importing" | "import-error" }>;
+  next: string;
   onRetry: () => void;
 }) {
   const router = useRouter();
@@ -323,8 +329,8 @@ function ImportProgress({
             >
               Tentar de novo
             </Button>
-            <Button type="button" variant="ghost" onClick={() => router.push("/me")} className="w-full sm:w-fit">
-              Ir para o painel
+            <Button type="button" variant="ghost" onClick={() => router.push(next)} className="w-full sm:w-fit">
+              {next.startsWith("/invite/") ? "Continuar para o convite" : "Ir para o painel"}
             </Button>
           </div>
         </div>
@@ -333,7 +339,7 @@ function ImportProgress({
   );
 }
 
-function ImportDone({ preview, imported }: { preview: RiotAccountPreview; imported: number }) {
+function ImportDone({ preview, imported, next }: { preview: RiotAccountPreview; imported: number; next: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
@@ -353,12 +359,12 @@ function ImportDone({ preview, imported }: { preview: RiotAccountPreview; import
       </div>
       <Button
         type="button"
-        onClick={() => startTransition(() => router.push("/me"))}
+        onClick={() => startTransition(() => router.push(next))}
         disabled={pending}
         className="w-full sm:w-fit"
       >
         {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : null}
-        Abrir meu painel
+        {next.startsWith("/invite/") ? "Continuar para o convite" : "Abrir meu painel"}
       </Button>
     </div>
   );

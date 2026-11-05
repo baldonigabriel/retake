@@ -47,6 +47,10 @@ export const getLinkedAccount = cache(async (userId: string): Promise<RiotAccoun
 export async function requireViewer(next?: string): Promise<{ user: SessionUser; account: RiotAccount }> {
   const user = await requireUser(next);
   const account = await getLinkedAccount(user.id);
-  if (!account) redirect("/onboarding");
+  if (!account) {
+    // Come back here (e.g. a group invite) once the Riot ID is linked.
+    const target = safeNextPath(next);
+    redirect(target === "/me" ? "/onboarding" : `/onboarding?next=${encodeURIComponent(target)}`);
+  }
   return { user, account };
 }
