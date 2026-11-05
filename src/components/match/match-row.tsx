@@ -77,8 +77,8 @@ export function MatchRow({
         <span className="stat text-[24px] leading-none font-semibold text-fg">{formatNumber(matchAcs)}</span>
         <span className="text-eyebrow text-fg-muted uppercase">ACS</span>
       </span>
-      <span aria-hidden="true" className="flex w-16 flex-col items-end gap-0.5 sm:w-28 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
-        <span className="num text-body-sm font-medium text-fg">
+      <span aria-hidden="true" className="flex w-16 flex-col items-end gap-0.5 sm:w-36 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+        <span className="num text-body-sm font-medium whitespace-nowrap text-fg">
           {match.teamScore}–{match.enemyScore}
         </span>
         <span className="num text-label whitespace-nowrap text-fg-muted">{when}</span>

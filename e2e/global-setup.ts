@@ -8,6 +8,7 @@ import { seed, type SeededSession } from "./support/seed";
 export const AUTH_DIR = path.join(__dirname, ".auth");
 export const ONBOARDED_STATE = path.join(AUTH_DIR, "onboarded.json");
 export const FRESH_STATE = path.join(AUTH_DIR, "fresh.json");
+export const EMPTY_STATE = path.join(AUTH_DIR, "empty.json");
 
 function storageState(session: SeededSession, baseURL: string) {
   const { hostname } = new URL(baseURL);
@@ -30,8 +31,9 @@ function storageState(session: SeededSession, baseURL: string) {
 
 export default async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0]?.use.baseURL ?? "http://localhost:3000";
-  const { onboarded, fresh } = await seed();
+  const { onboarded, fresh, empty } = await seed();
   await mkdir(AUTH_DIR, { recursive: true });
   await writeFile(ONBOARDED_STATE, JSON.stringify(storageState(onboarded, baseURL)));
   await writeFile(FRESH_STATE, JSON.stringify(storageState(fresh, baseURL)));
+  await writeFile(EMPTY_STATE, JSON.stringify(storageState(empty, baseURL)));
 }

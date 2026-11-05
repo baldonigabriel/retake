@@ -12,6 +12,8 @@ export function KpiCard({
   lowerIsBetter,
   trend,
   hint,
+  note,
+  deltaSuffix = "vs. sua média",
   className,
 }: {
   label: string;
@@ -22,6 +24,9 @@ export function KpiCard({
   trend?: readonly number[];
   /** Formula or explanation, read by screen readers and shown as `title` */
   hint?: string;
+  /** Shown instead of the delta when there's nothing to compare yet */
+  note?: string;
+  deltaSuffix?: string;
   className?: string;
 }) {
   return (
@@ -44,8 +49,10 @@ export function KpiCard({
           value={delta}
           digits={deltaDigits}
           lowerIsBetter={lowerIsBetter}
-          suffix="vs. sua média"
+          suffix={deltaSuffix}
         />
+      ) : note ? (
+        <p className="text-label font-normal text-fg-muted">{note}</p>
       ) : null}
     </div>
   );

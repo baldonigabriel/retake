@@ -244,6 +244,12 @@
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
 }
 
+/* First-load stagger for match lists and rankings (see StaggerList) */
+.stagger-list[data-entering] > li {
+  animation: enter 240ms var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 12) * 40ms);
+}
+
 /* Remove movement, keep opacity/colour changes */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -255,5 +261,8 @@
   }
   .motion-transform {
     transition-property: opacity, color, background-color, border-color !important;
+  }
+  .stagger-list[data-entering] > li {
+    animation: none;
   }
 }

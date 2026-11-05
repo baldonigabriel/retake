@@ -22,7 +22,9 @@ loadEnvConfig(process.cwd(), true, { info: () => {}, error: console.error });
 export const E2E = {
   userId: "e2e-user",
   newUserId: "e2e-new-user",
+  emptyUserId: "e2e-empty-user",
   puuid: "e2e-puuid-0001",
+  emptyPuuid: "e2e-puuid-empty",
   gameName: "Tester",
   tagLine: "E2E",
   matchPrefix: "e2e-match-",
@@ -70,7 +72,8 @@ export function buildMatches(now = new Date()) {
   for (let i = 0; i < MATCH_COUNT; i++) {
     const id = matchId(i);
     const map = MAPS[i % MAPS.length]!;
-    const queueId = i % 7 === 3 ? "unrated" : "competitive";
+    // The two oldest are unrated and older than 30 days (empty filter state).
+    const queueId = i >= MATCH_COUNT - 2 ? "unrated" : "competitive";
     // i = 0 is the newest. A slow upward trend in the recent matches.
     const form = i < 20 ? 1.08 : 0.94;
     const draw = i === 5;
@@ -90,7 +93,7 @@ export function buildMatches(now = new Date()) {
       mode: queueId === "competitive" ? "Competitive" : "Unrated",
       queueId,
       seasonId: null,
-      startedAt: new Date(now.getTime() - (i * 26 + 3) * 3_600_000),
+      startedAt: new Date(now.getTime() - (i * 26 + 3 + (i >= 22 ? 20 * 24 : 0)) * 3_600_000),
       gameLengthMs: (rounds * 95 + between(-60, 120)) * 1000,
       roundsPlayed: rounds,
       blueScore: blue,
@@ -142,13 +145,13 @@ export async function cleanup() {
   await database.delete(matches).where(like(matches.id, `${E2E.matchPrefix}%`));
   await database.delete(mmrSnapshots).where(like(mmrSnapshots.puuid, "e2e-%"));
   await database.delete(riotAccounts).where(like(riotAccounts.puuid, "e2e-%"));
-  await database.delete(users).where(inArray(users.id, [E2E.userId, E2E.newUserId]));
+  await database.delete(users).where(inArray(users.id, [E2E.userId, E2E.newUserId, E2E.emptyUserId]));
 }
 
 export type SeededSession = { name: string; value: string };
 
 /** Creates both test users, the linked account, matches and rank history. */
-export async function seed(): Promise<{ onboarded: SeededSession; fresh: SeededSession }> {
+export async function seed(): Promise<{ onboarded: SeededSession; fresh: SeededSession; empty: SeededSession }> {
   await cleanup();
   const database = db();
   const ctx = await testAuth().$context;
@@ -157,6 +160,7 @@ export async function seed(): Promise<{ onboarded: SeededSession; fresh: SeededS
   for (const [id, name] of [
     [E2E.userId, "Tester"],
     [E2E.newUserId, "Novato"],
+    [E2E.emptyUserId, "Vazio"],
   ] as const) {
     await ctx.test.saveUser(ctx.test.createUser({ id, name, email: `${id}@retake.example`, emailVerified: true }));
   }
@@ -169,6 +173,17 @@ export async function seed(): Promise<{ onboarded: SeededSession; fresh: SeededS
     linkedAt: new Date(now.getTime() - 30 * 24 * 3_600_000),
     lastSyncedAt: new Date(now.getTime() - 4 * 60_000),
     lastMatchAt: new Date(now.getTime() - 3 * 3_600_000),
+    syncStatus: "ok",
+  });
+
+  // Linked, synced, but no matches yet (dashboard empty state).
+  await database.insert(riotAccounts).values({
+    userId: E2E.emptyUserId,
+    puuid: E2E.emptyPuuid,
+    gameName: "Vazio",
+    tagLine: "E2E",
+    linkedAt: new Date(now.getTime() - 3_600_000),
+    lastSyncedAt: new Date(now.getTime() - 10 * 60_000),
     syncStatus: "ok",
   });
 
@@ -208,5 +223,9 @@ export async function seed(): Promise<{ onboarded: SeededSession; fresh: SeededS
     if (!cookie) throw new Error("test-utils login returned no session cookie");
     return { name: cookie.name, value: cookie.value };
   };
-  return { onboarded: await login(E2E.userId), fresh: await login(E2E.newUserId) };
+  return {
+    onboarded: await login(E2E.userId),
+    fresh: await login(E2E.newUserId),
+    empty: await login(E2E.emptyUserId),
+  };
 }
