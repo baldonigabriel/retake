@@ -205,9 +205,12 @@ export const groups = pgTable("groups", {
   ownerId: text("owner_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  /** URL-safe random code, generated in app code when the group is created. */
+  /**
+   * Invite token: 144 random bits, base64url (src/lib/groups/invite.ts).
+   * Revoking the link replaces it, so the old link stops working at once.
+   */
   inviteCode: text("invite_code").notNull().unique(),
-  /** Ciphertext (encrypted at rest with WEBHOOK_ENCRYPTION_KEY), never the plain URL. */
+  /** AES-256-GCM ciphertext (src/lib/crypto.ts, key ENCRYPTION_KEY), never the plain URL. */
   discordWebhookUrl: text("discord_webhook_url"),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
 });
@@ -224,11 +227,17 @@ export const groupMembers = pgTable(
     role: groupRole("role").notNull().default("member"),
     joinedAt: timestamptz("joined_at").notNull().defaultNow(),
   },
-  (t) => [primaryKey({ columns: [t.groupId, t.userId] })],
+  (t) => [
+    primaryKey({ columns: [t.groupId, t.userId] }),
+    // "Which groups am I in?" runs on every group page.
+    index("group_members_user_idx").on(t.userId),
+  ],
 );
 
 export type User = typeof users.$inferSelect;
 export type RiotAccount = typeof riotAccounts.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
 export type NewMatchPlayer = typeof matchPlayers.$inferInsert;
+export type Group = typeof groups.$inferSelect;
+export type GroupRole = (typeof groupRole.enumValues)[number];
 export type NewMmrSnapshot = typeof mmrSnapshots.$inferInsert;

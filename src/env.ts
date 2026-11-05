@@ -14,7 +14,8 @@ const serverSchema = z.object({
   DISCORD_CLIENT_SECRET: z.string().min(1).optional(),
   HENRIK_API_KEY: z.string().min(1).optional(),
   CRON_SECRET: z.string().min(16).optional(),
-  WEBHOOK_ENCRYPTION_KEY: z.string().min(32).optional(),
+  /** Base64 of 32 random bytes (openssl rand -base64 32): AES-256-GCM key for secrets at rest. */
+  ENCRYPTION_KEY: z.string().min(32).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
