@@ -4,18 +4,27 @@
 
 API não oficial do HenrikDev (`https://api.henrikdev.xyz`), com chave **Basic** (30 req/min). Ela não tem endosso da Riot, então o código de acesso fica isolado em `src/lib/henrik/` para facilitar uma troca de fonte no futuro.
 
-Endpoints usados no MVP (confira os detalhes na documentação em docs.henrikdev.xyz antes de implementar, porque a API evolui):
+Endpoints usados no MVP (conferidos em docs.henrikdev.xyz em 2026-11-05, API v4.10):
 
 | Uso | Endpoint |
 |---|---|
 | Validar Riot ID e obter puuid | `GET /valorant/v2/account/{name}/{tag}` |
-| Histórico de partidas por puuid | `GET /valorant/v4/by-puuid/matches/{region}/{platform}/{puuid}?size=N` |
+| Histórico de partidas por puuid | `GET /valorant/v4/by-puuid/matches/{region}/{platform}/{puuid}?size=N` (máximo 10 por página; aceita `start` e `mode`) |
 | Partida completa por id | `GET /valorant/v4/match/{region}/{match_id}` |
-| Histórico de rank/RR | endpoint de MMR history (verificar a versão atual na doc) |
+| Histórico de rank/RR | `GET /valorant/v2/by-puuid/mmr-history/{region}/{platform}/{puuid}` (últimas ~20 partidas competitivas; não existe versão v4) |
 
 Para o Brasil: `region = br`, `platform = pc`.
 
+Observações confirmadas com respostas reais:
+
+- O histórico v4 já devolve cada partida completa (metadados, times, os 10 jogadores, rounds e kills), com o mesmo conteúdo da rota de partida por id. O sync grava direto a partir do histórico e só usa a rota por id quando precisar de uma partida fora dele.
+- O campo `region` da conta e da partida é o shard da Riot (`na` para contas do Brasil), não a afinidade usada nas URLs. Por isso `riot_accounts.region` guarda a afinidade (`br`) e não o valor que a API devolve.
+- A conta v2 devolve o id do card (`card`), não a URL. A URL vem dos assets da comunidade: `https://media.valorant-api.com/playercards/{card}/smallart.png`.
+- O modo vem em `metadata.queue.id` (`competitive`, `unrated`, `swiftplay`, `deathmatch`...). É esse valor que os filtros usam.
+
 Custo de rate limit: cada chamada conta 1, mais 1 para cada busca que o servidor do HenrikDev precisar fazer na Riot (partidas já em cache no servidor deles não custam extra). Por isso, consultar o histórico com `size` pequeno e só buscar o que for novo.
+
+Headers de rate limit em toda resposta: `X-RateLimit-Limit`, `X-RateLimit-Remaining` e `X-RateLimit-Reset` (segundos até a janela reiniciar), além de `RateLimit` e `RateLimit-Policy` no formato do IETF. Em `429`, esperar `Retry-After` (ou `X-RateLimit-Reset`) antes de tentar de novo.
 
 ## 2. Modelo de dados
 

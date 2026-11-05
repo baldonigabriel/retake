@@ -7,6 +7,7 @@ import { z } from "zod";
  */
 const serverSchema = z.object({
   DATABASE_URL: z.url(),
+  DATABASE_URL_POOLED: z.url().optional(),
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
   BETTER_AUTH_URL: z.url().optional(),
   DISCORD_CLIENT_ID: z.string().min(1).optional(),
