@@ -26,7 +26,9 @@ export function serverEnv(): ServerEnv {
     throw new Error("serverEnv() must not be called in the browser");
   }
   if (!cached) {
-    const parsed = serverSchema.safeParse(process.env);
+    // `KEY=` (empty) in .env files means "not set yet", not an invalid value.
+    const present = Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== ""));
+    const parsed = serverSchema.safeParse(present);
     if (!parsed.success) {
       const fields = parsed.error.issues.map((i) => i.path.join(".")).join(", ");
       throw new Error(`Invalid or missing environment variables: ${fields}. See .env.example.`);
