@@ -35,7 +35,7 @@ export function RankingList({
             style={{ animationDelay: `${i * 40}ms` }}
             className={cn(
               "flex h-14 animate-enter items-center gap-3 border-t border-line px-4 first:border-t-0 motion-reduce:animate-none",
-              e.isYou && "bg-accent-tint shadow-[inset_2px_0_0_var(--color-primary)]",
+              e.isYou && "on-tint bg-accent-tint shadow-[inset_2px_0_0_var(--color-primary)]",
             )}
           >
             <span

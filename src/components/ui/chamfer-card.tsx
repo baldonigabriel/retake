@@ -28,11 +28,11 @@ export function ChamferCard({
       )}
       {...props}
     >
-      <div className="chamfer rounded-card bg-accent-line p-px">
+      <div className="chamfer h-full rounded-card bg-accent-line p-px">
         <div
           className={cn(
             "chamfer h-full rounded-[11px] p-4 sm:p-5",
-            variant === "mvp" ? "bg-accent-tint shadow-key" : "bg-surface-1",
+            variant === "mvp" ? "on-tint bg-accent-tint shadow-key" : "bg-surface-1",
             innerClassName,
           )}
         >

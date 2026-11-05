@@ -231,6 +231,14 @@
   letter-spacing: 0;
 }
 
+/*
+ * On accent-tint surfaces (user row, MVP card) the regular muted grey drops to
+ * 4.3:1. Remap it locally to a red-tinted grey that keeps AA (≈4.8:1).
+ */
+@utility on-tint {
+  --color-fg-muted: #8e8486;
+}
+
 /* Signature chamfer: top-right corner cut 10px */
 @utility chamfer {
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);

@@ -21,7 +21,7 @@ const buttonVariants = cva(
         default:
           "bg-primary font-semibold text-on-accent hover:bg-accent-hover active:bg-accent-pressed",
         secondary:
-          "bg-paper text-surface-3 hover:bg-white active:bg-[#d4d4d4]",
+          "bg-paper text-surface-3 hover:bg-white active:bg-paper/85",
         ghost:
           "border-line bg-transparent text-fg-secondary hover:border-line-strong hover:text-fg active:bg-surface-2 aria-expanded:border-line-strong aria-expanded:text-fg",
         destructive:

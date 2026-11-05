@@ -119,7 +119,7 @@ function Section({
         <h2 id={`${id}-title`} className="text-subheading text-fg">
           {title}
         </h2>
-        <p className="max-w-2xl text-fg-secondary">{description}</p>
+        <p className="max-w-[70ch] text-pretty text-fg-secondary">{description}</p>
       </div>
       {children}
     </section>

@@ -59,7 +59,12 @@ export function ScoreboardTable({
           <span className="sr-only"> rounds</span>
         </span>
       </header>
-      <div className="overflow-x-auto sm:overflow-visible">
+      <div
+        className="overflow-x-auto sm:overflow-visible"
+        tabIndex={0}
+        role="region"
+        aria-label={`Placar do ${team.name}, role para o lado para ver todas as colunas`}
+      >
         <table className="num w-full min-w-[640px] border-separate border-spacing-0 text-table [&_tbody_tr:last-child>*:first-child]:rounded-bl-card [&_tbody_tr:last-child>*:last-child]:rounded-br-card">
           <thead>
             <tr>
@@ -99,7 +104,7 @@ export function ScoreboardTable({
               ];
               const rowBg = p.isYou ? "bg-accent-tint" : "bg-surface-1 group-hover/row:bg-surface-2";
               return (
-                <tr key={`${p.name}#${p.tag}`} className="group/row" aria-current={p.isYou ? "true" : undefined}>
+                <tr key={`${p.name}#${p.tag}`} className={cn("group/row", p.isYou && "on-tint")} aria-current={p.isYou ? "true" : undefined}>
                   <th
                     scope="row"
                     className={cn(
