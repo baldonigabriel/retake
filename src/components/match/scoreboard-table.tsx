@@ -42,19 +42,23 @@ const NUM_COLS = ["ACS", "K", "D", "A", "K/D", "HS%", "ADR"] as const;
 export function ScoreboardTable({
   team,
   roundsPlayed,
+  headingLevel = "h3",
 }: {
   team: ScoreboardTeam;
   roundsPlayed: number;
+  /** h2 when the table is a top-level section of the page */
+  headingLevel?: "h2" | "h3";
 }) {
+  const Heading = headingLevel;
   const sorted = [...team.players].sort((a, b) => b.score - a.score);
   const headingId = `team-${team.name.replace(/\s+/g, "-").toLowerCase()}`;
 
   return (
     <section aria-labelledby={headingId} className="overflow-hidden rounded-card bg-surface-1 shadow-hairline sm:overflow-visible">
       <header className="flex items-center gap-3 border-b border-line px-4 py-3">
-        <h3 id={headingId} className="text-body-sm font-semibold text-fg">
+        <Heading id={headingId} className="text-body-sm font-semibold text-fg">
           {team.name}
-        </h3>
+        </Heading>
         <ResultChip result={team.result} long />
         <span className="stat ml-auto text-[24px] leading-none font-semibold text-fg">
           {team.rounds}

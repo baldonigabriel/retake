@@ -1,7 +1,7 @@
 import { AgentAvatar } from "@/components/match/agent-avatar";
 import { RESULT_LABEL } from "@/components/stats/result-chip";
 import { ChamferCard } from "@/components/ui/chamfer-card";
-import { agentIconUrl, mapSplashUrl } from "@/lib/assets";
+import { agentIconUrl, mapSplashUrl, mapThumbUrl } from "@/lib/assets";
 import { formatDuration, formatMatchDate, formatNumber, formatPercent } from "@/lib/format";
 import { modeLabel } from "@/lib/modes";
 import type { Scoreboard } from "@/lib/match/scoreboard";
@@ -28,6 +28,8 @@ const RESULT_BAR = { win: "bg-win", loss: "bg-loss", draw: "bg-draw" } as const;
  */
 export function MatchHeader({ match, board }: { match: MatchInfo; board: Scoreboard }) {
   const splash = mapSplashUrl(match.mapId);
+  // The splash is ~2 MB: phones get the 65 KB strip (display:none skips the download).
+  const thumb = mapThumbUrl(match.mapId);
   const { you } = board;
   const stats = [
     { label: "K/D/A", value: `${you.kills}/${you.deaths}/${you.assists}`, mono: true },
@@ -38,10 +40,17 @@ export function MatchHeader({ match, board }: { match: MatchInfo; board: Scorebo
 
   return (
     <ChamferCard innerClassName="relative isolate overflow-hidden p-0 sm:p-0">
+      {thumb ? (
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 bg-cover bg-center sm:hidden"
+          style={{ backgroundImage: `url(${thumb})` }}
+        />
+      ) : null}
       {splash ? (
         <span
           aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-cover bg-center"
+          className="absolute inset-0 -z-10 hidden bg-cover bg-center sm:block"
           style={{ backgroundImage: `url(${splash})` }}
         />
       ) : null}
@@ -49,9 +58,6 @@ export function MatchHeader({ match, board }: { match: MatchInfo; board: Scorebo
 
       <div className="flex flex-col gap-5 p-4 sm:flex-row sm:items-end sm:justify-between sm:p-6">
         <div className="flex flex-col gap-2">
-          <p className="text-eyebrow text-fg-muted uppercase">
-            {modeLabel(match.queueId, match.mode)} · {match.mapName ?? "Mapa desconhecido"}
-          </p>
           <h1 className="flex items-center gap-4">
             <span aria-hidden="true" className={cn("h-10 w-[3px] shrink-0 rounded-full", RESULT_BAR[board.result])} />
             <span className="stat text-stat-lg text-fg uppercase">{RESULT_LABEL[board.result]}</span>
@@ -62,6 +68,8 @@ export function MatchHeader({ match, board }: { match: MatchInfo; board: Scorebo
             </span>
           </h1>
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label font-normal text-fg-secondary">
+            <span className="font-medium text-fg">{match.mapName ?? "Mapa desconhecido"}</span>
+            <span>{modeLabel(match.queueId, match.mode)}</span>
             <time dateTime={match.startedAt.toISOString()}>{formatMatchDate(match.startedAt)}</time>
             {match.gameLengthMs ? (
               <span className="font-mono">
@@ -78,7 +86,7 @@ export function MatchHeader({ match, board }: { match: MatchInfo; board: Scorebo
           <dl className="grid flex-1 grid-cols-[auto_repeat(3,minmax(0,1fr))] gap-x-5 sm:flex-none sm:gap-x-6">
             {stats.map((s) => (
               <div key={s.label} className="flex flex-col gap-1">
-                <dt className="text-eyebrow whitespace-nowrap text-fg-muted uppercase">{s.label}</dt>
+                <dt className="text-eyebrow whitespace-nowrap text-fg-secondary uppercase">{s.label}</dt>
                 <dd
                   className={cn(
                     "leading-none whitespace-nowrap text-fg",

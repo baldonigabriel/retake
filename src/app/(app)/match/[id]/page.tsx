@@ -27,7 +27,7 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
       <MatchHeader match={detail.match} board={board} />
       <div className="flex flex-col gap-4">
         {board.teams.map((team) => (
-          <ScoreboardTable key={team.id} team={team} roundsPlayed={detail.match.roundsPlayed} />
+          <ScoreboardTable key={team.id} team={team} roundsPlayed={detail.match.roundsPlayed} headingLevel="h2" />
         ))}
       </div>
     </div>

@@ -4,7 +4,9 @@ import type { GroupStats } from "@/lib/stats/breakdown";
 
 /**
  * Per-map tiles. The community map thumbnail sits under a surface-0 overlay
- * at 85% so it never competes with the numbers (DESIGN.md › Imagens).
+ * at 85% so it never competes with the numbers (DESIGN.md › Imagens). Text
+ * over the art uses fg-secondary, never muted: bright parts of a map under
+ * the overlay drop muted grey below 4.5:1.
  */
 export function MapGrid({ maps }: { maps: readonly GroupStats[] }) {
   return (
@@ -25,19 +27,19 @@ export function MapGrid({ maps }: { maps: readonly GroupStats[] }) {
             <div className="flex flex-col gap-2 p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="truncate font-medium text-fg">{m.name}</p>
-                <p className="num shrink-0 text-label font-normal text-fg-muted">
+                <p className="num shrink-0 text-label font-normal text-fg-secondary">
                   {m.summary.matches} {m.summary.matches === 1 ? "partida" : "partidas"}
                 </p>
               </div>
               <dl className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-0.5">
-                  <dt className="text-eyebrow text-fg-muted uppercase">ACS</dt>
+                  <dt className="text-eyebrow text-fg-secondary uppercase">ACS</dt>
                   <dd className="stat text-[24px] leading-none font-semibold text-fg">
                     {formatNumber(Math.round(m.summary.acs))}
                   </dd>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <dt className="text-eyebrow text-fg-muted uppercase">Vitórias</dt>
+                  <dt className="text-eyebrow text-fg-secondary uppercase">Vitórias</dt>
                   <dd className="stat text-[24px] leading-none font-semibold text-fg">
                     {formatPercent(wr.rate, 0)}
                     <span className="sr-only">

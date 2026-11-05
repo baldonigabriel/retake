@@ -194,7 +194,7 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
   }
   html {
     @apply bg-surface-0 font-sans text-fg;
@@ -213,6 +213,10 @@
     color: var(--color-fg);
   }
   /* Visible keyboard focus everywhere */
+  /* Body copy: avoid one-word last lines */
+  p {
+    text-wrap: pretty;
+  }
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
