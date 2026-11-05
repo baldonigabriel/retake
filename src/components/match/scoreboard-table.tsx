@@ -6,6 +6,8 @@ import { acs, adr, hsRate, kd, type MatchResult } from "@/lib/stats/metrics";
 import { cn } from "@/lib/utils";
 
 export type ScoreboardPlayer = {
+  /** puuid; falls back to name#tag in the sample data */
+  id?: string;
   name: string;
   tag: string;
   agent: string;
@@ -104,7 +106,7 @@ export function ScoreboardTable({
               ];
               const rowBg = p.isYou ? "bg-accent-tint" : "bg-surface-1 group-hover/row:bg-surface-2";
               return (
-                <tr key={`${p.name}#${p.tag}`} className={cn("group/row", p.isYou && "on-tint")} aria-current={p.isYou ? "true" : undefined}>
+                <tr key={p.id ?? `${p.name}#${p.tag}`} className={cn("group/row", p.isYou && "on-tint")} aria-current={p.isYou ? "true" : undefined}>
                   <th
                     scope="row"
                     className={cn(

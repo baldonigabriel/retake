@@ -40,3 +40,18 @@ export function formatDuration(ms: number): string {
   const s = totalSeconds % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
 }
+
+/** Matches are shown in Brazil's time zone regardless of the server's. */
+export const DISPLAY_TIME_ZONE = "America/Sao_Paulo";
+
+/** "5 de nov. de 2026, 21:03" (pt-BR, São Paulo time) */
+export function formatMatchDate(date: Date): string {
+  return date.toLocaleString(LOCALE, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: DISPLAY_TIME_ZONE,
+  });
+}

@@ -30,3 +30,12 @@ describe("format", () => {
     expect(formatDuration(61_000)).toBe("1:01");
   });
 });
+
+describe("formatMatchDate", () => {
+  it("uses São Paulo time", async () => {
+    const { formatMatchDate } = await import("./format");
+    const text = formatMatchDate(new Date("2026-11-06T00:03:00Z"));
+    expect(text).toContain("21:03");
+    expect(text).toMatch(/5 de nov/);
+  });
+});

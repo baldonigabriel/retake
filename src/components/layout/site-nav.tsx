@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Settings, Users } from "lucide-react";
+import { Suspense } from "react";
 
 import { Logo } from "@/components/layout/logo";
 import { cn } from "@/lib/utils";
@@ -13,8 +14,21 @@ const NAV_ITEMS = [
   { href: "/settings", label: "Ajustes", icon: Settings },
 ] as const;
 
-function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
+function isActive(pathname: string | null, href: string) {
+  return pathname !== null && (pathname === href || pathname.startsWith(`${href}/`));
+}
+
+/**
+ * The pathname is request data on dynamic routes, so the links that depend
+ * on it render inside Suspense; the fallback is the same links without the
+ * active marker (no layout shift).
+ */
+function WithPathname({ children }: { children: (pathname: string | null) => React.ReactNode }) {
+  return <Suspense fallback={children(null)}><PathnameReader>{children}</PathnameReader></Suspense>;
+}
+
+function PathnameReader({ children }: { children: (pathname: string | null) => React.ReactNode }) {
+  return children(usePathname());
 }
 
 /**
@@ -25,8 +39,6 @@ function isActive(pathname: string, href: string) {
  * boundary by the (app) layout so the bar itself is part of the static shell.
  */
 export function SiteNav({ account }: { account?: React.ReactNode }) {
-  const pathname = usePathname();
-
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-40 border-b border-line bg-surface-0/80 backdrop-blur-[24px]">
@@ -38,6 +50,7 @@ export function SiteNav({ account }: { account?: React.ReactNode }) {
             <Logo />
           </Link>
 
+          <WithPathname>{(pathname) => (
           <ul className="hidden h-full items-stretch gap-1 md:flex">
             {NAV_ITEMS.map((item) => {
               const active = isActive(pathname, item.href);
@@ -60,6 +73,7 @@ export function SiteNav({ account }: { account?: React.ReactNode }) {
               );
             })}
           </ul>
+          )}</WithPathname>
 
           <div className="flex items-center justify-end gap-2">{account}</div>
         </nav>
@@ -69,6 +83,7 @@ export function SiteNav({ account }: { account?: React.ReactNode }) {
         aria-label="Principal (celular)"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface-0/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-[24px] md:hidden"
       >
+        <WithPathname>{(pathname) => (
         <ul className="grid grid-cols-3">
           {NAV_ITEMS.map((item) => {
             const active = isActive(pathname, item.href);
@@ -93,6 +108,7 @@ export function SiteNav({ account }: { account?: React.ReactNode }) {
             );
           })}
         </ul>
+        )}</WithPathname>
       </nav>
     </>
   );
