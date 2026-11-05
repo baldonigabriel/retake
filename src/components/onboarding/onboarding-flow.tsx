@@ -2,7 +2,7 @@
 
 import { Check, CircleAlert, LoaderCircle, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 import {
   importPageAction,
@@ -107,6 +107,15 @@ function RiotIdForm({ onFound }: { onFound: (preview: RiotAccountPreview) => voi
   const [serverError, setServerError] = useState<ActionError | null>(null);
   const [pending, startTransition] = useTransition();
   const tagRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  // Text typed before hydration stays in the DOM but not in state: adopt it.
+  useEffect(() => {
+    const typedName = nameRef.current?.value ?? "";
+    const typedTag = tagRef.current?.value ?? "";
+    if (typedName) setGameName(typedName);
+    if (typedTag) setTagLine(typedTag);
+  }, []);
 
   const issue = riotIdIssue(gameName, tagLine);
   const complete = gameName.trim().length >= 3 && tagLine.trim().length >= 3 && !issue;
@@ -146,6 +155,7 @@ function RiotIdForm({ onFound }: { onFound: (preview: RiotAccountPreview) => voi
           invalid={Boolean(message)}
           describedBy={`${id}-hint`}
           nameProps={{
+            ref: nameRef,
             value: gameName,
             onChange: (e) => onNameChange(e.target.value),
             maxLength: 33,
