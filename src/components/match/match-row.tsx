@@ -66,8 +66,8 @@ export function MatchRow({
       <span aria-hidden="true" className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate font-medium text-fg">{match.map}</span>
         <span className="truncate text-label font-normal text-fg-muted">
-          {match.mode}
-          <span className="font-mono sm:hidden"> · {kda}</span>
+          <span className="hidden sm:inline">{match.mode}</span>
+          <span className="font-mono sm:hidden">{kda}</span>
         </span>
       </span>
       <span aria-hidden="true" className="hidden w-24 font-mono text-table text-fg-secondary sm:block">

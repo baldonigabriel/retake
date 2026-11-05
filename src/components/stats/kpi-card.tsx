@@ -31,14 +31,14 @@ export function KpiCard({
         className,
       )}
     >
-      <p className="text-eyebrow text-fg-muted uppercase" title={hint}>
-        {label}
-        {hint ? <span className="sr-only">: {hint}</span> : null}
-      </p>
-      <div className="flex items-end justify-between gap-3">
-        <p className="stat text-stat-lg text-fg">{value}</p>
-        {trend ? <Sparkline data={trend} className="mb-1" /> : null}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-eyebrow text-fg-muted uppercase" title={hint}>
+          {label}
+          {hint ? <span className="sr-only">: {hint}</span> : null}
+        </p>
+        {trend ? <Sparkline data={trend} width={48} height={16} /> : null}
       </div>
+      <p className="stat text-stat-lg text-fg">{value}</p>
       {delta !== undefined ? (
         <DeltaChip
           value={delta}
