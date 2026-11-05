@@ -33,7 +33,7 @@ export function SiteNav() {
           aria-label="Principal"
           className="mx-auto grid h-14 w-full max-w-[1200px] grid-cols-[1fr_auto] items-center gap-4 px-4 sm:px-6 md:grid-cols-[1fr_auto_1fr]"
         >
-          <Link href="/" aria-label="Retake, início" className="w-fit rounded-control">
+          <Link href="/" aria-label="Retake, início" className="-ml-1 flex min-h-11 w-fit items-center rounded-control px-1">
             <Logo />
           </Link>
 
