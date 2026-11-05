@@ -1,12 +1,14 @@
 import { Logo } from "@/components/layout/logo";
+import { cn } from "@/lib/utils";
 
 /**
  * Footer with the non-affiliation notice required by Riot's fan content policy
  * ("Legal Jibber Jabber" from developer.riotgames.com, kept verbatim).
  */
-export function SiteFooter() {
+/** `bottomNav`: leave room for the mobile bottom bar (signed-in area). */
+export function SiteFooter({ bottomNav = true }: { bottomNav?: boolean }) {
   return (
-    <footer className="border-t border-line pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
+    <footer className={cn("border-t border-line", bottomNav && "pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0")}>
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:items-start md:justify-between">
         <Logo className="text-fg-secondary" />
         <p lang="en" className="max-w-[60ch] text-label leading-relaxed text-fg-muted">

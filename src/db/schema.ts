@@ -6,8 +6,9 @@
  *   like UUIDs but that isn't guaranteed by the API.
  * - Metrics (ACS, K/D, ...) are never stored: they are computed from the raw
  *   match_players columns by src/lib/stats.
- * - Better Auth creates its own user/session tables in Phase 2. Until then the
- *   user references below have no foreign key; Phase 2 adds them.
+ * - Better Auth tables (users, sessions, accounts, verifications) follow the
+ *   field names of Better Auth's core schema; the Drizzle adapter maps them by
+ *   their JS keys, so the SQL columns stay snake_case like the rest.
  */
 import {
   boolean,
@@ -27,13 +28,84 @@ const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode
 export const syncStatus = pgEnum("sync_status", ["ok", "error", "pending"]);
 export const groupRole = pgEnum("group_role", ["owner", "member"]);
 
+/* ---------------------------------------------------------------- auth -- */
+
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  createdAt: timestamptz("created_at").notNull().defaultNow(),
+  updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+});
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    token: text("token").notNull().unique(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamptz("expires_at").notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("sessions_user_id_idx").on(t.userId)],
+);
+
+/** OAuth links (Discord). Tokens are never returned by Better Auth's API. */
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamptz("access_token_expires_at"),
+    refreshTokenExpiresAt: timestamptz("refresh_token_expires_at"),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("accounts_user_id_idx").on(t.userId)],
+);
+
+/** OAuth state / PKCE verifiers. */
+export const verifications = pgTable(
+  "verifications",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamptz("expires_at").notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("verifications_identifier_idx").on(t.identifier)],
+);
+
+/* ---------------------------------------------------------------- game -- */
+
 export const riotAccounts = pgTable("riot_accounts", {
   id: uuid("id").primaryKey().defaultRandom(),
   /**
-   * Owner (Better Auth user id). Nullable until the account is claimed in
-   * onboarding; accounts synced from the terminal (sync:once) have none.
+   * Owner. Nullable until the account is claimed in onboarding; accounts
+   * synced from the terminal (sync:once) have none. Unique: one Riot account
+   * per user. Deleting the user releases the account (matches are shared).
    */
-  userId: text("user_id").unique(),
+  userId: text("user_id")
+    .unique()
+    .references(() => users.id, { onDelete: "set null" }),
   puuid: text("puuid").notNull().unique(),
   gameName: text("game_name").notNull(),
   tagLine: text("tag_line").notNull(),
@@ -128,7 +200,9 @@ export const groups = pgTable("groups", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  ownerId: text("owner_id").notNull(),
+  ownerId: text("owner_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   /** URL-safe random code, generated in app code when the group is created. */
   inviteCode: text("invite_code").notNull().unique(),
   /** Ciphertext (encrypted at rest with WEBHOOK_ENCRYPTION_KEY), never the plain URL. */
@@ -142,13 +216,16 @@ export const groupMembers = pgTable(
     groupId: uuid("group_id")
       .notNull()
       .references(() => groups.id, { onDelete: "cascade" }),
-    userId: text("user_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     role: groupRole("role").notNull().default("member"),
     joinedAt: timestamptz("joined_at").notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.groupId, t.userId] })],
 );
 
+export type User = typeof users.$inferSelect;
 export type RiotAccount = typeof riotAccounts.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
 export type NewMatchPlayer = typeof matchPlayers.$inferInsert;

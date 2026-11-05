@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronsUpDown, LayoutDashboard, Palette, Settings, Users } from "lucide-react";
+import { LayoutDashboard, Settings, Users } from "lucide-react";
 
 import { Logo } from "@/components/layout/logo";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,6 @@ const NAV_ITEMS = [
   { href: "/me", label: "Painel", icon: LayoutDashboard },
   { href: "/groups", label: "Grupos", icon: Users },
   { href: "/settings", label: "Ajustes", icon: Settings },
-  { href: "/design-system", label: "Design", icon: Palette },
 ] as const;
 
 function isActive(pathname: string, href: string) {
@@ -21,9 +20,11 @@ function isActive(pathname: string, href: string) {
 /**
  * DESIGN.md › Barra de navegação. Desktop: fixed top bar, surface-0 at 80% +
  * blur, links centred, active link with a 2px accent indicator. Mobile: slim
- * top bar (logo + avatar) and a bottom bar with 4 icons + labels (≥44px).
+ * top bar (logo + avatar) and a bottom bar with icons + labels (≥44px).
+ * `account` is the signed-in user's menu, streamed in behind a Suspense
+ * boundary by the (app) layout so the bar itself is part of the static shell.
  */
-export function SiteNav() {
+export function SiteNav({ account }: { account?: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
@@ -60,23 +61,7 @@ export function SiteNav() {
             })}
           </ul>
 
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              className="hidden min-h-8 items-center gap-2 rounded-control px-2.5 text-body-sm text-fg-secondary shadow-hairline transition-[color,box-shadow,transform] duration-150 ease-out hover:text-fg hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)] active:scale-[0.97] sm:inline-flex"
-              aria-label="Trocar de grupo. Grupo atual: Os Cria"
-            >
-              Os Cria
-              <ChevronsUpDown aria-hidden="true" className="size-3.5 text-fg-muted" />
-            </button>
-            <span
-              aria-label="Sua conta: nyx"
-              role="img"
-              className="inline-flex size-8 items-center justify-center rounded-full bg-surface-3 text-label font-medium text-fg-secondary shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-            >
-              N
-            </span>
-          </div>
+          <div className="flex items-center justify-end gap-2">{account}</div>
         </nav>
       </header>
 
@@ -84,7 +69,7 @@ export function SiteNav() {
         aria-label="Principal (celular)"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface-0/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-[24px] md:hidden"
       >
-        <ul className="grid grid-cols-4">
+        <ul className="grid grid-cols-3">
           {NAV_ITEMS.map((item) => {
             const active = isActive(pathname, item.href);
             const Icon = item.icon;
