@@ -15,6 +15,13 @@
       "when": 1793908193827,
       "tag": "0001_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793908424590,
+      "tag": "0002_riot_account_linked_at",
+      "breakpoints": true
     }
   ]
 }

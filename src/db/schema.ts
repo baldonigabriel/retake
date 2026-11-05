@@ -113,6 +113,8 @@ export const riotAccounts = pgTable("riot_accounts", {
   region: text("region").notNull().default("br"),
   platform: text("platform").notNull().default("pc"),
   cardUrl: text("card_url"),
+  /** When a user claimed this account in onboarding. */
+  linkedAt: timestamptz("linked_at"),
   lastSyncedAt: timestamptz("last_synced_at"),
   lastMatchAt: timestamptz("last_match_at"),
   syncStatus: syncStatus("sync_status").notNull().default("pending"),

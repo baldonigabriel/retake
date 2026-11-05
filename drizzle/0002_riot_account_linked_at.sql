@@ -1,0 +1,1 @@
+ALTER TABLE "riot_accounts" ADD COLUMN "linked_at" timestamp with time zone;

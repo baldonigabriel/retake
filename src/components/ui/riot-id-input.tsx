@@ -11,6 +11,8 @@ export function RiotIdInput({
   invalid,
   describedBy,
   className,
+  nameProps,
+  tagProps,
 }: {
   id: string;
   nameDefault?: string;
@@ -18,6 +20,9 @@ export function RiotIdInput({
   invalid?: boolean;
   describedBy?: string;
   className?: string;
+  /** Extra props for the controlled use (value/onChange/disabled...). */
+  nameProps?: React.ComponentProps<"input">;
+  tagProps?: React.ComponentProps<"input">;
 }) {
   return (
     <div
@@ -36,6 +41,7 @@ export function RiotIdInput({
         spellCheck={false}
         aria-invalid={invalid || undefined}
         aria-describedby={describedBy}
+        {...nameProps}
         className="min-w-0 flex-1 bg-transparent py-2.5 pl-3 text-base text-fg outline-none placeholder:text-fg-muted focus-visible:outline-none sm:text-body-sm"
       />
       <span aria-hidden="true" className="font-mono text-body-sm text-fg-muted">
@@ -50,6 +56,7 @@ export function RiotIdInput({
         autoComplete="off"
         spellCheck={false}
         aria-invalid={invalid || undefined}
+        {...tagProps}
         className="w-16 bg-transparent py-2.5 pr-3 pl-0.5 font-mono text-base text-fg-muted uppercase outline-none placeholder:text-fg-muted/60 focus-visible:text-fg focus-visible:outline-none sm:text-body-sm"
       />
     </div>

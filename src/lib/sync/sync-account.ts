@@ -8,7 +8,7 @@
  *   (db.batch) so a match never exists without its players;
  * - MMR snapshots use the (puuid, match_id) unique index the same way.
  */
-import { asc, eq, inArray, sql } from "drizzle-orm";
+import { asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 
 import type { Database } from "@/db";
 import { matches, matchPlayers, mmrSnapshots, riotAccounts, type RiotAccount } from "@/db/schema";
@@ -65,7 +65,18 @@ export async function upsertRiotAccount(
   return row!;
 }
 
-export async function syncAccount(deps: SyncDeps, account: RiotAccount): Promise<SyncResult> {
+export interface SyncPage {
+  /** Offset in the match history (0 = newest). */
+  start?: number;
+  /** Page size, capped at 10 by the API. */
+  size?: number;
+}
+
+export async function syncAccount(
+  deps: SyncDeps,
+  account: RiotAccount,
+  page: SyncPage = {},
+): Promise<SyncResult> {
   const now = deps.now ?? (() => new Date());
   const result: SyncResult = {
     accountId: account.id,
@@ -84,7 +95,8 @@ export async function syncAccount(deps: SyncDeps, account: RiotAccount): Promise
 
     // Step 3: recent history, small page.
     const history = await deps.henrik.getMatchHistory(region, platform, account.puuid, {
-      size: HISTORY_PAGE_SIZE,
+      size: page.size ?? HISTORY_PAGE_SIZE,
+      start: page.start,
     });
     result.fetched = history.matches.length + history.invalid.length;
 
@@ -158,15 +170,29 @@ export async function syncAccount(deps: SyncDeps, account: RiotAccount): Promise
   return result;
 }
 
+export interface SyncDueOptions {
+  /** Only accounts linked to a user (skips the ones created by sync:once). */
+  onlyClaimed?: boolean;
+  /** Stop starting new accounts after this instant (function time budget). */
+  deadline?: number;
+}
+
 /** Step 2: the N accounts synced longest ago (never-synced first), one by one. */
-export async function syncDueAccounts(deps: SyncDeps, limit: number): Promise<SyncResult[]> {
+export async function syncDueAccounts(
+  deps: SyncDeps,
+  limit: number,
+  options: SyncDueOptions = {},
+): Promise<SyncResult[]> {
+  const clock = () => (deps.now ?? (() => new Date()))().getTime();
   const due = await deps.db
     .select()
     .from(riotAccounts)
+    .where(options.onlyClaimed ? isNotNull(riotAccounts.userId) : undefined)
     .orderBy(sql`${riotAccounts.lastSyncedAt} asc nulls first`, asc(riotAccounts.createdAt))
     .limit(limit);
   const results: SyncResult[] = [];
   for (const account of due) {
+    if (options.deadline !== undefined && clock() >= options.deadline) break;
     results.push(await syncAccount(deps, account));
   }
   return results;
