@@ -10,15 +10,21 @@ import { cn } from "@/lib/utils";
  * refresh after a sync) appear without motion. Each child `li` reads its
  * index from `--i`.
  */
-export function StaggerList({ children, className, ...props }: React.ComponentProps<"ul">) {
+export function StaggerList({
+  children,
+  className,
+  ordered = false,
+  ...props
+}: Omit<React.HTMLAttributes<HTMLElement>, "ref"> & { ordered?: boolean }) {
   const [entering, setEntering] = useState(true);
   useEffect(() => {
     const timer = setTimeout(() => setEntering(false), 900);
     return () => clearTimeout(timer);
   }, []);
+  const List = ordered ? "ol" : "ul";
   return (
-    <ul data-entering={entering || undefined} className={cn("stagger-list", className)} {...props}>
+    <List data-entering={entering || undefined} className={cn("stagger-list", className)} {...props}>
       {children}
-    </ul>
+    </List>
   );
 }
