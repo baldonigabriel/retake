@@ -34,6 +34,11 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
   return <PendingContext value={{ pending, navigate }}>{children}</PendingContext>;
 }
 
+/** `navigate(key, value, fallback)` for filter controls other than FilterBar. */
+export function useFilterNavigation() {
+  return use(PendingContext).navigate;
+}
+
 export function FilterBar({
   modes,
   mode,
