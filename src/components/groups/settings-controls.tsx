@@ -172,7 +172,7 @@ export function WebhookForm({ groupId, masked, unreadable }: { groupId: string; 
           onBlur={() => setTouched(true)}
         />
         {error ? (
-          <p id={`${id}-error`} className="text-label font-normal text-loss">
+          <p id={`${id}-error`} role="alert" className="text-label font-normal text-loss">
             {error}
           </p>
         ) : null}

@@ -73,7 +73,7 @@ export function CreateGroupForm({ className }: { className?: string }) {
           onBlur={() => setTouched((t) => ({ ...t, name: name.length > 0 || t.name }))}
         />
         {nameError ? (
-          <p id={`${id}-name-error`} className="text-label font-normal text-loss">
+          <p id={`${id}-name-error`} role="alert" className="text-label font-normal text-loss">
             {nameError}
           </p>
         ) : null}
@@ -113,7 +113,7 @@ export function CreateGroupForm({ className }: { className?: string }) {
           />
         </div>
         {slugError ? (
-          <p id={`${id}-slug-error`} className="text-label font-normal text-loss">
+          <p id={`${id}-slug-error`} role="alert" className="text-label font-normal text-loss">
             {slugError}
           </p>
         ) : (

@@ -13,9 +13,10 @@ export default function Loading() {
         <Skeleton className="h-11 w-56 rounded-control sm:h-9" />
         <Skeleton className="h-3 w-40" />
       </div>
-      <div className="grid gap-4 lg:grid-cols-12 lg:items-start">
+      <div className="grid gap-4 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:items-start">
         <Skeleton className="h-56 rounded-card lg:col-span-5 lg:col-start-8 lg:row-start-1" />
-        <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline lg:col-span-7 lg:row-span-2 lg:row-start-1">
+        <div className="flex flex-col gap-4 lg:col-span-7 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+        <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <Skeleton className="h-4 w-36" />
             <Skeleton className="h-8 w-48 rounded-control" />
@@ -32,8 +33,9 @@ export default function Loading() {
             </div>
           ))}
         </div>
+        <Skeleton className="h-64 rounded-card" />
+        </div>
         <Skeleton className="h-48 rounded-card lg:col-span-5 lg:col-start-8 lg:row-start-2" />
-        <Skeleton className="h-64 rounded-card lg:col-span-12 lg:row-start-3" />
       </div>
     </div>
   );

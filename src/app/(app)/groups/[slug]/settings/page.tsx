@@ -85,6 +85,7 @@ export default async function GroupSettingsPage({ params }: PageProps<"/groups/[
         <div className="flex flex-col gap-1">
           <h2 id="discord-title" className="flex items-center gap-2 text-body-sm font-semibold text-fg">
             Discord
+            <span className="sr-only">,</span>
             <Badge>em breve</Badge>
           </h2>
           <p className="text-fg-secondary">

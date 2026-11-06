@@ -118,16 +118,18 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
         </div>
 
         {/*
-          Mobile: one column in reading order MVP → ranking → together → members.
-          Desktop: two independent columns (no empty gaps when one runs longer):
-          ranking + together on the left, MVP + members on the right. The
-          column wrappers are `display: contents` on mobile, so `order` applies.
+          DOM order = mobile reading order: MVP → ranking → together → members.
+          Desktop: ranking + together form one left item spanning two rows, so
+          the right column (MVP on row 1, members on row 2) never leaves gaps.
         */}
-        <FilteredContent className="grid gap-4 lg:grid-cols-12 lg:items-start">
-          <div className="contents lg:col-span-7 lg:flex lg:flex-col lg:gap-4">
+        <FilteredContent className="grid gap-4 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:items-start">
+          <div className="lg:col-span-5 lg:col-start-8 lg:row-start-1">
+            <MvpCard mvp={mvp} weekLabel={weekChoice === "last" ? "semana passada" : "esta semana"} />
+          </div>
+          <div className="flex flex-col gap-4 lg:col-span-7 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <section
             aria-labelledby="ranking-title"
-            className="order-2 overflow-hidden rounded-card bg-surface-1 shadow-hairline"
+            className="overflow-hidden rounded-card bg-surface-1 shadow-hairline"
           >
             <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
               <h2 id="ranking-title" className="text-body-sm font-semibold text-fg">
@@ -189,7 +191,7 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
           </section>
           <section
             aria-labelledby="together-title"
-            className="order-3 overflow-hidden rounded-card bg-surface-1 shadow-hairline"
+            className="overflow-hidden rounded-card bg-surface-1 shadow-hairline"
           >
             <header className="flex flex-col gap-0.5 border-b border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <h2 id="together-title" className="text-body-sm font-semibold text-fg">
@@ -212,16 +214,9 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
             )}
           </section>
           </div>
-          <div className="contents lg:col-span-5 lg:flex lg:flex-col lg:gap-4">
-          <div className="order-1">
-            <MvpCard mvp={mvp} weekLabel={weekChoice === "last" ? "semana passada" : "esta semana"} />
-          </div>
-
-
-
           <section
             aria-labelledby="members-title"
-            className="order-4 overflow-hidden rounded-card bg-surface-1 shadow-hairline"
+            className="overflow-hidden rounded-card bg-surface-1 shadow-hairline lg:col-span-5 lg:col-start-8 lg:row-start-2"
           >
             <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
               <h2 id="members-title" className="text-body-sm font-semibold text-fg">
@@ -263,7 +258,6 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
               )}
             </footer>
           </section>
-          </div>
 
 
         </FilteredContent>
