@@ -109,7 +109,9 @@ export function TrendChart({ data }: { data: readonly Point[] }) {
             isAnimationActive={!reduced}
             animationDuration={150}
             animationEasing="ease-out"
-            allowEscapeViewBox={{ x: false, y: true }}
+            // Stay inside the chart: the panel clips anything past its edge,
+            // so a low point flips the tooltip above the cursor instead.
+            allowEscapeViewBox={{ x: false, y: false }}
             content={({ active, payload }) => {
               const point = payload?.[0];
               if (!active || !point) return null;
