@@ -1,4 +1,4 @@
-import { MatchRowSkeleton } from "@/components/match/match-row";
+import { HistoryRowSkeleton } from "@/components/history/history-row";
 import { BackLink } from "@/components/match/back-link";
 import { KpiCardSkeleton } from "@/components/stats/kpi-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,7 +43,7 @@ export default function Loading() {
       </div>
       <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
         {Array.from({ length: 4 }, (_, i) => (
-          <MatchRowSkeleton key={i} />
+          <HistoryRowSkeleton key={i} />
         ))}
       </div>
     </div>

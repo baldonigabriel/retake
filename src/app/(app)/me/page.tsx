@@ -4,12 +4,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { AgentsPanel } from "@/components/agents/agents-panel";
+import { HistoryPanel } from "@/components/history/history-panel";
 import { FilterBar, FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
 import { KpiRow } from "@/components/dashboard/kpi-row";
 import { MapGrid } from "@/components/dashboard/map-grid";
 import { RankHeader } from "@/components/dashboard/rank-header";
-import { RecentMatches } from "@/components/dashboard/recent-matches";
 import { SyncNowButton } from "@/components/dashboard/sync-now-button";
 import { GoalsPanel, GoalsPanelSkeleton } from "@/components/goals/goals-panel";
 import { TrendChart } from "@/components/stats/trend-chart";
@@ -18,6 +18,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/states";
 import { SYNC_NOW_COOLDOWN_MS } from "@/lib/accounts/initial-import";
 import { requireViewer } from "@/lib/auth/session";
+import { withExtras } from "@/lib/dashboard/history";
 import { getPlayerLines, getRankHistory } from "@/lib/dashboard/queries";
 import { verdict } from "@/lib/dashboard/verdict";
 import { formatRelativeTime } from "@/lib/format";
@@ -38,6 +39,7 @@ import {
   trendSeries,
   type Period,
 } from "@/lib/stats/breakdown";
+import { filterHistory, historyOptions, historySummary, parseHistoryFilter, parseShow, HISTORY_SUMMARY_WINDOW } from "@/lib/stats/history";
 import { buildInsights } from "@/lib/stats/insights";
 import { cn } from "@/lib/utils";
 
@@ -54,8 +56,6 @@ const PERIOD_OPTIONS: readonly { value: Period; label: string }[] = [
   { value: "all", label: "Tudo" },
 ];
 const PERIOD_PHRASE: Record<Period, string> = { "30d": "nos últimos 30 dias", "90d": "nos últimos 90 dias", all: "" };
-
-const RECENT_LIST = 10;
 
 export default async function MePage({ searchParams }: PageProps<"/me">) {
   const { user, account } = await requireViewer("/me");
@@ -80,6 +80,13 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const seasons = seasonOptions(lines, catalog);
   const season = parseSeason(params.season, seasons);
   const agents = agentStats(filterBySeason(lines, season));
+  // "Últimas partidas": its own agent/map filters and page size, on top of mode and period.
+  const historyFilters = historyOptions(lines);
+  const historyAgent = parseHistoryFilter(params.agent, historyFilters.agents);
+  const historyMap = parseHistoryFilter(params.map, historyFilters.maps);
+  const historyLines = filterHistory(lines, { agent: historyAgent, map: historyMap });
+  const historyItems = await withExtras(account.puuid, historyLines.slice(0, parseShow(params.show)));
+  const clearHistory = new URLSearchParams(Object.entries({ mode: params.mode, period: params.period, season: params.season }).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : [])));
   const cooldownUntil = account.lastSyncedAt ? account.lastSyncedAt.getTime() + SYNC_NOW_COOLDOWN_MS : null;
   const mixed = mode === ALL_MODES;
   // Goals always use this São Paulo week, whatever the filters say.
@@ -201,19 +208,23 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
                   <MapGrid maps={byMap(lines, mode)} className="lg:grid-cols-4" />
                 </Panel>
 
-                <Panel
-                  title="Partidas recentes"
-                  id="recent-title"
-                  aside={
-                    lines.length > RECENT_LIST ? (
-                      <span className="num text-label font-normal text-fg-muted">
-                        {RECENT_LIST} de {lines.length}
-                      </span>
-                    ) : null
+                <HistoryPanel
+                  summary={historySummary(historyLines)}
+                  summaryCaption={`${historyLines.length > HISTORY_SUMMARY_WINDOW ? `Últimas ${HISTORY_SUMMARY_WINDOW}` : historyLines.length === 1 ? "1 partida" : `${historyLines.length} partidas`} · ${modeLabel(mode)}`}
+                  items={historyItems}
+                  total={historyLines.length}
+                  now={now}
+                  hrefFor={(item) => `/match/${item.matchId}`}
+                  agents={historyFilters.agents}
+                  maps={historyFilters.maps}
+                  agent={historyAgent}
+                  map={historyMap}
+                  emptyAction={
+                    <Link href={`/me${clearHistory.size ? `?${clearHistory}` : ""}`} className={buttonVariants()}>
+                      Ver todas as partidas
+                    </Link>
                   }
-                >
-                  <RecentMatches lines={lines.slice(0, RECENT_LIST)} now={now} />
-                </Panel>
+                />
               </>
             )}
           </FilteredContent>

@@ -357,7 +357,8 @@
  * First-load stagger for match lists, rankings and groups (see StaggerList):
  * 40ms apart, only the first 10 are staggered (the rest arrive with the 10th).
  */
-.stagger-list[data-entering] > li {
+.stagger-list[data-entering] > li,
+.stagger-list[data-entering] .stagger-item {
   animation: enter 240ms var(--ease-out) both;
   animation-delay: calc(min(var(--i, 0), 9) * 40ms);
 }
@@ -528,6 +529,7 @@
   }
   /* Fades that stay (more specific than the safety net, so they win). */
   .stagger-list[data-entering] > li,
+  .stagger-list[data-entering] .stagger-item,
   .content-enter,
   .celebrate,
   .trend-chart .recharts-area,

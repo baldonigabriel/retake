@@ -1,5 +1,5 @@
 import { AgentsBreakdownSkeleton } from "@/components/agents/agents-table";
-import { MatchRowSkeleton } from "@/components/match/match-row";
+import { HistoryRowSkeleton } from "@/components/history/history-row";
 import { KpiCardSkeleton } from "@/components/stats/kpi-card";
 import { GoalsPanelSkeleton } from "@/components/goals/goals-panel";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,8 +48,20 @@ export default function Loading() {
         <div className="border-b border-line px-4 py-3">
           <Skeleton className="h-4 w-36" />
         </div>
+        <div className="flex gap-2 border-b border-line px-4 py-3">
+          <Skeleton className="h-11 flex-1 rounded-control sm:h-8 sm:w-44 sm:flex-none" />
+          <Skeleton className="h-11 flex-1 rounded-control sm:h-8 sm:w-44 sm:flex-none" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 border-b border-line p-4 sm:grid-cols-4 sm:p-5 lg:w-1/2">
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <Skeleton className="h-3 w-12" />
+              <Skeleton className="h-8 w-20" />
+            </div>
+          ))}
+        </div>
         {Array.from({ length: 5 }, (_, i) => (
-          <MatchRowSkeleton key={i} />
+          <HistoryRowSkeleton key={i} />
         ))}
       </div>
     </div>

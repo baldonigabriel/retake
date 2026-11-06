@@ -100,7 +100,7 @@ test.describe("onboarded user", () => {
     }
     await expect(page.getByRole("heading", { name: "Agentes", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Por mapa" })).toBeVisible();
-    await expect(page.getByRole("list", { name: "Partidas recentes" }).getByRole("link")).toHaveCount(10);
+    await expect(page.getByRole("list", { name: "Últimas partidas" }).getByRole("link")).toHaveCount(20);
     await expect(page.locator("[data-slot=chamfer-card]")).toHaveCount(1);
     await noHorizontalScroll(page);
   });
@@ -121,14 +121,14 @@ test.describe("onboarded user", () => {
 
   test("a match opens with the full scoreboard and the user's row highlighted", async ({ page }) => {
     await page.goto("/me");
-    await page.getByRole("list", { name: "Partidas recentes" }).getByRole("link").first().click();
+    await page.getByRole("list", { name: "Últimas partidas" }).getByRole("link").first().click();
     // The newest match is a seeded group match of this week (or match 0 right after Monday 00:00).
     await expect(page).toHaveURL(new RegExp(`/match/${E2E.matchPrefix}`));
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/Vitória|Derrota|Empate/i);
     await expect(page.getByRole("heading", { name: /^Seu time/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: /^Adversário/ })).toBeVisible();
-    await expect(page.getByRole("list", { name: "Partidas recentes" })).toHaveCount(0);
+    await expect(page.getByRole("list", { name: "Últimas partidas" })).toHaveCount(0);
     const boards = page.locator("section[aria-labelledby^=team-]");
     await expect(boards).toHaveCount(2);
     await expect(boards.locator("tbody tr")).toHaveCount(10);

@@ -312,11 +312,12 @@ export async function seed(): Promise<{
   // Rank history for the competitive matches: Platinum 3 → Diamond 1.
   let rr = 40;
   let tier = 17;
-  const snapshots = matchRows
+  const allRows = [...playerRows, ...week.playerRows];
+  const snapshots = [...matchRows, ...week.matchRows]
     .filter((m) => m.queueId === "competitive")
-    .reverse()
+    .sort((a, b) => (a.startedAt as Date).getTime() - (b.startedAt as Date).getTime())
     .map((m) => {
-      const line = playerRows.find((p) => p.matchId === m.id && p.puuid === E2E.puuid)!;
+      const line = allRows.find((p) => p.matchId === m.id && p.puuid === E2E.puuid)!;
       const change = m.winningTeam === null ? 0 : line.won ? 21 : -16;
       rr += change;
       if (rr >= 100) [tier, rr] = [tier + 1, rr - 100];

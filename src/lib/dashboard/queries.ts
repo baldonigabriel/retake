@@ -4,7 +4,7 @@
  */
 import "server-only";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { matches, matchPlayers, mmrSnapshots } from "@/db/schema";
@@ -66,3 +66,51 @@ export async function getRankHistory(puuid: string): Promise<RankPoint[]> {
   return rows.reverse();
 }
 
+
+export interface MatchExtras {
+  /** Competitive tier the player had in that match (match_players.tier) */
+  tier: number | null;
+  /** 1 = best ACS of the player's team (ties share the position) */
+  teamPosition: number;
+  teamSize: number;
+  /** RR won or lost, from the snapshot linked to the match; null when there's none */
+  rrChange: number | null;
+}
+
+/**
+ * Per-match extras for the rows on screen: tier, place in the team by ACS
+ * (score / rounds; same rounds for the whole team, so ranking by score is
+ * the same) and RR. Only for `puuid`'s own lines.
+ */
+export async function getMatchExtras(puuid: string, matchIds: readonly string[]): Promise<Map<string, MatchExtras>> {
+  if (matchIds.length === 0) return new Map();
+  const ids = [...matchIds];
+  const ranked = db()
+    .select({
+      matchId: matchPlayers.matchId,
+      puuid: matchPlayers.puuid,
+      tier: matchPlayers.tier,
+      position: sql<number>`rank() over (partition by ${matchPlayers.matchId}, ${matchPlayers.team} order by ${matchPlayers.score} desc)`.as("position"),
+      size: sql<number>`count(*) over (partition by ${matchPlayers.matchId}, ${matchPlayers.team})`.as("size"),
+    })
+    .from(matchPlayers)
+    .where(inArray(matchPlayers.matchId, ids))
+    .as("ranked");
+  const rows = await db()
+    .select({
+      matchId: ranked.matchId,
+      tier: ranked.tier,
+      position: ranked.position,
+      size: ranked.size,
+      rrChange: mmrSnapshots.rrChange,
+    })
+    .from(ranked)
+    .leftJoin(mmrSnapshots, and(eq(mmrSnapshots.puuid, ranked.puuid), eq(mmrSnapshots.matchId, ranked.matchId)))
+    .where(eq(ranked.puuid, puuid));
+  return new Map(
+    rows.map((r) => [
+      r.matchId,
+      { tier: r.tier, teamPosition: Number(r.position), teamSize: Number(r.size), rrChange: r.rrChange ?? null },
+    ]),
+  );
+}

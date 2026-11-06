@@ -5,8 +5,8 @@ import { notFound } from "next/navigation";
 
 import { AgentMapTable } from "@/components/agents/agent-maps";
 import { FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
-import { RecentMatches } from "@/components/dashboard/recent-matches";
 import { GroupFilter } from "@/components/groups/group-filters";
+import { HistoryPanel } from "@/components/history/history-panel";
 import { AgentAvatar } from "@/components/match/agent-avatar";
 import { BackLink } from "@/components/match/back-link";
 import { AnimatedNumber } from "@/components/stats/animated-number";
@@ -17,6 +17,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/states";
 import { agentIconUrl } from "@/lib/assets";
 import { requireViewer } from "@/lib/auth/session";
+import { withExtras } from "@/lib/dashboard/history";
 import { getPlayerLines } from "@/lib/dashboard/queries";
 import { formatHours } from "@/lib/format";
 import { modeAdjective, modeLabel } from "@/lib/modes";
@@ -25,6 +26,7 @@ import { getSeasonCatalog } from "@/lib/seasons-api";
 import { ALL_MODES, DEFAULT_MODE, filterByMode } from "@/lib/stats/aggregate";
 import { BEST_MAP_MIN_MATCHES, bestMap, linesForAgent, mapStats, performance } from "@/lib/stats/agents";
 import { modeOptions, parseMode, trendSeries } from "@/lib/stats/breakdown";
+import { filterHistory, historyOptions, parseHistoryFilter, parseShow } from "@/lib/stats/history";
 
 export const metadata: Metadata = {
   title: "Agente",
@@ -67,6 +69,10 @@ export default async function AgentPage({ params, searchParams }: PageProps<"/me
   const mixed = mode === ALL_MODES;
   const seasonName = season === ALL_SEASONS ? "todas as temporadas" : seasons.find((s) => s.value === season)?.label;
   const now = new Date();
+  const { maps: mapOptions } = historyOptions(lines);
+  const mapFilter = parseHistoryFilter(query.map, mapOptions);
+  const listLines = filterHistory(lines, { map: mapFilter });
+  const items = await withExtras(account.puuid, listLines.slice(0, parseShow(query.show)));
 
   return (
     <div className="content-enter flex flex-col gap-4 py-6 sm:py-8">
@@ -206,15 +212,16 @@ export default async function AgentPage({ params, searchParams }: PageProps<"/me
                 <AgentMapTable maps={maps} bestKey={best?.key ?? null} />
               </section>
 
-              <section aria-labelledby="agent-matches" className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
-                <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-                  <h2 id="agent-matches" className="text-body-sm font-semibold text-fg">
-                    Partidas com {name}
-                  </h2>
-                  <span className="num text-label font-normal text-fg-muted">{lines.length}</span>
-                </header>
-                <RecentMatches lines={lines} now={now} />
-              </section>
+              <HistoryPanel
+                title={`Partidas com ${name}`}
+                id="agent-matches"
+                items={items}
+                total={listLines.length}
+                now={now}
+                hrefFor={(item) => `/match/${item.matchId}`}
+                maps={mapOptions}
+                map={mapFilter}
+              />
             </>
           )}
         </FilteredContent>
