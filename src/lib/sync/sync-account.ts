@@ -1,5 +1,6 @@
 /**
- * Sync flow (docs/SPEC.md §3, steps 2–5 and 7; Discord cards are Phase 4).
+ * Sync flow (docs/SPEC.md §3, steps 2–5 and 7; step 6, the Discord cards, is
+ * src/lib/discord, run by the callers with the inserted match ids).
  * Framework-free: used by scripts/sync-once.ts now and by /api/cron/sync later.
  *
  * Idempotent by construction:

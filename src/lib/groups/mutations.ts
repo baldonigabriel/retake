@@ -20,6 +20,7 @@ import { groupMembers, groups } from "@/db/schema";
 import { encrypt, serverKey } from "@/lib/crypto";
 
 import { newInviteCode } from "./invite";
+import { webhookContext } from "./webhook-context";
 import { getInvite, getRole } from "./queries";
 import { MAX_MEMBERS } from "./validation";
 
@@ -123,7 +124,4 @@ export async function setWebhook(database: Database, ownerId: string, groupId: s
   await database.update(groups).set({ discordWebhookUrl: value }).where(eq(groups.id, groupId));
 }
 
-/** Additional authenticated data: a ciphertext copied to another group won't decrypt. */
-export function webhookContext(groupId: string): string {
-  return `group-webhook:${groupId}`;
-}
+export { webhookContext };
