@@ -18,11 +18,11 @@ export function LogoMark({ className, letter = "var(--color-surface-0)" }: { cla
   );
 }
 
-/** Wordmark lockup. Neutral inside the app; red only on the browser and phone icons. */
+/** Wordmark lockup: the red mark (dark R) beside the name, everywhere. */
 export function Logo({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2 text-fg", className)}>
-      <LogoMark />
+      <LogoMark className="text-primary" letter="var(--color-on-accent)" />
       <span className="text-[17px] font-semibold tracking-[-0.02em]">retake</span>
     </span>
   );
