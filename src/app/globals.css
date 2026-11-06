@@ -396,6 +396,10 @@
     transform: scale(0.98);
   }
 }
+/* clip-path hides the parked sheen but doesn't clip scrolling: overflow does. */
+.celebrate-sheen {
+  overflow: hidden;
+}
 .celebrate-sheen::after {
   content: "";
   position: absolute;
