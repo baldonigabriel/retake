@@ -4,6 +4,7 @@ import {
   BEST_MAP_MIN_MATCHES,
   agentSlug,
   agentStats,
+  columnBests,
   bestMap,
   linesForAgent,
   mapStats,
@@ -146,7 +147,7 @@ describe("agentStats", () => {
 
   it("groups lines without an agent instead of dropping them", () => {
     const rows = agentStats([line({ agentId: null, agentName: null })]);
-    expect(rows[0]).toMatchObject({ agentName: "Agente desconhecido", matches: 1, slug: "desconhecido" });
+    expect(rows[0]).toMatchObject({ agentName: "Agente desconhecido", matches: 1, slug: null });
   });
 
   it("returns an empty list for no lines", () => {
@@ -167,5 +168,29 @@ describe("agentSlug / linesForAgent", () => {
     expect(linesForAgent(lines, "KAY-O")).toHaveLength(1);
     expect(linesForAgent(lines, "raze")).toHaveLength(1);
     expect(linesForAgent(lines, "desconhecido")).toHaveLength(0);
+  });
+});
+
+describe("columnBests", () => {
+  const many = (n: number, o: Partial<AgentLine>) => Array.from({ length: n }, () => line(o));
+  const agents = agentStats([
+    ...many(3, { agentId: "a", agentName: "Raze", kills: 30, score: 6000 }),
+    ...many(3, { agentId: "b", agentName: "Sage", kills: 10, score: 6000, won: false, winningTeam: "Red" }),
+    ...many(1, { agentId: "c", agentName: "Jett", kills: 90, score: 9000 }), // 1 match: never a best
+  ]);
+
+  it("picks the top value per column among agents with enough matches", () => {
+    const bests = columnBests(agents);
+    expect([...bests.kd]).toEqual(["a"]);
+    expect([...bests.winRate]).toEqual(["a"]);
+  });
+
+  it("keeps every agent tied at the top", () => {
+    expect([...columnBests(agents).acs].sort()).toEqual(["a", "b"]);
+  });
+
+  it("highlights nothing with fewer than two eligible agents", () => {
+    const bests = columnBests(agents, 4);
+    expect(Object.values(bests).every((s) => s.size === 0)).toBe(true);
   });
 });

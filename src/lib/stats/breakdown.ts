@@ -21,6 +21,16 @@ export interface DashboardLine extends PlayerMatchLine {
   blueScore: number | null;
 }
 
+/**
+ * A dashboard line plus what the agent and match-list views need: damage
+ * received (DDΔ), duration (hours played) and season (season filter).
+ */
+export interface DetailedLine extends DashboardLine {
+  damageReceived: number;
+  gameLengthMs: number | null;
+  seasonId: string | null;
+}
+
 /** How many recent matches the KPIs and trend use (SPEC §4). */
 export const RECENT_WINDOW = 20;
 

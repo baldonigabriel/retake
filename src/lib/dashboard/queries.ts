@@ -8,16 +8,18 @@ import { desc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { matches, matchPlayers, mmrSnapshots } from "@/db/schema";
-import type { DashboardLine } from "@/lib/stats/breakdown";
+import type { DetailedLine } from "@/lib/stats/breakdown";
 
 /** Every stored match line for the player, newest first. */
-export async function getPlayerLines(puuid: string): Promise<DashboardLine[]> {
+export async function getPlayerLines(puuid: string): Promise<DetailedLine[]> {
   return db()
     .select({
       matchId: matches.id,
       startedAt: matches.startedAt,
       queueId: matches.queueId,
       mode: matches.mode,
+      seasonId: matches.seasonId,
+      gameLengthMs: matches.gameLengthMs,
       mapId: matches.mapId,
       mapName: matches.mapName,
       roundsPlayed: matches.roundsPlayed,
@@ -33,6 +35,7 @@ export async function getPlayerLines(puuid: string): Promise<DashboardLine[]> {
       assists: matchPlayers.assists,
       score: matchPlayers.score,
       damageDealt: matchPlayers.damageDealt,
+      damageReceived: matchPlayers.damageReceived,
       headshots: matchPlayers.headshots,
       bodyshots: matchPlayers.bodyshots,
       legshots: matchPlayers.legshots,

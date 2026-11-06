@@ -55,3 +55,10 @@ export function formatMatchDate(date: Date): string {
     timeZone: DISPLAY_TIME_ZONE,
   });
 }
+
+/** Time played: 2_700_000 → "45 min", 5_400_000 → "1,5 h", 0 → "0 min". */
+export function formatHours(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return "0 min";
+  if (ms < 3_600_000) return `${Math.max(1, Math.round(ms / 60_000))} min`;
+  return `${formatNumber(ms / 3_600_000, 1)} h`;
+}

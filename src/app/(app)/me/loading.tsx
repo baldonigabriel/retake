@@ -1,3 +1,4 @@
+import { AgentsBreakdownSkeleton } from "@/components/agents/agents-table";
 import { MatchRowSkeleton } from "@/components/match/match-row";
 import { KpiCardSkeleton } from "@/components/stats/kpi-card";
 import { GoalsPanelSkeleton } from "@/components/goals/goals-panel";
@@ -34,20 +35,14 @@ export default function Loading() {
         <Skeleton className="h-56 w-full sm:h-64" />
       </div>
       <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
-        <div className="border-b border-line px-4 py-3">
-          <Skeleton className="h-4 w-24" />
+        <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-3 w-36" />
+          </div>
+          <Skeleton className="h-11 w-40 rounded-control sm:h-9" />
         </div>
-        <div className="grid lg:grid-cols-2">
-          {Array.from({ length: 2 }, (_, i) => (
-            <div key={i} className="flex items-start gap-3 px-4 py-3">
-              <Skeleton className="size-9 rounded-control" />
-              <div className="flex flex-1 flex-col gap-1.5">
-                <Skeleton className="h-3.5 w-full max-w-sm" />
-                <Skeleton className="h-3 w-40" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <AgentsBreakdownSkeleton />
       </div>
       <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
         <div className="border-b border-line px-4 py-3">

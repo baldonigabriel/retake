@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDuration, formatNumber, formatPercent, formatRelativeTime, formatSigned } from "./format";
+import { formatDuration, formatHours, formatNumber, formatPercent, formatRelativeTime, formatSigned } from "./format";
 
 describe("format", () => {
   it("uses pt-BR decimals", () => {
@@ -37,5 +37,15 @@ describe("formatMatchDate", () => {
     const text = formatMatchDate(new Date("2026-11-06T00:03:00Z"));
     expect(text).toContain("21:03");
     expect(text).toMatch(/5 de nov/);
+  });
+});
+
+describe("formatHours", () => {
+  it("uses minutes under an hour and one decimal above", () => {
+    expect(formatHours(0)).toBe("0 min");
+    expect(formatHours(20_000)).toBe("1 min");
+    expect(formatHours(2_700_000)).toBe("45 min");
+    expect(formatHours(5_400_000)).toBe("1,5 h");
+    expect(formatHours(Number.NaN)).toBe("0 min");
   });
 });

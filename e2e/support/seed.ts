@@ -69,6 +69,11 @@ const AGENTS = [
   { id: "707eab51-4836-f488-046a-cda6bf494859", name: "Viper" },
 ] as const;
 
+/** Real act ids (valorant-api.com): the newest matches are in Act VI, older ones in Act V. */
+export const SEASONS = { current: "d816f426-48ea-f052-117f-9697a155b319", previous: "8102cd81-43a0-d0d7-bd59-47b8fe9bed1b" } as const;
+/** A competitive match the RR history doesn't cover: the UI shows "—". */
+export const NO_RR_MATCH = 3;
+
 /** Deterministic pseudo-random numbers so screenshots are stable. */
 function rng(seed: number) {
   let s = seed >>> 0;
@@ -115,7 +120,7 @@ export function buildMatches(now = new Date()) {
       mapName: map.name,
       mode: queueId === "competitive" ? "Competitive" : "Unrated",
       queueId,
-      seasonId: null,
+      seasonId: i < 12 ? SEASONS.current : SEASONS.previous,
       startedAt: new Date(now.getTime() - (i * 26 + 3 + (i >= 22 ? 20 * 24 : 0)) * 3_600_000),
       gameLengthMs: (rounds * 95 + between(-60, 120)) * 1000,
       roundsPlayed: rounds,
@@ -182,7 +187,7 @@ export function buildWeekMatches(now = new Date()) {
       mapName: map.name,
       mode: "Competitive",
       queueId: "competitive",
-      seasonId: null,
+      seasonId: SEASONS.current,
       startedAt: new Date(start.getTime() + Math.floor((span * (i + 1)) / (WEEK_MATCH_COUNT + 1))),
       gameLengthMs: rounds * 95_000,
       roundsPlayed: rounds,
@@ -328,7 +333,7 @@ export async function seed(): Promise<{
         recordedAt: m.startedAt as Date,
       };
     });
-  await database.insert(mmrSnapshots).values(snapshots);
+  await database.insert(mmrSnapshots).values(snapshots.filter((snap) => snap.matchId !== matchId(NO_RR_MATCH)));
 
   const login = async (userId: string) => {
     const { cookies } = await ctx.test.login({ userId });

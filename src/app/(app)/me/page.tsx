@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { AgentTable } from "@/components/dashboard/agent-table";
+import { AgentsPanel } from "@/components/agents/agents-panel";
 import { FilterBar, FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
 import { KpiRow } from "@/components/dashboard/kpi-row";
@@ -23,11 +23,12 @@ import { verdict } from "@/lib/dashboard/verdict";
 import { formatRelativeTime } from "@/lib/format";
 import { formatWeek, inWeek, previousWeek, weekRange } from "@/lib/groups/week";
 import { modeAdjective, modeLabel } from "@/lib/modes";
-import { ALL_MODES, DEFAULT_MODE, filterByMode } from "@/lib/stats";
+import { filterBySeason, parseSeason, seasonOptions } from "@/lib/seasons";
+import { getSeasonCatalog } from "@/lib/seasons-api";
+import { ALL_MODES, DEFAULT_MODE, agentStats, filterByMode } from "@/lib/stats";
 import {
   DEFAULT_PERIOD,
   RECENT_WINDOW,
-  byAgent,
   byMap,
   compareRecent,
   filterByPeriod,
@@ -58,10 +59,11 @@ const RECENT_LIST = 10;
 
 export default async function MePage({ searchParams }: PageProps<"/me">) {
   const { user, account } = await requireViewer("/me");
-  const [params, allLines, rank] = await Promise.all([
+  const [params, allLines, rank, catalog] = await Promise.all([
     searchParams,
     getPlayerLines(account.puuid),
     getRankHistory(account.puuid),
+    getSeasonCatalog(),
   ]);
   const now = new Date();
 
@@ -75,6 +77,9 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const trend = trendSeries(lines);
   const sentence = verdict(cmp, RECENT_WINDOW);
   const insights = buildInsights(lines, mode);
+  const seasons = seasonOptions(lines, catalog);
+  const season = parseSeason(params.season, seasons);
+  const agents = agentStats(filterBySeason(lines, season));
   const cooldownUntil = account.lastSyncedAt ? account.lastSyncedAt.getTime() + SYNC_NOW_COOLDOWN_MS : null;
   const mixed = mode === ALL_MODES;
   // Goals always use this São Paulo week, whatever the filters say.
@@ -184,14 +189,17 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
 
                 <InsightsPanel result={insights} mode={mode} />
 
-                <div className="grid gap-4 lg:grid-cols-12 lg:items-start">
-                  <Panel title="Por agente" id="agents-title" className="lg:col-span-7">
-                    <AgentTable agents={byAgent(lines, mode)} />
-                  </Panel>
-                  <Panel title="Por mapa" id="maps-title" className="lg:col-span-5">
-                    <MapGrid maps={byMap(lines, mode)} />
-                  </Panel>
-                </div>
+                <AgentsPanel
+                  agents={agents}
+                  seasons={seasons}
+                  season={season}
+                  modeName={modeLabel(mode)}
+                  hrefFor={(a) => (a.slug ? `/me/agents/${a.slug}` : null)}
+                />
+
+                <Panel title="Por mapa" id="maps-title">
+                  <MapGrid maps={byMap(lines, mode)} className="lg:grid-cols-4" />
+                </Panel>
 
                 <Panel
                   title="Partidas recentes"

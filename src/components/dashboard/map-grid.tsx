@@ -1,6 +1,7 @@
 import { mapThumbUrl } from "@/lib/assets";
 import { formatNumber, formatPercent } from "@/lib/format";
 import type { GroupStats } from "@/lib/stats/breakdown";
+import { cn } from "@/lib/utils";
 
 /**
  * Per-map tiles. The community map thumbnail sits under a surface-0 overlay
@@ -8,9 +9,9 @@ import type { GroupStats } from "@/lib/stats/breakdown";
  * over the art uses fg-secondary, never muted: bright parts of a map under
  * the overlay drop muted grey below 4.5:1.
  */
-export function MapGrid({ maps }: { maps: readonly GroupStats[] }) {
+export function MapGrid({ maps, className }: { maps: readonly GroupStats[]; className?: string }) {
   return (
-    <ul className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-2">
+    <ul className={cn("grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-2", className)}>
       {maps.map((m) => {
         const thumb = mapThumbUrl(m.id);
         const wr = m.summary.winRate;

@@ -117,8 +117,8 @@ export interface AgentStats extends PerformanceStats {
   key: string;
   agentId: string | null;
   agentName: string;
-  /** URL segment for /me/agents/[agent] */
-  slug: string;
+  /** URL segment for /me/agents/[agent]; null for lines without an agent */
+  slug: string | null;
   /** Best win rate with at least BEST_MAP_MIN_MATCHES matches; null when no map qualifies */
   bestMap: MapStats | null;
 }
@@ -205,7 +205,7 @@ export function agentStats(
         key,
         agentId: first.agentId,
         agentName: first.agentName ?? UNKNOWN_AGENT,
-        slug: agentSlug(first.agentName),
+        slug: first.agentName ? agentSlug(first.agentName) : null,
         bestMap: bestMap(mapStats(group), options.bestMapMinMatches),
         ...performance(group),
       };
@@ -217,4 +217,28 @@ export function agentStats(
 export function linesForAgent<T extends AgentLine>(lines: readonly T[], slug: string): T[] {
   const wanted = slug.toLowerCase();
   return lines.filter((l) => l.agentName !== null && agentSlug(l.agentName) === wanted);
+}
+
+/** Metric columns of the agents table; "best" is the highest value in each. */
+export const AGENT_COLUMNS = ["winRate", "kd", "adr", "acs", "hsRate", "ddDelta"] as const;
+export type AgentColumn = (typeof AGENT_COLUMNS)[number];
+
+/**
+ * Agents holding the best value of each metric column (ties: all of them).
+ * Only agents with at least `minMatches` matches compete, and a column has a
+ * best only when 2+ agents compete: one lucky match isn't a highlight.
+ */
+export function columnBests(
+  agents: readonly AgentStats[],
+  minMatches = BEST_MAP_MIN_MATCHES,
+): Record<AgentColumn, Set<string>> {
+  const eligible = agents.filter((a) => a.matches >= minMatches);
+  const bests = {} as Record<AgentColumn, Set<string>>;
+  for (const column of AGENT_COLUMNS) {
+    bests[column] = new Set();
+    if (eligible.length < 2) continue;
+    const top = Math.max(...eligible.map((a) => a[column]));
+    for (const a of eligible) if (a[column] === top) bests[column].add(a.key);
+  }
+  return bests;
 }

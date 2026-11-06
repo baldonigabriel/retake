@@ -98,7 +98,7 @@ test.describe("onboarded user", () => {
     for (const kpi of ["ACS", "K/D", "HS%", "ADR", "Vitórias"]) {
       await expect(page.locator("p", { hasText: new RegExp(`^${kpi.replace("/", "\\/")}`) }).first()).toBeVisible();
     }
-    await expect(page.getByRole("heading", { name: "Por agente" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Agentes", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Por mapa" })).toBeVisible();
     await expect(page.getByRole("list", { name: "Partidas recentes" }).getByRole("link")).toHaveCount(10);
     await expect(page.locator("[data-slot=chamfer-card]")).toHaveCount(1);
