@@ -8,7 +8,8 @@
  * `after()` (still inside maxDuration); the summary goes to the logs.
  * Weekly summaries (src/lib/summary) go first, and only do work from Monday
  * 09:00 until every group with a webhook got last week's post; each run
- * spends at most SUMMARY_BUDGET_MS on them, then syncs as usual.
+ * spends at most SUMMARY_BUDGET_MS on them. Then due Bagre periods are
+ * closed and announced (src/lib/bagre/close, idempotent), then the sync.
  *
  * `?wait=1` runs inline and returns the summary, for debugging by hand:
  *
@@ -19,6 +20,7 @@ import { after } from "next/server";
 import { db } from "@/db";
 import { serverEnv } from "@/env";
 import { providersFromEnv } from "@/lib/ai";
+import { runBagreClosing, type BagreRunResult } from "@/lib/bagre/close";
 import { notifyNewMatches, type NotifyResult } from "@/lib/discord";
 import { discordKey } from "@/lib/discord/key";
 import { henrikClient } from "@/lib/henrik";
@@ -34,6 +36,8 @@ const BATCH_SIZE = 5;
 const TIME_BUDGET_MS = 40_000;
 /** Weekly summaries: don't start a group after this (each needs up to ~21 s). */
 const SUMMARY_BUDGET_MS = 25_000;
+/** Bagre results: don't start another post after this. */
+const BAGRE_BUDGET_MS = 30_000;
 /** Stop starting new Discord posts after this (maxDuration is 60 s). */
 const DISCORD_BUDGET_MS = 52_000;
 
@@ -56,9 +60,23 @@ async function weekly(startedAt: number): Promise<WeeklyRunResult | { error: str
   }
 }
 
+async function bagre(startedAt: number): Promise<BagreRunResult | { error: string }> {
+  try {
+    return await runBagreClosing(db(), {
+      key: discordKey(),
+      appUrl: serverEnv().BETTER_AUTH_URL,
+      deadline: startedAt + BAGRE_BUDGET_MS,
+    });
+  } catch (error) {
+    console.error("[cron] bagre step failed", error);
+    return { error: "bagre step failed" };
+  }
+}
+
 async function run() {
   const startedAt = Date.now();
   const summaries = await weekly(startedAt);
+  const bagreResult = await bagre(startedAt);
   const results = await syncDueAccounts({ db: db(), henrik: henrikClient() }, BATCH_SIZE, {
     onlyClaimed: true,
     deadline: startedAt + TIME_BUDGET_MS,
@@ -89,6 +107,7 @@ async function run() {
     newMatches: inserted.length,
     discord,
     summaries,
+    bagre: bagreResult,
     durationMs: Date.now() - startedAt,
     results: results.map((r) => ({
       accountId: r.accountId,

@@ -1,8 +1,9 @@
-import { Settings, Swords, Trophy, UsersRound } from "lucide-react";
+import { Fish, Settings, Swords, Trophy, UsersRound } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BagreBadge } from "@/components/bagre/bagre-badge";
 import { BagreCard } from "@/components/bagre/bagre-card";
 import { FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
 import { Avatar } from "@/components/layout/account-menu";
@@ -17,6 +18,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/states";
 import { db } from "@/db";
 import { requireViewer } from "@/lib/auth/session";
+import { BADGE_TITLE } from "@/lib/bagre/period";
 import { loadBagreTeaser } from "@/lib/bagre/teaser";
 import { metricDelta, metricNumber, recordLine } from "@/lib/groups/display";
 import { getGroupMembers, getMemberLines, getMembership, getTogetherLines } from "@/lib/groups/queries";
@@ -265,6 +267,10 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
                       <span className="text-label font-normal text-fg-muted">sem Riot ID</span>
                     )}
                   </span>
+                  {bagre?.badges[m.userId] ? <BagreBadge cadence={bagre.badges[m.userId]!} className="hidden sm:inline-flex" /> : null}
+                  {bagre?.badges[m.userId] ? (
+                    <Fish role="img" aria-label={BADGE_TITLE[bagre.badges[m.userId]!]} className="size-4 shrink-0 text-fg sm:hidden" />
+                  ) : null}
                   {m.isYou ? <Badge variant="outline">você</Badge> : null}
                   {m.role === "owner" ? <Badge>dono</Badge> : null}
                   {!m.isYou && m.puuid && viewerCanCompare ? (

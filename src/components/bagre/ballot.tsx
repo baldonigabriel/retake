@@ -2,14 +2,15 @@
 
 import { Check, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 
 import { voteAction, withdrawNominationAction } from "@/app/(app)/groups/bagre-actions";
 import { MatchLine } from "@/components/bagre/match-line";
 import { StaggerList } from "@/components/dashboard/stagger-list";
 import { Avatar } from "@/components/layout/account-menu";
-import { MotionScope, useValueMotion } from "@/components/motion/motion-scope";
+import { VoteBar } from "@/components/bagre/vote-bar";
+import { MotionScope } from "@/components/motion/motion-scope";
 import { AnimatedNumber } from "@/components/stats/animated-number";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,6 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { NominationView } from "@/lib/bagre/queries";
 import { formatRelativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-const noop = () => () => {};
 
 function WithdrawButton({ nominationId, name }: { nominationId: string; name: string }) {
   const router = useRouter();
@@ -44,36 +43,6 @@ function WithdrawButton({ nominationId, name }: { nominationId: string; name: st
         router.refresh();
       }}
     />
-  );
-}
-
-/**
- * Share of the votes as a bar (transform only). It grows from zero the first
- * time it shows up in the browser and slides when the viewer's own vote moves
- * it; refreshes from other people's votes swap it directly (useValueMotion).
- */
-function VoteBar({ share, mine }: { share: number; mine: boolean }) {
-  const animate = useValueMotion(share, "share");
-  const mountedInBrowser = useSyncExternalStore(noop, () => true, () => false);
-  const [grow, setGrow] = useState(
-    () => mountedInBrowser && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === false,
-  );
-  useEffect(() => {
-    if (!grow) return;
-    const frame = requestAnimationFrame(() => setGrow(false));
-    return () => cancelAnimationFrame(frame);
-  }, [grow]);
-  return (
-    <span aria-hidden="true" className="block h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
-      <span
-        className={cn(
-          "block h-full origin-left rounded-full",
-          mine ? "bg-fg" : "bg-fg-muted",
-          animate && "transition-transform duration-300 ease-(--ease-out) motion-reduce:transition-none",
-        )}
-        style={{ transform: `scaleX(${grow ? 0 : share})` }}
-      />
-    </span>
   );
 }
 

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { AgentsPanel } from "@/components/agents/agents-panel";
+import { BagreBadge } from "@/components/bagre/bagre-badge";
 import { FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
 import { GroupFilter } from "@/components/groups/group-filters";
 import { HistoryPanel } from "@/components/history/history-panel";
@@ -10,7 +11,9 @@ import { Avatar } from "@/components/layout/account-menu";
 import { BackLink } from "@/components/match/back-link";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/states";
+import { db } from "@/db";
 import { requireViewer } from "@/lib/auth/session";
+import { currentBadges } from "@/lib/bagre/results";
 import { withExtras } from "@/lib/dashboard/history";
 import { getPlayerLines } from "@/lib/dashboard/queries";
 import { getGroupMember, getMembership } from "@/lib/groups/queries";
@@ -52,6 +55,7 @@ export default async function MemberProfilePage({ params, searchParams }: PagePr
   if (userId === user.id) redirect("/me");
   const member = await getGroupMember(group.id, userId);
   if (!member) notFound();
+  const badge = group.bagreEnabled ? (await currentBadges(db(), group.id, new Date())).get(member.userId) : undefined;
 
   const header = (
     <>
@@ -66,6 +70,7 @@ export default async function MemberProfilePage({ params, searchParams }: PagePr
           <p className="flex flex-wrap items-center gap-2 text-fg-secondary">
             Membro de {group.name}
             {member.role === "owner" ? <Badge>dono</Badge> : null}
+            {badge ? <BagreBadge cadence={badge.cadence} /> : null}
           </p>
         </div>
       </header>

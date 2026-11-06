@@ -5,14 +5,16 @@ import { notFound } from "next/navigation";
 
 import { Ballot } from "@/components/bagre/ballot";
 import { NominateButton, NominateProvider } from "@/components/bagre/nominate-dialog";
+import { ResultCard } from "@/components/bagre/result-card";
 import { Suggestions } from "@/components/bagre/suggestions";
 import { BackLink } from "@/components/match/back-link";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/states";
 import { db } from "@/db";
 import { requireViewer } from "@/lib/auth/session";
-import { BADGE_TITLE, formatDeadline, formatPeriod, PERIOD_NOUN, rangeOf } from "@/lib/bagre/period";
+import { badgeUntil, BADGE_TITLE, formatDeadline, formatPeriod, PERIOD_NOUN, rangeOf } from "@/lib/bagre/period";
 import { loadBagreScreen } from "@/lib/bagre/queries";
+import { loadResults } from "@/lib/bagre/results";
 import { getMembership } from "@/lib/groups/queries";
 
 export const metadata: Metadata = {
@@ -40,7 +42,12 @@ export default async function BagrePage({ params }: PageProps<"/groups/[slug]/ba
   const { group, role } = membership;
 
   const now = new Date();
-  const screen = await loadBagreScreen(db(), group, user.id, now);
+  const [screen, results] = await Promise.all([
+    loadBagreScreen(db(), group, user.id, now),
+    loadResults(db(), group.id, { viewerId: user.id, limit: 13, skipEmpty: true }),
+  ]);
+  // The last result stays on top until the end of the period after it (the badge window).
+  const latest = results[0] && badgeUntil(results[0].cadence, results[0].endsAt).getTime() > now.getTime() ? results[0] : null;
   const { round } = screen;
   const cadence = round?.cadence ?? group.bagreCadence;
   const deadline = round ? formatDeadline(rangeOf(round), now) : "";
@@ -102,10 +109,16 @@ export default async function BagrePage({ params }: PageProps<"/groups/[slug]/ba
         <BackLink href={`/groups/${group.slug}`} label={group.name} />
         {header}
 
-        <div className="grid gap-4 pt-2 lg:grid-cols-12 lg:items-start">
+        {/* DOM order = mobile reading order: result → nominations → suggestions → rules. */}
+        <div className="grid gap-4 pt-2 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:items-start">
+          {latest ? (
+            <div className="lg:col-span-5 lg:col-start-8 lg:row-start-1">
+              <ResultCard result={latest} />
+            </div>
+          ) : null}
           <section
             aria-labelledby="nominees-title"
-            className="overflow-hidden rounded-card bg-surface-1 shadow-hairline lg:col-span-7"
+            className="overflow-hidden rounded-card bg-surface-1 shadow-hairline lg:col-span-7 lg:col-start-1 lg:row-span-2 lg:row-start-1"
           >
             <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-line px-4 py-3">
               <h2 id="nominees-title" className="text-body-sm font-semibold text-fg">
@@ -151,7 +164,7 @@ export default async function BagrePage({ params }: PageProps<"/groups/[slug]/ba
             )}
           </section>
 
-          <div className="flex flex-col gap-4 lg:col-span-5">
+          <div className={`flex flex-col gap-4 lg:col-span-5 lg:col-start-8 ${latest ? "lg:row-start-2" : "lg:row-start-1"}`}>
             <Suggestions suggestions={screen.suggestions} accepting={screen.accepting} />
             <section aria-labelledby="rules-title" className="flex flex-col gap-3 rounded-card bg-surface-1 p-4 shadow-hairline">
               <h2 id="rules-title" className="text-body-sm font-semibold text-fg">

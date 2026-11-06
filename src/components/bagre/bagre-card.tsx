@@ -34,7 +34,7 @@ export function BagreCard({ href, teaser }: { href: string; teaser: BagreTeaser 
       ) : null}
       <p className="num text-body-sm text-fg-secondary">
         {deadline === null
-          ? "Ninguém indicado ainda. Abra para indicar alguém do período."
+          ? "Abra para indicar alguém e votar neste período."
           : nominations === 0
             ? `Ninguém indicado ainda. Dá para indicar e votar até ${deadline}.`
             : `${nominations} ${nominations === 1 ? "indicação" : "indicações"}${voters > 0 ? ` · ${voters} ${voters === 1 ? "voto" : "votos"}` : ""} · até ${deadline}`}

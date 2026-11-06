@@ -101,6 +101,20 @@ pnpm summary:once <slug-do-grupo> --webhook <url>      # manda para um webhook d
 pnpm summary:once <slug-do-grupo> --week last --send   # semana passada, no webhook do grupo
 ```
 
+## 5.2 Bagre do grupo
+
+A mesma rota do cron encerra os períodos do Bagre que venceram (semanal: depois de domingo 23h59; diário: depois da meia-noite, horário de Brasília), define o Bagre e posta o resultado no Discord de cada grupo com webhook. Encerrar é idempotente: rodadas repetidas ou simultâneas não fecham nem postam duas vezes. Falhas de envio tentam de novo nas rodadas seguintes, até 3 vezes e por até 2 dias.
+
+Antes do deploy, aplique as migrations `0007` a `0009` no banco de produção (passo 1.3).
+
+Para ver o que seria anunciado (não fecha nada nem grava no banco):
+
+```
+pnpm bagre:once <slug-do-grupo>                      # como o período atual fecharia agora
+pnpm bagre:once <slug-do-grupo> --last               # o último resultado já encerrado
+pnpm bagre:once <slug-do-grupo> --webhook <url>      # manda o card para um webhook de teste
+```
+
 ## 6. Conferir
 
 1. Abra o site, entre com o Discord e vincule seu Riot ID.

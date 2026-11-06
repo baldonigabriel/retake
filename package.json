@@ -16,6 +16,7 @@
     "sync:once": "tsx scripts/sync-once.ts",
     "summary:once": "tsx scripts/summary-once.ts",
     "rr:backfill": "tsx scripts/backfill-rr.ts",
+    "bagre:once": "tsx scripts/bagre-once.ts",
     "e2e:seed": "tsx e2e/support/seed-cli.ts"
   },
   "dependencies": {
