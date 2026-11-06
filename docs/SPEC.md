@@ -12,6 +12,7 @@ Endpoints usados no MVP (conferidos em docs.henrikdev.xyz em 2026-11-05, API v4.
 | Histórico de partidas por puuid | `GET /valorant/v4/by-puuid/matches/{region}/{platform}/{puuid}?size=N` (máximo 10 por página; aceita `start` e `mode`) |
 | Partida completa por id | `GET /valorant/v4/match/{region}/{match_id}` |
 | Histórico de rank/RR | `GET /valorant/v2/by-puuid/mmr-history/{region}/{platform}/{puuid}` (últimas ~20 partidas competitivas; não existe versão v4) |
+| Histórico de rank/RR armazenado | `GET /valorant/v2/by-puuid/stored-mmr-history/{region}/{platform}/{puuid}?size=N` (registros do próprio HenrikDev, vai mais longe; usado no backfill) |
 
 Para o Brasil: `region = br`, `platform = pc`.
 
@@ -21,6 +22,8 @@ Observações confirmadas com respostas reais:
 - O campo `region` da conta e da partida é o shard da Riot (`na` para contas do Brasil), não a afinidade usada nas URLs. Por isso `riot_accounts.region` guarda a afinidade (`br`) e não o valor que a API devolve.
 - A conta v2 devolve o id do card (`card`), não a URL. A URL vem dos assets da comunidade: `https://media.valorant-api.com/playercards/{card}/smallart.png`.
 - O modo vem em `metadata.queue.id` (`competitive`, `unrated`, `swiftplay`, `deathmatch`...). É esse valor que os filtros usam.
+
+RR por partida (conferido em docs.henrikdev.xyz em 2026-11-06): cada item dos dois históricos de rank traz `match_id`, `tier`, `rr` (RR depois da partida) e `last_change` (RR ganho ou perdido nela), além de `refunded_rr` e `was_derank_protected`. A rota de partida v4 não traz RR, só o `tier` de cada jogador. Por isso o RR de uma partida vem de `mmr_snapshots`, ligado por (`puuid`, `match_id`): o sync busca o histórico ao entrar competitiva nova e, por até 6 horas, enquanto uma competitiva recente ainda não tiver RR; `pnpm rr:backfill` liga as partidas antigas (histórico armazenado primeiro, depois o ao vivo, só para contas com partida sem RR). Partida sem RR na API aparece com "—", nunca com valor estimado.
 
 Custo de rate limit: cada chamada conta 1, mais 1 para cada busca que o servidor do HenrikDev precisar fazer na Riot (partidas já em cache no servidor deles não custam extra). Por isso, consultar o histórico com `size` pequeno e só buscar o que for novo.
 
@@ -56,7 +59,7 @@ Guardar o JSON bruto da partida é opcional e fica desligado por padrão (ocupa 
 2. A rota pega as N contas com `last_synced_at` mais antigo (N pequeno, para caber no tempo máximo da função).
 3. Para cada conta, consulta o histórico por puuid com `size` pequeno (5).
 4. Descarta os `match_id` que já existem no banco. Para os novos, grava a partida e os 10 jogadores numa transação.
-5. Se entrou partida competitiva nova, atualiza o histórico de rank (`mmr_snapshots`).
+5. Se entrou partida competitiva nova (ou há competitiva das últimas 6 horas ainda sem RR), atualiza o histórico de rank (`mmr_snapshots`, um por partida, ligado pelo `match_id`).
 6. Para cada grupo com webhook em que algum membro estava na partida nova, envia **um** card por partida (listando todos os membros do grupo que jogaram), nunca um card por membro.
 7. Atualiza `last_synced_at`. Em caso de erro, grava `sync_status = error` e segue para a próxima conta.
 

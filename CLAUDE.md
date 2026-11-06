@@ -127,6 +127,7 @@ pnpm db:generate    gera migration a partir do schema
 pnpm db:migrate     aplica migrations
 pnpm sync:once      sincroniza um Riot ID (ex.: pnpm sync:once "Nome#TAG")
 pnpm summary:once   resumo semanal de um grupo (ex.: pnpm summary:once meu-grupo --webhook <url>)
+pnpm rr:backfill    liga o RR às competitivas salvas sem ele (--all inclui contas sem usuário)
 ```
 
 ## Convenções

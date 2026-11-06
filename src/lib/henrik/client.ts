@@ -22,6 +22,7 @@ import {
   matchSchema,
   mmrHistoryEntrySchema,
   mmrHistorySchema,
+  storedMmrHistorySchema,
   type HenrikAccount,
   type HenrikMatch,
   type HenrikMmrEntry,
@@ -165,6 +166,26 @@ export class HenrikClient {
     const path = `/valorant/v2/by-puuid/mmr-history/${region}/${platform}/${encodeURIComponent(puuid)}`;
     const { data } = await this.getJson(path, envelope(mmrHistorySchema));
     return data.history.flatMap((item) => {
+      const parsed = mmrHistoryEntrySchema.safeParse(item);
+      return parsed.success ? [parsed.data] : [];
+    });
+  }
+
+  /**
+   * RR history from HenrikDev's stored records (older than the live ~20).
+   * Same entry shape as getMmrHistory; invalid entries are dropped. One
+   * request, whatever `size` is.
+   */
+  async getStoredMmrHistory(
+    region: Region,
+    platform: Platform,
+    puuid: string,
+    options: { size?: number } = {},
+  ): Promise<HenrikMmrEntry[]> {
+    const query = options.size ? `?${new URLSearchParams({ size: String(options.size) })}` : "";
+    const path = `/valorant/v2/by-puuid/stored-mmr-history/${region}/${platform}/${encodeURIComponent(puuid)}${query}`;
+    const { data } = await this.getJson(path, storedMmrHistorySchema);
+    return data.flatMap((item) => {
       const parsed = mmrHistoryEntrySchema.safeParse(item);
       return parsed.success ? [parsed.data] : [];
     });

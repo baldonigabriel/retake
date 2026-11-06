@@ -108,6 +108,12 @@ export type HenrikMatch = z.infer<typeof matchSchema>;
 export const matchHistorySchema = envelope(z.array(z.unknown()));
 
 // --- MMR history v2 (GET /valorant/v2/by-puuid/mmr-history) -----------------
+// Each entry is one competitive match: `match_id` plus `last_change`, the RR
+// won or lost in it (docs.henrikdev.xyz, checked 2026-11-06). Only the last
+// ~20 matches; older ones come from the stored history below.
+
+/** Stored history documents `date` only as a string: accept any parseable date. */
+const anyDate = z.string().refine((v) => !Number.isNaN(Date.parse(v)), "invalid date");
 
 export const mmrHistoryEntrySchema = z.object({
   match_id: z.string().nullish(),
@@ -115,7 +121,7 @@ export const mmrHistoryEntrySchema = z.object({
   rr: z.number(),
   last_change: z.number().nullish(),
   elo: z.number().nullish(),
-  date: isoDate,
+  date: anyDate,
   queue_id: z.string().nullish(),
 });
 export type HenrikMmrEntry = z.infer<typeof mmrHistoryEntrySchema>;
@@ -123,3 +129,9 @@ export type HenrikMmrEntry = z.infer<typeof mmrHistoryEntrySchema>;
 export const mmrHistorySchema = z.object({
   history: z.array(z.unknown()),
 });
+
+// --- Stored MMR history v2 (GET /valorant/v2/by-puuid/stored-mmr-history) ---
+// Same entry shape, read from HenrikDev's own database: it goes further back
+// than the live history, so it's what the RR backfill uses. `?size=N`.
+
+export const storedMmrHistorySchema = envelope(z.array(z.unknown()));

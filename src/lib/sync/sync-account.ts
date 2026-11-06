@@ -9,11 +9,11 @@
  *   (db.batch) so a match never exists without its players;
  * - MMR snapshots use the (puuid, match_id) unique index the same way.
  */
-import { asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
 import type { Database } from "@/db";
 import { matches, matchPlayers, mmrSnapshots, riotAccounts, type RiotAccount } from "@/db/schema";
-import { playerCardUrl, type HenrikClient, type Platform, type Region } from "@/lib/henrik";
+import { playerCardUrl, type HenrikClient, type HenrikMmrEntry, type Platform, type Region } from "@/lib/henrik";
 
 import { COMPETITIVE, includesPlayer, isStorable, queueIdOf, toMatchRow, toPlayerRows, toSnapshotRows } from "./map";
 
@@ -123,24 +123,20 @@ export async function syncAccount(
       else result.alreadyStored++; // a concurrent sync stored it first
     }
 
-    // Step 5: new competitive match for this account → refresh rank history.
-    // "New" is relative to last_match_at, so it also covers matches a
-    // friend's sync stored before ours.
+    // Step 5: refresh rank history when there's a new competitive match for
+    // this account, or a recent one still without its RR (the API sometimes
+    // lists a match before its RR update). "New" is relative to
+    // last_match_at, so it also covers matches a friend's sync stored first.
     const lastMatchAt = account.lastMatchAt?.getTime() ?? Number.NEGATIVE_INFINITY;
     const newCompetitive = mine.some(
       (m) => queueIdOf(m) === COMPETITIVE && new Date(m.metadata.started_at).getTime() > lastMatchAt,
     );
-    if (newCompetitive) {
+    const pending = newCompetitive
+      ? []
+      : await matchesMissingRr(deps.db, account.puuid, new Date(now().getTime() - RR_PENDING_WINDOW_MS));
+    if (newCompetitive || pending.length > 0) {
       const entries = await deps.henrik.getMmrHistory(region, platform, account.puuid);
-      const rows = toSnapshotRows(account.puuid, entries);
-      if (rows.length > 0) {
-        const insertedSnapshots = await deps.db
-          .insert(mmrSnapshots)
-          .values(rows)
-          .onConflictDoNothing({ target: [mmrSnapshots.puuid, mmrSnapshots.matchId] })
-          .returning({ id: mmrSnapshots.id });
-        result.snapshotsInserted = insertedSnapshots.length;
-      }
+      result.snapshotsInserted = await saveSnapshots(deps.db, account.puuid, entries);
     }
 
     // Step 7: bookkeeping.
@@ -169,6 +165,44 @@ export async function syncAccount(
   }
 
   return result;
+}
+
+/**
+ * A recent competitive match without RR keeps asking the live MMR history
+ * (1 request per sync of that account) for this long; after that the match
+ * shows "—" until a backfill finds it.
+ */
+export const RR_PENDING_WINDOW_MS = 6 * 3_600_000;
+
+/** Competitive matches of `puuid` with no rank snapshot linked, newest first (optionally since a date). */
+export async function matchesMissingRr(db: Database, puuid: string, since?: Date): Promise<string[]> {
+  const rows = await db
+    .select({ id: matches.id })
+    .from(matchPlayers)
+    .innerJoin(matches, eq(matches.id, matchPlayers.matchId))
+    .leftJoin(mmrSnapshots, and(eq(mmrSnapshots.puuid, matchPlayers.puuid), eq(mmrSnapshots.matchId, matches.id)))
+    .where(
+      and(
+        eq(matchPlayers.puuid, puuid),
+        eq(matches.queueId, COMPETITIVE),
+        isNull(mmrSnapshots.id),
+        since ? gte(matches.startedAt, since) : undefined,
+      ),
+    )
+    .orderBy(desc(matches.startedAt));
+  return rows.map((r) => r.id);
+}
+
+/** Inserts the entries that carry a match id; the (puuid, match_id) index skips known ones. */
+export async function saveSnapshots(db: Database, puuid: string, entries: readonly HenrikMmrEntry[]): Promise<number> {
+  const rows = toSnapshotRows(puuid, entries);
+  if (rows.length === 0) return 0;
+  const inserted = await db
+    .insert(mmrSnapshots)
+    .values(rows)
+    .onConflictDoNothing({ target: [mmrSnapshots.puuid, mmrSnapshots.matchId] })
+    .returning({ id: mmrSnapshots.id });
+  return inserted.length;
 }
 
 export interface SyncDueOptions {

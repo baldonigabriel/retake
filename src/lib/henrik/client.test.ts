@@ -121,6 +121,16 @@ describe("HenrikClient", () => {
       { match_id: "m1", tier: { id: 21, name: "Ascendant 1" }, rr: 12, last_change: -16, elo: 1812, date: good.date, queue_id: "competitive" },
     ]);
   });
+
+  it("reads the stored MMR history with a size, dropping bad entries and bad dates", async () => {
+    const good = rawMmrEntry("m9", 40, 18, "2026-09-01T21:00:00.000Z");
+    const badDate = rawMmrEntry("m8", 22, -15, "ontem");
+    const { client, calls } = setup([{ body: { status: 200, results: { total: 3, returned: 3, before: 0, after: 0 }, data: [good, badDate, { match_id: 1 }] } }]);
+    const entries = await client.getStoredMmrHistory("br", "pc", ME_PUUID, { size: 120 });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.url).toBe(`https://api.henrikdev.xyz/valorant/v2/by-puuid/stored-mmr-history/br/pc/${ME_PUUID}?size=120`);
+    expect(entries.map((e) => [e.match_id, e.last_change])).toEqual([["m9", 18]]);
+  });
 });
 
 describe("parseRetryAfter", () => {
