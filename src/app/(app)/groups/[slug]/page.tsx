@@ -78,7 +78,7 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
   const mixed = mode === ALL_MODES;
 
   return (
-    <div className="flex flex-col gap-4 py-8 sm:py-10">
+    <div className="content-enter flex flex-col gap-4 py-8 sm:py-10">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex min-w-0 flex-col gap-2">
           <p className="text-eyebrow text-fg-muted uppercase">Grupo</p>

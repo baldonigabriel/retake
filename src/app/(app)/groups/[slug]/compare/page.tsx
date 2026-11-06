@@ -67,7 +67,7 @@ export default async function ComparePage({ params, searchParams }: PageProps<"/
 
   if (!pair) {
     return (
-      <div className="flex flex-col gap-4 py-8 sm:py-10">
+      <div className="content-enter flex flex-col gap-4 py-8 sm:py-10">
         {back}
         <h1 className="text-heading text-fg">Comparação 1x1</h1>
         <section className="rounded-card bg-surface-1 shadow-hairline">
@@ -100,7 +100,7 @@ export default async function ComparePage({ params, searchParams }: PageProps<"/
   const togetherCount = comparison.together.length;
 
   return (
-    <div className="flex flex-col gap-4 py-8 sm:py-10">
+    <div className="content-enter flex flex-col gap-4 py-8 sm:py-10">
       <header className="flex flex-col gap-2">
         {back}
         <h1 className="text-heading text-fg">Comparação 1x1</h1>

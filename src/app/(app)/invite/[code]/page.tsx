@@ -27,7 +27,7 @@ export default async function InvitePage({ params }: PageProps<"/invite/[code]">
 
   if (!invite) {
     return (
-      <div className="mx-auto w-full max-w-md py-16">
+      <div className="content-enter mx-auto w-full max-w-md py-16">
         <section className="rounded-card bg-surface-1 shadow-hairline">
           <EmptyState
             icon={Link2Off}
@@ -47,7 +47,7 @@ export default async function InvitePage({ params }: PageProps<"/invite/[code]">
   if ((await getRole(invite.id, user.id)) !== null) redirect(`/groups/${invite.slug}`);
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col py-12 sm:py-16">
+    <div className="content-enter mx-auto flex w-full max-w-md flex-col py-12 sm:py-16">
       <section
         aria-labelledby="invite-title"
         className="flex flex-col gap-5 rounded-card-lg bg-surface-1 p-5 shadow-key sm:p-6"

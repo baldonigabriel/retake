@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 
 /**
  * List whose items enter with a 40ms stagger on the FIRST load only
- * (DESIGN.md › Movimento). Items rendered after that (filter change,
- * refresh after a sync) appear without motion. Each child `li` reads its
- * index from `--i`.
+ * (DESIGN.md › Movimento › Listas e estados; the first 10 are staggered).
+ * Items rendered after that (filter change, refresh after a sync) appear
+ * without motion. Each child `li` reads its index from `--i`.
  */
 export function StaggerList({
   children,

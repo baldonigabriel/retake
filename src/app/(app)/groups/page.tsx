@@ -19,7 +19,7 @@ export default async function GroupsPage() {
   const empty = groups.length === 0;
 
   return (
-    <div className="flex flex-col gap-4 py-8 sm:py-10">
+    <div className="content-enter flex flex-col gap-4 py-8 sm:py-10">
       <header className="flex flex-col gap-2">
         <h1 className="text-heading text-fg">Grupos</h1>
         <p className="max-w-[70ch] text-fg-secondary">

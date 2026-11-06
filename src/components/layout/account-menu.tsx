@@ -46,7 +46,7 @@ export function AccountMenu({ name, image }: { name: string; image: string | nul
           align="end"
           sideOffset={6}
           className={cn(
-            "z-50 min-w-52 origin-(--radix-dropdown-menu-content-transform-origin) rounded-control border border-line-strong bg-surface-3 p-1 shadow-pop",
+            "reduce-fade z-50 min-w-52 origin-(--radix-dropdown-menu-content-transform-origin) rounded-control border border-line-strong bg-surface-3 p-1 shadow-pop",
             "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:duration-150 data-[state=open]:ease-out",
             "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:duration-100 data-[state=closed]:ease-out",
             "motion-reduce:data-[state=open]:zoom-in-100 motion-reduce:data-[state=closed]:zoom-out-100",

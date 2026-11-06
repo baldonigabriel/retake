@@ -82,7 +82,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const lastWeek = previousWeek(week);
 
   return (
-    <div className="flex flex-col gap-4 py-8 sm:py-10">
+    <div className="content-enter flex flex-col gap-4 py-8 sm:py-10">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex min-w-0 flex-col gap-2">
           <h1 className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-heading text-fg">

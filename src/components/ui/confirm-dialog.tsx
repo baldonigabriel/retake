@@ -37,14 +37,14 @@ export function ConfirmDialog({
       <AlertDialog.Portal>
         <AlertDialog.Overlay
           className={cn(
-            "fixed inset-0 z-50 bg-surface-0/70 backdrop-blur-[2px]",
+            "reduce-fade fixed inset-0 z-50 bg-surface-0/70 backdrop-blur-[2px]",
             "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-200",
             "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-120",
           )}
         />
         <AlertDialog.Content
           className={cn(
-            "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-32px)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-card-lg border border-line-strong bg-surface-3 p-5 shadow-pop",
+            "reduce-fade fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-32px)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-card-lg border border-line-strong bg-surface-3 p-5 shadow-pop",
             "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:duration-200 data-[state=open]:ease-(--ease-out)",
             "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:duration-120 data-[state=closed]:ease-out",
             "motion-reduce:data-[state=open]:zoom-in-100 motion-reduce:data-[state=closed]:zoom-out-100",

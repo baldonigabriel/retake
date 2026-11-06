@@ -85,7 +85,10 @@ export function FilterBar({
 export function FilteredContent({ children, className }: { children: React.ReactNode; className?: string }) {
   const { pending } = use(PendingContext);
   return (
-    <div aria-busy={pending || undefined} className={cn(pending && "opacity-60", className)}>
+    <div
+      aria-busy={pending || undefined}
+      className={cn("transition-opacity duration-150 ease-(--ease-out)", pending && "opacity-60", className)}
+    >
       {children}
     </div>
   );

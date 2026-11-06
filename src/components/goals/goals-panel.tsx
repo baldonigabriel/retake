@@ -20,7 +20,7 @@ const STATUS: Record<GoalProgress["status"], { text: string; icon: typeof Check;
 
 function Shell({ aside, children }: { aside?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section aria-labelledby="goals-title" className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
+    <section aria-labelledby="goals-title" className="content-enter overflow-hidden rounded-card bg-surface-1 shadow-hairline">
       <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
         <h2 id="goals-title" tabIndex={-1} className="text-body-sm font-semibold text-fg focus-visible:outline-none">
           Metas da semana

@@ -20,7 +20,7 @@ export default async function SettingsPage() {
   const status = STATUS[account.syncStatus];
 
   return (
-    <div className="flex max-w-2xl flex-col gap-4 py-8 sm:py-10">
+    <div className="content-enter flex max-w-2xl flex-col gap-4 py-8 sm:py-10">
       <h1 className="text-heading text-fg">Ajustes</h1>
 
       <section aria-labelledby="riot-title" className="flex flex-col gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:p-5">

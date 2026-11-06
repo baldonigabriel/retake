@@ -353,10 +353,33 @@
   }
 }
 
-/* First-load stagger for match lists and rankings (see StaggerList) */
+/*
+ * First-load stagger for match lists, rankings and groups (see StaggerList):
+ * 40ms apart, only the first 10 are staggered (the rest arrive with the 10th).
+ */
 .stagger-list[data-entering] > li {
   animation: enter 240ms var(--ease-out) both;
-  animation-delay: calc(min(var(--i, 0), 12) * 40ms);
+  animation-delay: calc(min(var(--i, 0), 9) * 40ms);
+}
+
+/* Skeleton → content: a page or panel that replaces a skeleton fades in (150ms). */
+.content-enter {
+  animation: fade 150ms var(--ease-out) both;
+}
+
+/*
+ * Toasts (Sonner): slide + fade on transform and opacity only, 240ms in and
+ * 180ms out; no height animation. Swipes keep Sonner's own (no) transition.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-sonner-toaster] [data-sonner-toast]:not([data-swiping="true"]) {
+    transition:
+      transform 240ms var(--ease-out),
+      opacity 240ms var(--ease-out);
+  }
+  [data-sonner-toaster] [data-sonner-toast][data-removed="true"]:not([data-swiping="true"]) {
+    transition-duration: 180ms;
+  }
 }
 
 /* Goal progress: the bar fills once when it first appears (transform only). */
@@ -433,7 +456,11 @@
   }
 }
 
-/* Remove movement, keep opacity/colour changes */
+/*
+ * Reduced motion (DESIGN.md › Movimento reduzido): nothing moves or scales.
+ * Everything stops (the 0.01ms safety net), except the entrances listed at the
+ * end, which keep a 150ms opacity-only fade.
+ */
 @media (prefers-reduced-motion: reduce) {
   .hero-shard {
     animation: none;
@@ -448,15 +475,19 @@
   .motion-transform {
     transition-property: opacity, color, background-color, border-color !important;
   }
-  .stagger-list[data-entering] > li {
-    animation: none;
-  }
-  /* Charts: no reveal or rise, just a short fade (beats the 0.01ms rule above). */
   .trend-reveal-rect {
     animation: none !important;
   }
+  /* Fades that stay (more specific than the safety net, so they win). */
+  .stagger-list[data-entering] > li,
+  .content-enter,
   .trend-chart .recharts-area,
-  .trend-tooltip {
+  .trend-tooltip,
+  .reduce-fade[data-state="open"],
+  .reduce-fade[data-state="delayed-open"] {
     animation: fade 150ms ease-out both !important;
+  }
+  [data-sonner-toaster] [data-sonner-toast] {
+    transition: opacity 150ms ease-out !important;
   }
 }

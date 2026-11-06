@@ -28,7 +28,7 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
   const teams = board.teams.map((t) => ({ ...t, players: t.players.map((p) => ({ ...p, inGroup: !p.isYou && mates.has(p.id) })) }));
 
   return (
-    <div className="flex flex-col gap-4 py-6 sm:py-8">
+    <div className="content-enter flex flex-col gap-4 py-6 sm:py-8">
       <BackLink />
       <MatchHeader match={detail.match} board={board} />
       <div className="flex flex-col gap-4">
