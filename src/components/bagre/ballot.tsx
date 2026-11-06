@@ -120,7 +120,10 @@ export function Ballot({
                     variant="ghost"
                     size="sm"
                     aria-pressed={mine}
-                    aria-label={mine ? `Seu voto: ${n.nominee.name}` : `Votar em ${n.nominee.name}`}
+                    // The name starts with the visible text (WCAG 2.5.3, label in name).
+                    aria-label={
+                      mine ? `Seu voto: ${n.nominee.name}` : shownVote ? `Trocar voto para ${n.nominee.name}` : `Votar em ${n.nominee.name}`
+                    }
                     onClick={() => vote(n)}
                     className={cn(
                       "min-w-[6.5rem] shrink-0",

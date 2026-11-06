@@ -189,7 +189,7 @@ test.describe("bagre", () => {
     await friend.page.getByRole("button", { name: `Votar em ${E2E.gameName}` }).click();
     await expect(friend.page.getByRole("button", { name: `Seu voto: ${E2E.gameName}` })).toBeVisible();
     // Changes the vote to Terceiro.
-    await friend.page.getByRole("button", { name: `Votar em ${E2E.thirdName}` }).click();
+    await friend.page.getByRole("button", { name: `Trocar voto para ${E2E.thirdName}` }).click();
     await expect(friend.page.getByRole("button", { name: `Seu voto: ${E2E.thirdName}` })).toBeVisible();
     await expect(friend.page.getByText("Voto trocado")).toBeVisible();
     await expect(friend.page.getByText("2 de 3 votaram")).toBeVisible();

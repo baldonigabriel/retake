@@ -14,7 +14,6 @@ export function BagreCard({ href, teaser }: { href: string; teaser: BagreTeaser 
   return (
     <Link
       href={href}
-      aria-label={`Abrir o ${title}`}
       className="hover-layer press group/card relative flex flex-col gap-3 rounded-card bg-surface-1 p-4 shadow-hairline [--hover-ring:inset_0_0_0_1px_var(--color-line-strong)] sm:p-5"
     >
       <div className="flex items-center justify-between gap-3">

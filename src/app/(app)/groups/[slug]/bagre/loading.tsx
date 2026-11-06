@@ -7,7 +7,6 @@ export default function Loading() {
       <Skeleton className="h-8 w-28 rounded-control" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-2">
-          <Skeleton className="h-3 w-32" />
           <Skeleton className="h-8 w-52" />
           <Skeleton className="h-4 w-56" />
         </div>

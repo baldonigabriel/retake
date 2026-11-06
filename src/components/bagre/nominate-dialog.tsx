@@ -59,7 +59,6 @@ export function NominateProvider({
             )}
           />
           <Dialog.Content
-            aria-describedby={undefined}
             className={cn(
               "reduce-fade fixed top-1/2 left-1/2 z-50 flex max-h-[min(720px,calc(100dvh-32px))] w-[calc(100%-32px)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-card-lg border border-line-strong bg-surface-3 shadow-pop",
               "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:duration-200 data-[state=open]:ease-(--ease-out)",
@@ -154,7 +153,9 @@ function NominateForm({
       <header className="flex items-start justify-between gap-3 border-b border-line-strong px-5 pt-5 pb-4">
         <div className="flex flex-col gap-1">
           <Dialog.Title className="text-body font-semibold text-fg">Indicar ao Bagre</Dialog.Title>
-          <p className="text-body-sm text-fg-secondary">Escolha alguém, a partida e conte o motivo. Zoeira leve, combinado?</p>
+          <Dialog.Description className="text-body-sm text-fg-secondary">
+            Escolha alguém, a partida e conte o motivo. Zoeira leve, combinado?
+          </Dialog.Description>
         </div>
         <Dialog.Close asChild>
           <Button type="button" variant="quiet" size="icon-sm" aria-label="Fechar" className="-mt-1 -mr-2">
@@ -247,7 +248,7 @@ function NominateForm({
               Motivo
             </label>
             <span
-              aria-live="polite"
+              id={`${id}-count`}
               className={cn("num text-label font-normal", length > COMMENT_MAX ? "text-loss" : "text-fg-muted")}
             >
               {length}/{COMMENT_MAX}
@@ -260,7 +261,7 @@ function NominateForm({
             value={comment}
             placeholder="Ex.: quatro abates de Jett e uma granada no próprio pé"
             aria-invalid={error?.field === "comment" ? true : undefined}
-            aria-describedby={error?.field === "comment" ? `${id}-err` : undefined}
+            aria-describedby={`${id}-count${error?.field === "comment" ? ` ${id}-err` : ""}`}
             onChange={(e) => {
               setComment(e.target.value);
               if (error?.field === "comment") setError(null);
