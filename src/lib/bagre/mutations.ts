@@ -3,14 +3,14 @@
  * database, who the caller is in the group the row belongs to; nothing
  * trusts a group id, role or membership sent by the client. The group is
  * always read from the round (or the nomination's round), never from input.
+ *
+ * Framework-free (no "server-only" here) so the e2e suite can call the same
+ * functions the Server Actions call; the actions file is the server boundary.
  */
-import "server-only";
-
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 
 import type { Database } from "@/db";
-import { awardNominations, awardRounds, awardVotes, groups, matches, matchPlayers, riotAccounts, type AwardRound } from "@/db/schema";
-import { getRole } from "@/lib/groups/queries";
+import { awardNominations, awardRounds, awardVotes, groupMembers, groups, matches, matchPlayers, riotAccounts, type AwardRound, type GroupRole } from "@/db/schema";
 
 import { BagreError } from "./errors";
 import { isAccepting } from "./rounds";
@@ -23,9 +23,19 @@ function isUniqueViolation(error: unknown): boolean {
   return false;
 }
 
+/** Role of `userId` in `groupId`, or null when not a member. */
+async function roleIn(database: Database, groupId: string, userId: string): Promise<GroupRole | null> {
+  const [row] = await database
+    .select({ role: groupMembers.role })
+    .from(groupMembers)
+    .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
+    .limit(1);
+  return row?.role ?? null;
+}
+
 /** Owner turns the Bagre on/off and picks the cadence (applies from the next period on). */
 export async function updateBagreSettings(database: Database, userId: string, input: BagreSettingsInput): Promise<void> {
-  const role = await getRole(input.groupId, userId);
+  const role = await roleIn(database, input.groupId, userId);
   if (role === null) throw new BagreError("not_found");
   if (role !== "owner") throw new BagreError("forbidden");
   await database
@@ -46,7 +56,7 @@ async function roundForMember(database: Database, roundId: string, userId: strin
     .innerJoin(groups, eq(groups.id, awardRounds.groupId))
     .where(eq(awardRounds.id, roundId))
     .limit(1);
-  if (!row || (await getRole(row.round.groupId, userId)) === null) throw new BagreError("not_found");
+  if (!row || (await roleIn(database, row.round.groupId, userId)) === null) throw new BagreError("not_found");
   if (!row.enabled) throw new BagreError("disabled");
   if (!isAccepting(row.round, now)) throw new BagreError("closed");
   return row.round;
@@ -56,7 +66,7 @@ async function roundForMember(database: Database, roundId: string, userId: strin
 export async function nominate(database: Database, userId: string, input: NominateInput, now = new Date()): Promise<string> {
   const round = await roundForMember(database, input.roundId, userId, now);
   if (input.nomineeId === userId) throw new BagreError("self");
-  if ((await getRole(round.groupId, input.nomineeId)) === null) throw new BagreError("not_member");
+  if ((await roleIn(database, round.groupId, input.nomineeId)) === null) throw new BagreError("not_member");
 
   const [account] = await database
     .select({ puuid: riotAccounts.puuid })
@@ -121,7 +131,7 @@ export async function castVote(database: Database, userId: string, nominationId:
   if (!nomination) throw new BagreError("not_found");
   const round = await roundForMember(database, nomination.roundId, userId, now);
   if (nomination.nomineeId === userId) throw new BagreError("self");
-  if ((await getRole(round.groupId, nomination.nomineeId)) === null) throw new BagreError("not_member");
+  if ((await roleIn(database, round.groupId, nomination.nomineeId)) === null) throw new BagreError("not_member");
 
   await database
     .insert(awardVotes)

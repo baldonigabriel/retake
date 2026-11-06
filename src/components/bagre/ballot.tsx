@@ -67,12 +67,14 @@ export function Ballot({
   now: Date;
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [shownVote, setShownVote] = useOptimistic(myVote);
   const total = nominations.reduce((sum, n) => sum + (n.votes ?? 0), 0);
 
+  // Not blocked while a vote is in flight: Server Actions run one after the
+  // other, so a quick change of mind is queued and the last click wins.
   function vote(n: NominationView) {
-    if (pending || n.id === shownVote) return;
+    if (n.id === shownVote) return;
     const changing = shownVote !== null;
     startTransition(async () => {
       setShownVote(n.id);
