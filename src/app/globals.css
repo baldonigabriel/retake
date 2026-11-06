@@ -382,6 +382,45 @@
   }
 }
 
+/*
+ * Product highlights (DESIGN.md › Movimento › Destaques): the MVP card and a
+ * win enter with fade + scale(0.98) and a diagonal sheen crosses them ONCE
+ * (clipped by the chamfer). The win bar grows from the bottom. No loops.
+ */
+.celebrate {
+  animation: celebrate-in 240ms var(--ease-out) both;
+}
+@keyframes celebrate-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+.celebrate-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.07) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: sheen 700ms var(--ease-out) 200ms both;
+}
+@keyframes sheen {
+  to {
+    transform: translateX(100%);
+  }
+}
+.result-bar-grow {
+  transform-origin: bottom;
+  animation: bar-grow 300ms var(--ease-out) 100ms both;
+}
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
 /* Goal progress: the bar fills once when it first appears (transform only). */
 .goal-fill {
   transform-origin: left center;
@@ -475,12 +514,18 @@
   .motion-transform {
     transition-property: opacity, color, background-color, border-color !important;
   }
-  .trend-reveal-rect {
+  .trend-reveal-rect,
+  .celebrate-sheen::after,
+  .result-bar-grow {
     animation: none !important;
+  }
+  .celebrate-sheen::after {
+    display: none;
   }
   /* Fades that stay (more specific than the safety net, so they win). */
   .stagger-list[data-entering] > li,
   .content-enter,
+  .celebrate,
   .trend-chart .recharts-area,
   .trend-tooltip,
   .reduce-fade[data-state="open"],

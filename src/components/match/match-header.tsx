@@ -39,7 +39,7 @@ export function MatchHeader({ match, board }: { match: MatchInfo; board: Scorebo
   ];
 
   return (
-    <ChamferCard innerClassName="relative isolate overflow-hidden p-0 sm:p-0">
+    <ChamferCard celebrate={board.result === "win"} innerClassName="relative isolate overflow-hidden p-0 sm:p-0">
       {thumb ? (
         <span
           aria-hidden="true"
@@ -59,7 +59,10 @@ export function MatchHeader({ match, board }: { match: MatchInfo; board: Scorebo
       <div className="flex flex-col gap-5 p-4 sm:flex-row sm:items-end sm:justify-between sm:p-6">
         <div className="flex flex-col gap-2">
           <h1 className="flex items-center gap-4">
-            <span aria-hidden="true" className={cn("h-10 w-[3px] shrink-0 rounded-full", RESULT_BAR[board.result])} />
+            <span
+              aria-hidden="true"
+              className={cn("h-10 w-[3px] shrink-0 rounded-full", RESULT_BAR[board.result], board.result === "win" && "result-bar-grow")}
+            />
             <span className="stat text-stat-lg text-fg uppercase">{RESULT_LABEL[board.result]}</span>
             <span className="stat text-stat-lg text-fg">
               {board.own}

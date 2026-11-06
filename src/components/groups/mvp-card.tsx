@@ -32,7 +32,7 @@ export function MvpCard({ mvp, weekLabel }: { mvp: Mvp | null; weekLabel: string
 
   const { member, summary } = mvp;
   return (
-    <ChamferCard variant="mvp">
+    <ChamferCard variant="mvp" celebrate>
       <section aria-labelledby="mvp-title" className="flex flex-col gap-4">
         <h2 id="mvp-title" className="flex items-center gap-2 text-eyebrow text-fg-muted uppercase">
           <Trophy aria-hidden="true" className="size-3.5 text-primary" />
