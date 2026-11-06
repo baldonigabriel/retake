@@ -154,16 +154,65 @@ Os cards de **destaque** (MVP da semana, cabeçalho de rank no dashboard, result
 
 ## Movimento
 
-Transições de 150–200ms com `ease-out` (ou curva customizada equivalente) em hover, foco e abertura de menus; nunca `ease-in` em UI. Animações de interface ficam abaixo de 300ms. Números dos KPIs podem fazer contagem animada de 300ms **apenas no primeiro carregamento**. Nada de parallax, partículas ou fundos animados nas telas de dados.
+Movimento aqui é resposta, não enfeite: confirma que a interface ouviu o clique, mostra que um número mudou e suaviza a troca entre estados. A referência é a skill emil-design-eng, sempre dentro dos limites abaixo.
 
-Detalhes de interação:
-- Botões respondem ao clique com `scale(0.97)` no `:active`.
-- Popovers e menus crescem a partir do elemento que os abriu, começando em `scale(0.95)` com opacidade 0 (nunca de `scale(0)`); modais abrem centralizados.
-- Efeitos de hover só valem em `@media (hover: hover) and (pointer: fine)`.
-- Listas de partidas e rankings entram com escalonamento de 30–60ms por item, só no primeiro carregamento.
-- Anime apenas `transform` e `opacity`.
-- Ações disparadas pelo teclado e interações repetidas o dia todo (trocar filtro, trocar métrica do gráfico) não animam.
-- Com `prefers-reduced-motion`, remova o movimento e mantenha só mudanças de opacidade e cor.
+### Regras gerais
+
+- Anime apenas `transform` e `opacity`. A única exceção é a contagem de números (ver abaixo). Fundo, borda e cor de texto não têm transição; quando um hover precisa de fundo ou borda suave, ele vem de uma camada (`::before`) que só muda de opacidade.
+- Curva `ease-out` forte em tudo (`--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`); nunca `ease-in`.
+- Interações ficam abaixo de 300ms: 150ms em hover e foco, 160ms no press, 150ms para abrir menus e popovers (100ms para fechar), 200ms no indicador das abas e filtros.
+- Nada em laço. As únicas repetições permitidas são os indicadores de carregamento (brilho do skeleton e spinner), só enquanto algo carrega, e o fundo do hero da landing.
+- Nenhuma animação atrasa a leitura de um dado nem desloca o layout: o espaço final é reservado antes de qualquer coisa se mexer, e o valor certo está no HTML e para leitores de tela desde o primeiro instante.
+- Sync em segundo plano e atualizações automáticas (o refresh depois de "Sincronizar agora", o cron) nunca animam: o valor novo aparece direto.
+- Ações disparadas pelo teclado não animam: trocar uma aba pelo teclado move o indicador sem deslizar.
+- Nada de parallax, partículas, shaders ou fundos animados nas telas de dados. Efeitos pesados só na landing.
+
+### Exceção: contagem de números
+
+Os KPIs do painel, o ranking e o MVP do grupo, a comparação 1x1 e as metas usam `@number-flow/react`.
+
+- **Duração de 700ms** (faixa permitida: 600–800ms), `ease-out`. É a única animação acima de 300ms numa interação, porque precisa de tempo para os dígitos serem lidos enquanto giram.
+- Formato pt-BR idêntico ao texto estático: vírgula decimal, `%` colado ao número e as mesmas casas decimais. Sempre `tabular-nums`.
+- Anima **na primeira exibição no navegador** (ao chegar na tela por navegação, contando a partir de zero) e **quando um filtro muda o valor** (modo, período, semana, jogador da comparação). Num carregamento completo da página, o número já chega pronto no HTML e não conta, para nunca mostrar um valor errado antes de o JavaScript carregar.
+- Nunca anima a cada re-render nem em sync em segundo plano.
+- Trocar a métrica (ACS → K/D) troca o número sem contar: é outra grandeza, não o mesmo número mudando.
+- A largura final do número é reservada antes de a contagem começar, para nada ao lado se mexer.
+- Leitores de tela recebem só o valor final.
+
+### Interação
+
+- Hover só em `@media (hover: hover) and (pointer: fine)`, e só em elementos clicáveis. Muda fundo e/ou borda, nunca tamanho, posição ou peso da fonte.
+- Press: `scale(0.97)` em botões, itens de navegação e cards clicáveis. Linhas de lista que ocupam a largura do painel usam `scale(0.99)`, para o recuo em pixels ficar parecido com o de um botão.
+- Foco por teclado é sempre igual ou mais forte que o hover: a mesma camada de fundo do hover mais o anel de 2px em `--accent`.
+
+### Gráficos
+
+- Primeira renderização: a série entra da esquerda para a direita (máscara com `scaleX`) em 300ms.
+- Troca de filtro ou de métrica: a série nova entra com fade e 4px de subida em 200ms; os eixos trocam direto. Sync em segundo plano não reanima.
+- Hover: linha guia vertical, ponto ativo maior (raio 5px com anel na cor do card) e tooltip no estilo de popover (`--surface-3`, borda forte, sombra) com mapa, agente, resultado (texto e cor) e o valor em Barlow Condensed.
+- Toque: tocar no ponto abre o tooltip; tocar fora do gráfico fecha.
+
+### Listas e estados
+
+- Partidas, ranking e grupos entram em sequência só no primeiro carregamento: 40ms entre itens (faixa: 30–60ms), escalonando no máximo os 10 primeiros (os seguintes entram junto com o décimo), 240ms por item, com opacidade e 6px de subida.
+- Skeleton → conteúdo: o conteúdo aparece com fade de 150ms.
+- Troca de filtro: o conteúdo atual fica a 60% de opacidade (fade de 150ms) até o novo chegar; nada de skeleton piscando.
+- Abas e filtros (controle segmentado): um indicador desliza até a opção escolhida em 200ms, assim que ela é clicada, sem esperar os dados.
+- Popovers e menus crescem a partir do elemento que os abriu, de `scale(0.95)` e opacidade 0 (nunca de `scale(0)`). Modais abrem centralizados (200ms; fecham em 120ms).
+- Toasts entram e saem deslizando com fade (só `transform` e `opacity`, sem animar altura): 240ms na entrada, 180ms na saída.
+
+### Destaques de produto
+
+- O card de MVP da semana e o resultado de vitória no topo da partida entram com fade e `scale(0.98)` e recebem, uma única vez, um brilho diagonal discreto que atravessa o card (700ms). Na vitória, a barra de resultado cresce de baixo para cima.
+- Derrota e empate não têm celebração.
+
+### Movimento reduzido
+
+Com `prefers-reduced-motion: reduce`:
+
+- Nada se desloca nem muda de escala: sem press, sem escalonamento, sem slide, sem brilho e sem contagem (o número troca direto).
+- Fica só um fade curto (150ms) nas entradas de listas, conteúdo, gráficos, popovers e toasts. O indicador das abas troca de lugar sem deslizar.
+- O brilho do skeleton é desligado.
 
 ## Imagens
 
