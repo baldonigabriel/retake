@@ -124,6 +124,7 @@ describe("acceptSummary", () => {
     expect(acceptSummary(`${ok} {"partidas": 5}`, s)).toBeNull();
     expect(acceptSummary(`${ok} https://exemplo.com`, s)).toBeNull();
     expect(acceptSummary(`${ok} @everyone`, s)).toBeNull();
+    expect(acceptSummary(`${ok} Com taxaVitoria de 60%.`, s)).toBeNull();
   });
 });
 

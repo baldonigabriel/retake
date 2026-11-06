@@ -32,6 +32,8 @@ export const SUMMARY_SYSTEM = [
   "- Use SOMENTE os dados do JSON. Não invente números, nomes, mapas, agentes, partidas nem acontecimentos.",
   "- Cite os números exatamente como aparecem no JSON. Não faça contas novas (porcentagens, médias, somas, diferenças).",
   "- Não mencione campos null ou com valor 0.",
+  "- Nunca escreva nomes de campos do JSON (como taxaVitoria, maiorPlacar, acsSemana): descreva em linguagem natural (\"71% de vitórias\", \"maior placar\").",
+  "- Não repita a mesma informação duas vezes e não use jargão técnico.",
   "- 'outrosModos' são partidas fora do competitivo: se citar, deixe claro que são de outros modos.",
   "- Sem títulos, listas, hashtags ou links. No máximo um emoji.",
   "- Provocação leve entre amigos pode; nada ofensivo.",
@@ -76,6 +78,7 @@ export function acceptSummary(raw: string, stats: WeeklyStats): string | null {
   let text = raw.trim().replace(/^["“”']+|["“”']+$/g, "").replace(/\n{3,}/g, "\n\n").trim();
   if (text.length < SUMMARY_MIN_CHARS || text.length > SUMMARY_MAX_CHARS) return null;
   if (/```|[{}]|https?:\/\/|@everyone|@here/i.test(text)) return null;
+  if (/(taxaVitoria|maiorPlacar|maisEvoluiu|partidasJuntos|outrosModos|acsSemana\w*)/.test(text)) return null;
 
   let scrubbed = text;
   for (const name of collectNames(stats)) scrubbed = scrubbed.replace(new RegExp(escapeRegExp(name), "gi"), " ");
