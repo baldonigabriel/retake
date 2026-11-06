@@ -121,7 +121,22 @@ export const sampleRanking: SampleRankingEntry[] = [
   { name: "tropeço", tag: "RJ21", value: "188", delta: -14, matches: 12 },
 ];
 
-export type TrendPoint = { match: number; acs: number; kd: number; hs: number; adr: number };
+export type TrendPoint = {
+  match: number;
+  acs: number;
+  kd: number;
+  hs: number;
+  adr: number;
+  map: string;
+  agent: string;
+  agentId: string | null;
+  result: "win" | "loss" | "draw";
+  own: number;
+  enemy: number;
+};
+
+const SAMPLE_MAPS = ["Ascent", "Bind", "Haven", "Lotus", "Sunset"];
+const SAMPLE_AGENTS = ["Jett", "Omen", "Sova", "Killjoy"];
 
 export const sampleTrend: TrendPoint[] = [
   212, 228, 219, 241, 236, 252, 230, 244, 261, 238, 249, 255, 233, 247, 266, 251, 243, 259, 270, 247,
@@ -131,4 +146,10 @@ export const sampleTrend: TrendPoint[] = [
   kd: Math.round((acsValue / 200) * 100) / 100,
   hs: Math.round((18 + ((i * 7) % 11)) * 10) / 10,
   adr: Math.round(acsValue * 0.64),
+  map: SAMPLE_MAPS[i % SAMPLE_MAPS.length]!,
+  agent: SAMPLE_AGENTS[i % SAMPLE_AGENTS.length]!,
+  agentId: null,
+  result: acsValue >= 240 ? "win" : "loss",
+  own: acsValue >= 240 ? 13 : 9,
+  enemy: acsValue >= 240 ? 9 : 13,
 }));

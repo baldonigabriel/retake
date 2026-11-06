@@ -102,6 +102,12 @@ describe("trendSeries", () => {
     expect(series.map((p) => p.matchId)).toEqual(["m1", "m0"]);
     expect(series[1]).toMatchObject({ match: 2, acs: 300, kd: 2, hs: 25, adr: 150 });
   });
+
+  it("carries map, agent, result and score for the chart tooltip", () => {
+    const [point] = trendSeries([line(0, { mapName: "Bind", agentName: "Sage" })]);
+    expect(point).toMatchObject({ map: "Bind", agent: "Sage", result: "win" });
+    expect(point!.own).toBeGreaterThan(point!.enemy);
+  });
 });
 
 describe("byAgent / byMap", () => {

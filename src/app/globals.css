@@ -306,6 +306,53 @@
   margin-block: calc(-2 * round(nearest, calc(var(--number-flow-mask-height, 0.25em) / 2), 1px));
 }
 
+/*
+ * Trend chart (DESIGN.md › Movimento › Gráficos). First render: the series is
+ * clipped by a rect that scales 0 → 1 on X (transform only). A metric/filter
+ * change remounts the series with .trend-swap (fade + 4px rise). The tooltip
+ * pops in from 0.95 once per appearance.
+ */
+.trend-chart .recharts-area {
+  clip-path: var(--trend-reveal);
+}
+/* A tap or click focuses Recharts' layer; only keyboard focus shows the ring. */
+.trend-chart :focus:not(:focus-visible) {
+  outline: none;
+}
+.trend-reveal-rect {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  animation: trend-reveal 300ms var(--ease-out) both;
+}
+@keyframes trend-reveal {
+  from {
+    transform: scaleX(0);
+  }
+}
+.trend-swap {
+  animation: trend-swap 200ms var(--ease-out) both;
+}
+@keyframes trend-swap {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.trend-tooltip {
+  animation: pop-in 150ms var(--ease-out) both;
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
 /* First-load stagger for match lists and rankings (see StaggerList) */
 .stagger-list[data-entering] > li {
   animation: enter 240ms var(--ease-out) both;
@@ -403,5 +450,13 @@
   }
   .stagger-list[data-entering] > li {
     animation: none;
+  }
+  /* Charts: no reveal or rise, just a short fade (beats the 0.01ms rule above). */
+  .trend-reveal-rect {
+    animation: none !important;
+  }
+  .trend-chart .recharts-area,
+  .trend-tooltip {
+    animation: fade 150ms ease-out both !important;
   }
 }

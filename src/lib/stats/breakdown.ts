@@ -5,7 +5,7 @@
  * Mode rule: callers filter by ONE mode (or explicitly by ALL_MODES) before
  * anything here runs, so every number on screen belongs to the selected mode.
  */
-import { acs, adr, hsRate, kd } from "./metrics";
+import { acs, adr, hsRate, kd, type MatchResult } from "./metrics";
 import { ALL_MODES, DEFAULT_MODE, filterByMode, matchResult, summarize, type PlayerMatchLine, type StatSummary } from "./aggregate";
 
 export interface DashboardLine extends PlayerMatchLine {
@@ -92,6 +92,13 @@ export interface TrendPoint {
   hs: number;
   adr: number;
   won: boolean;
+  /** For the chart tooltip: where, with whom, how it ended. */
+  map: string;
+  agent: string;
+  agentId: string | null;
+  result: MatchResult;
+  own: number;
+  enemy: number;
 }
 
 /** Per-match values for the trend chart, oldest → newest. */
@@ -108,6 +115,11 @@ export function trendSeries(lines: readonly DashboardLine[], window = RECENT_WIN
       hs: hsRate(l.headshots, l.bodyshots, l.legshots) * 100,
       adr: adr(l.damageDealt, l.roundsPlayed),
       won: l.won,
+      map: l.mapName ?? "Mapa desconhecido",
+      agent: l.agentName ?? "Agente",
+      agentId: l.agentId,
+      result: matchResult(l),
+      ...playerScore(l),
     }));
 }
 
