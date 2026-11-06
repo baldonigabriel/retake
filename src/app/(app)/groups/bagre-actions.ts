@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { getSessionUser } from "@/lib/auth/session";
 import { BAGRE_MESSAGES, BagreError, type BagreErrorCode } from "@/lib/bagre/errors";
-import { nominate, updateBagreSettings, withdrawNomination } from "@/lib/bagre/mutations";
+import { castVote, nominate, updateBagreSettings, withdrawNomination } from "@/lib/bagre/mutations";
 import { bagreSettingsSchema, nominateSchema, nominationIdSchema } from "@/lib/bagre/validation";
 
 /**
@@ -71,5 +71,19 @@ export async function withdrawNominationAction(nominationId: unknown): Promise<B
     return { ok: true };
   } catch (error) {
     return handle(error, "withdraw");
+  }
+}
+
+/** Casts the caller's vote, or moves it to another nomination. */
+export async function voteAction(nominationId: unknown): Promise<BagreActionResult> {
+  const user = await getSessionUser();
+  if (!user) return fail("signed_out");
+  const id = nominationIdSchema.safeParse(nominationId);
+  if (!id.success) return fail("not_found");
+  try {
+    await castVote(db(), user.id, id.data);
+    return { ok: true };
+  } catch (error) {
+    return handle(error, "vote");
   }
 }

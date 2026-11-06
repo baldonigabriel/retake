@@ -6,10 +6,10 @@
  */
 import "server-only";
 
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, eq, gte, lt, sql } from "drizzle-orm";
 
 import type { Database } from "@/db";
-import { awardNominations, awardRounds, groups, matches, matchPlayers, riotAccounts, type AwardRound } from "@/db/schema";
+import { awardNominations, awardRounds, awardVotes, groups, matches, matchPlayers, riotAccounts, type AwardRound } from "@/db/schema";
 import { getRole } from "@/lib/groups/queries";
 
 import { BagreError } from "./errors";
@@ -105,4 +105,29 @@ export async function withdrawNomination(database: Database, userId: string, nom
   await database
     .delete(awardNominations)
     .where(and(eq(awardNominations.id, nominationId), eq(awardNominations.nominatorId, userId)));
+}
+
+/**
+ * Casts or changes the caller's vote. The round and group come from the
+ * nomination in the database; the caller must be a member, the nominee must
+ * still be a member and can't be the caller (the DB CHECK backs this up).
+ */
+export async function castVote(database: Database, userId: string, nominationId: string, now = new Date()): Promise<void> {
+  const [nomination] = await database
+    .select({ roundId: awardNominations.roundId, nomineeId: awardNominations.nomineeId })
+    .from(awardNominations)
+    .where(eq(awardNominations.id, nominationId))
+    .limit(1);
+  if (!nomination) throw new BagreError("not_found");
+  const round = await roundForMember(database, nomination.roundId, userId, now);
+  if (nomination.nomineeId === userId) throw new BagreError("self");
+  if ((await getRole(round.groupId, nomination.nomineeId)) === null) throw new BagreError("not_member");
+
+  await database
+    .insert(awardVotes)
+    .values({ roundId: round.id, voterId: userId, nominationId, nomineeId: nomination.nomineeId, createdAt: now, updatedAt: now })
+    .onConflictDoUpdate({
+      target: [awardVotes.roundId, awardVotes.voterId],
+      set: { nominationId: sql`excluded.nomination_id`, nomineeId: sql`excluded.nominee_id`, updatedAt: now },
+    });
 }

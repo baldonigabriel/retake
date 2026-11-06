@@ -16,6 +16,7 @@ import {
   boolean,
   check,
   doublePrecision,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -414,6 +415,38 @@ export const awardNominations = pgTable(
   ],
 );
 
+/**
+ * One vote per member per period (PK), changeable until the end (upsert).
+ * The composite FK pins the vote to a nomination of the SAME round with the
+ * SAME nominee, so the CHECK below really means "never vote for yourself".
+ * Withdrawing a nomination deletes its votes (cascade).
+ */
+export const awardVotes = pgTable(
+  "award_votes",
+  {
+    roundId: uuid("round_id")
+      .notNull()
+      .references(() => awardRounds.id, { onDelete: "cascade" }),
+    voterId: text("voter_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    nominationId: uuid("nomination_id").notNull(),
+    nomineeId: text("nominee_id").notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.roundId, t.voterId] }),
+    foreignKey({
+      name: "award_votes_nomination_fk",
+      columns: [t.nominationId, t.roundId, t.nomineeId],
+      foreignColumns: [awardNominations.id, awardNominations.roundId, awardNominations.nomineeId],
+    }).onDelete("cascade"),
+    index("award_votes_nomination_idx").on(t.nominationId),
+    check("award_votes_not_self", sql`${t.voterId} <> ${t.nomineeId}`),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type RiotAccount = typeof riotAccounts.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
@@ -426,3 +459,4 @@ export type Goal = typeof goals.$inferSelect;
 export type WeeklySummary = typeof weeklySummaries.$inferSelect;
 export type AwardRound = typeof awardRounds.$inferSelect;
 export type AwardNomination = typeof awardNominations.$inferSelect;
+export type AwardVote = typeof awardVotes.$inferSelect;

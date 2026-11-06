@@ -5,10 +5,10 @@
  */
 import "server-only";
 
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 
 import type { Database } from "@/db";
-import { awardNominations, users, type AwardRound } from "@/db/schema";
+import { awardNominations, awardVotes, users, type AwardRound } from "@/db/schema";
 import { getGroupMembers, getMemberLines, type MemberRow } from "@/lib/groups/queries";
 import type { GroupLine } from "@/lib/groups/ranking";
 import { suggestCandidates, type BagreSuggestion } from "@/lib/stats/bagre";
@@ -36,6 +36,8 @@ export interface NominationView {
   matchId: string;
   /** The match page only opens for players in it. */
   viewerPlayed: boolean;
+  /** Null until the viewer votes (or the period closes): the server never sends it earlier. */
+  votes: number | null;
 }
 
 export interface NomineeOption extends PersonView {
@@ -53,6 +55,12 @@ export interface BagreScreen {
   nominations: NominationView[];
   suggestions: (BagreSuggestion<GroupLine> & { person: PersonView; nominated: boolean; viewerPlayed: boolean })[];
   options: NomineeOption[];
+  /** The nomination the viewer voted for. */
+  myVote: string | null;
+  /** How many members voted (always shown; it says nothing about who is ahead). */
+  voters: number;
+  /** Counts are visible: the viewer voted, or the period is closed. */
+  revealed: boolean;
 }
 
 export const person = (m: Pick<MemberRow, "userId" | "name" | "tag" | "image" | "isYou">): PersonView => ({
@@ -80,17 +88,37 @@ export async function roundNominations(database: Database, roundId: string) {
     .orderBy(asc(awardNominations.createdAt), asc(awardNominations.id));
 }
 
+/** Votes of a round cast by these (current) members. Never sent to the browser as-is. */
+export async function roundVotes(database: Database, roundId: string, memberIds: string[]) {
+  if (memberIds.length === 0) return [];
+  return database
+    .select({ voterId: awardVotes.voterId, nominationId: awardVotes.nominationId })
+    .from(awardVotes)
+    .where(and(eq(awardVotes.roundId, roundId), inArray(awardVotes.voterId, memberIds)));
+}
+
 export async function loadBagreScreen(database: Database, group: BagreGroup, viewerId: string, now: Date): Promise<BagreScreen> {
   const [members, round] = await Promise.all([getGroupMembers(group.id, viewerId), currentRound(database, group, now)]);
-  const empty: BagreScreen = { round, accepting: false, members, nominations: [], suggestions: [], options: [] };
+  const empty: BagreScreen = {
+    round,
+    accepting: false,
+    members,
+    nominations: [],
+    suggestions: [],
+    options: [],
+    myVote: null,
+    voters: 0,
+    revealed: false,
+  };
   if (!round) return empty;
 
   const byId = new Map(members.map((m) => [m.userId, m]));
   const byPuuid = new Map(members.flatMap((m) => (m.puuid ? [[m.puuid, m] as const] : [])));
   const viewer = byId.get(viewerId);
-  const [lines, rows] = await Promise.all([
+  const [lines, rows, votes] = await Promise.all([
     getMemberLines([...byPuuid.keys()], round.startsAt, round.endsAt),
     roundNominations(database, round.id),
+    roundVotes(database, round.id, [...byId.keys()]),
   ]);
 
   const lineOf = (matchId: string, puuid: string | null) =>
@@ -111,10 +139,20 @@ export async function loadBagreScreen(database: Database, group: BagreGroup, vie
         line: lineOf(r.matchId, nominee.puuid),
         matchId: r.matchId,
         viewerPlayed: viewerPlayed(r.matchId),
+        votes: null as number | null,
       },
     ];
   });
   const nominated = new Set(nominations.map((n) => n.nominee.userId));
+
+  // Only votes for nominations still standing (nominee still a member) count.
+  const valid = new Set(nominations.map((n) => n.id));
+  const counted = votes.filter((v) => valid.has(v.nominationId));
+  const myVote = counted.find((v) => v.voterId === viewerId)?.nominationId ?? null;
+  const revealed = myVote !== null || round.status === "closed";
+  if (revealed) {
+    for (const n of nominations) n.votes = counted.filter((v) => v.nominationId === n.id).length;
+  }
 
   const suggestions = suggestCandidates(
     members.map((m) => ({ userId: m.userId, puuid: m.puuid, name: m.name })),
@@ -136,5 +174,15 @@ export async function loadBagreScreen(database: Database, group: BagreGroup, vie
       lines: m.puuid ? lines.filter((l) => l.puuid === m.puuid) : [],
     }));
 
-  return { round, accepting: isAccepting(round, now) && group.bagreEnabled, members, nominations, suggestions, options };
+  return {
+    round,
+    accepting: isAccepting(round, now) && group.bagreEnabled,
+    members,
+    nominations,
+    suggestions,
+    options,
+    myVote,
+    voters: counted.length,
+    revealed,
+  };
 }

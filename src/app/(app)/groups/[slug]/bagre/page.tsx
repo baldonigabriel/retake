@@ -112,11 +112,22 @@ export default async function BagrePage({ params }: PageProps<"/groups/[slug]/ba
                 Indicados {PERIOD_NOUN[cadence].of}
               </h2>
               <span className="num text-label font-normal text-fg-muted">
-                {screen.nominations.length} {screen.nominations.length === 1 ? "indicação" : "indicações"}
+                {screen.voters} de {screen.members.length} {screen.voters === 1 ? "votou" : "votaram"}
               </span>
             </header>
+            {hasNominations && !screen.revealed ? (
+              <p className="border-b border-line px-4 py-2 text-label font-normal text-fg-secondary">
+                Vote para ver a contagem. O voto é secreto e dá para trocar até {deadline}.
+              </p>
+            ) : null}
             {hasNominations ? (
-              <Ballot nominations={screen.nominations} accepting={screen.accepting} now={now} />
+              <Ballot
+                nominations={screen.nominations}
+                accepting={screen.accepting}
+                myVote={screen.myVote}
+                revealed={screen.revealed}
+                now={now}
+              />
             ) : (
               <EmptyState
                 icon={Fish}
