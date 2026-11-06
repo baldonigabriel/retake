@@ -15,6 +15,7 @@ import {
   doublePrecision,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -29,6 +30,8 @@ const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode
 export const syncStatus = pgEnum("sync_status", ["ok", "error", "pending"]);
 export const groupRole = pgEnum("group_role", ["owner", "member"]);
 export const discordPostStatus = pgEnum("discord_post_status", ["queued", "sending", "sent", "failed"]);
+export const summaryStatus = pgEnum("summary_status", ["generating", "ready", "sending", "sent", "failed", "skipped"]);
+export const summaryProvider = pgEnum("summary_provider", ["gemini", "groq", "rules"]);
 export const goalMetric = pgEnum("goal_metric", ["hs", "acs", "kd", "adr", "winrate", "matches"]);
 
 /* ---------------------------------------------------------------- auth -- */
@@ -288,6 +291,39 @@ export const goals = pgTable(
   (t) => [uniqueIndex("goals_user_metric_uq").on(t.userId, t.metric)],
 );
 
+/**
+ * One weekly summary per (group, week): the primary key is the "posted once"
+ * guarantee, like discord_posts. A run claims the row by inserting it
+ * ("generating"), writes the text and the provider that wrote it ("ready"),
+ * then claims it again to post ("sending" → "sent"). A row stuck in
+ * "sending" is never retried (a missing post beats a duplicate); one stuck
+ * in "generating" posted nothing yet, so it's reclaimed after a while.
+ */
+export const weeklySummaries = pgTable(
+  "weekly_summaries",
+  {
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    /** Monday 00:00 São Paulo of the summarised week. */
+    weekStart: timestamptz("week_start").notNull(),
+    status: summaryStatus("status").notNull().default("generating"),
+    /** Who wrote the text: gemini, groq or the rule-based fallback. */
+    provider: summaryProvider("provider"),
+    model: text("model"),
+    text: text("text"),
+    /** The aggregated numbers the text was written from (WeeklyStats). */
+    stats: jsonb("stats"),
+    attempts: integer("attempts").notNull().default(0),
+    messageId: text("message_id"),
+    lastError: text("last_error"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+    sentAt: timestamptz("sent_at"),
+  },
+  (t) => [primaryKey({ columns: [t.groupId, t.weekStart] })],
+);
+
 export type User = typeof users.$inferSelect;
 export type RiotAccount = typeof riotAccounts.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
@@ -297,3 +333,4 @@ export type GroupRole = (typeof groupRole.enumValues)[number];
 export type DiscordPost = typeof discordPosts.$inferSelect;
 export type NewMmrSnapshot = typeof mmrSnapshots.$inferInsert;
 export type Goal = typeof goals.$inferSelect;
+export type WeeklySummary = typeof weeklySummaries.$inferSelect;

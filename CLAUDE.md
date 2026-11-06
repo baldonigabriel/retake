@@ -43,6 +43,9 @@ src/
     sync/                          lógica de sincronização (independente do Next)
     stats/                         funções puras de métricas (100% testadas)
     discord/                       montagem e envio de cards por webhook
+    ai/                            provedores de texto (Gemini, Groq) com fallback em cadeia
+    summary/                       resumo semanal: números por código, texto por IA ou regras
+    goals/                         metas pessoais da semana
   components/
     ui/                            shadcn (não editar à mão sem necessidade)
     stats/, match/, groups/        componentes do produto
@@ -120,6 +123,7 @@ pnpm test:e2e       Playwright
 pnpm db:generate    gera migration a partir do schema
 pnpm db:migrate     aplica migrations
 pnpm sync:once      sincroniza um Riot ID (ex.: pnpm sync:once "Nome#TAG")
+pnpm summary:once   resumo semanal de um grupo (ex.: pnpm summary:once meu-grupo --webhook <url>)
 ```
 
 ## Convenções

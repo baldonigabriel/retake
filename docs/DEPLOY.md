@@ -54,6 +54,8 @@ gh repo create retake --private --source . --remote origin --push
    | `HENRIK_API_KEY` | sua chave do HenrikDev |
    | `CRON_SECRET` | segredo gerado no passo 0 |
    | `ENCRYPTION_KEY` | segredo gerado no passo 0 |
+   | `GEMINI_API_KEY` | opcional: chave gratuita do [Google AI Studio](https://aistudio.google.com/apikey), para o resumo semanal |
+   | `GROQ_API_KEY` | opcional: chave gratuita do [Groq](https://console.groq.com/keys), reserva se o Gemini falhar |
 
 3. Clique em **Deploy**. Se você só descobrir o endereço depois do primeiro deploy, ajuste `BETTER_AUTH_URL` e faça **Redeploy**.
 
@@ -82,6 +84,23 @@ Para ver o resultado completo de uma rodada:
 curl -X POST -H "Authorization: Bearer <CRON_SECRET>" "https://retake-xyz.vercel.app/api/cron/sync?wait=1"
 ```
 
+## 5.1 Resumo semanal com IA
+
+Toda segunda a partir das 9h (horário de Brasília), a mesma rota do cron posta no Discord de cada grupo com webhook o resumo da semana que terminou. Os números (partidas, vitórias, MVP, maior placar, quem mais evoluiu) são calculados pelo código; a IA só escreve o texto a partir deles.
+
+- O texto vem do **Gemini** (`gemini-3.5-flash-lite`, plano gratuito); se ele falhar, do **Groq** (`openai/gpt-oss-120b`, plano gratuito); se os dois falharem ou não houver chaves, de frases-modelo por regras. O rodapé do card diz quem escreveu, e a tabela `weekly_summaries` guarda o provedor de cada resumo.
+- Cada chamada de IA tem timeout de 8 s, um 429 pula o provedor (sem repetir em laço) e respostas com número que não está nos dados são descartadas.
+- O post sai uma única vez por grupo e semana, mesmo com duas rodadas do cron ao mesmo tempo. Semana sem nenhuma partida não gera post.
+- As duas chaves são opcionais. Sem elas, o resumo sai pelas regras.
+
+Para ver ou mandar um resumo na hora (não interfere no post oficial de segunda):
+
+```
+pnpm summary:once <slug-do-grupo>                      # mostra números, texto e provedor
+pnpm summary:once <slug-do-grupo> --webhook <url>      # manda para um webhook de teste
+pnpm summary:once <slug-do-grupo> --week last --send   # semana passada, no webhook do grupo
+```
+
 ## 6. Conferir
 
 1. Abra o site, entre com o Discord e vincule seu Riot ID.
@@ -92,5 +111,6 @@ curl -X POST -H "Authorization: Bearer <CRON_SECRET>" "https://retake-xyz.vercel
 
 - **Login volta com erro:** o redirect do Discord não bate exatamente com `BETTER_AUTH_URL` + `/api/auth/callback/discord` (confira https e barra no fim).
 - **Cron responde 401:** o header precisa ser `Authorization: Bearer <CRON_SECRET>`, com o mesmo valor da Vercel.
+- **Resumo da semana não chegou:** ele sai a partir de segunda às 9h, só para grupos com webhook e com pelo menos uma partida na semana. Na Vercel, **Logs** mostra `summaries` na linha `[cron] sync`; `pnpm summary:once <slug>` mostra o que seria enviado.
 - **Card não chegou:** o card só sai para partidas que começaram nas últimas 6 horas e para grupos com webhook salvo. Se o webhook foi apagado no Discord, a mensagem de teste avisa; salve um novo.
 - **"Webhook salvo, mas não conseguimos lê-lo":** a `ENCRYPTION_KEY` mudou. Cole o webhook de novo.

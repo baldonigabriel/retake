@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "sync:once": "tsx scripts/sync-once.ts",
+    "summary:once": "tsx scripts/summary-once.ts",
     "e2e:seed": "tsx e2e/support/seed-cli.ts"
   },
   "dependencies": {

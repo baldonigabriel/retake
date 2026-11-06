@@ -42,6 +42,10 @@ As tabelas de usuário e sessão são criadas pelo Better Auth.
 
 **group_members** — PK (`group_id`, `user_id`), `role` (`owner` | `member`), `joined_at`
 
+**goals** (Fase 5) — `id`, `user_id` (FK), `metric` (`hs` | `acs` | `kd` | `adr` | `winrate` | `matches`), `target`, `created_at`, `updated_at`; único por (`user_id`, `metric`). Só o alvo é guardado; o progresso é calculado.
+
+**weekly_summaries** (Fase 5) — PK (`group_id`, `week_start`), `status`, `provider` (`gemini` | `groq` | `rules`), `model`, `text`, `stats` (números agregados), `attempts`, `message_id`, `last_error`, `created_at`, `updated_at`, `sent_at`.
+
 Índices: `match_players(puuid, match_id)`, `matches(started_at)`, `mmr_snapshots(puuid, recorded_at)`.
 
 Guardar o JSON bruto da partida é opcional e fica desligado por padrão (ocupa muito espaço no plano gratuito do banco).

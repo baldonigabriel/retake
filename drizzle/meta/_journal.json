@@ -43,6 +43,13 @@
       "when": 1793939556008,
       "tag": "0005_goals",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793940013844,
+      "tag": "0006_weekly_summaries",
+      "breakpoints": true
     }
   ]
 }

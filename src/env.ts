@@ -16,6 +16,11 @@ const serverSchema = z.object({
   CRON_SECRET: z.string().min(16).optional(),
   /** Base64 of 32 random bytes (openssl rand -base64 32): AES-256-GCM key for secrets at rest. */
   ENCRYPTION_KEY: z.string().min(32).optional(),
+  /** Weekly summary text (src/lib/ai). Both optional: without them the summary uses rule-based text. */
+  GEMINI_API_KEY: z.string().min(1).optional(),
+  GEMINI_MODEL: z.string().min(1).optional(),
+  GROQ_API_KEY: z.string().min(1).optional(),
+  GROQ_MODEL: z.string().min(1).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
