@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Fragment } from "react";
 
+import { LogoMark } from "@/components/layout/logo";
 import { formatRelativeTime } from "@/lib/format";
 import type { WebhookPayload } from "@/lib/discord/card";
 
@@ -43,9 +44,7 @@ export function DiscordCardPreview({ payload, now, channel }: { payload: Webhook
       </p>
       <div className="flex gap-3">
         <span aria-hidden="true" className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary">
-          <svg viewBox="0 0 20 20" className="size-4">
-            <path d="M2 2h11l5 5v11H2z" fill="var(--color-on-accent)" />
-          </svg>
+          <LogoMark className="size-5 text-on-accent" letter="var(--color-primary)" />
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">

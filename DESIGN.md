@@ -122,6 +122,8 @@ Os cards de **destaque** (MVP da semana, cabeçalho de rank no dashboard, result
 
 ## Componentes
 
+**Logo.** Um quadrado com o corte chanfrado da assinatura e um "R" cheio cuja perna segue a mesma diagonal do corte, para canto e letra lerem como um traço só (grade de 32, o R a 6 unidades de cada lado). Ao lado, "retake" em Inter 600 minúsculo, 17px, `letter-spacing: -0.02em`. Dentro do app a marca é neutra (quadrado `--text-primary`, R `--surface-0`; no rodapé, `--text-secondary`), porque o vermelho é da ação principal. Só os ícones fora do app usam o quadrado em `--accent` com o R em `--on-accent`: aba do navegador (sem fundo) e ícone do celular (sobre `--surface-1`).
+
 **Barra de navegação.** Fixa no topo, fundo `--surface-0` a 80% com `backdrop-filter: blur(24px)`, borda inferior `--border`. Logo à esquerda, links no centro em 14px `--text-secondary` (ativo: `--text-primary` com indicador de 2px em `--accent` embaixo), avatar e seletor de grupo à direita. No mobile, vira barra inferior com 4 ícones e rótulos.
 
 **Botão primário.** Fundo `--accent`, texto `--on-accent` 14px/600, raio 6px, padding 10px 16px, altura mínima 40px (44px no mobile). **Apenas um por tela.**
