@@ -3,13 +3,20 @@
  * (Vercel Hobby cron only runs daily). SPEC §3, steps 2–7; step 6 (Discord
  * cards) runs after the accounts, with what's left of the time budget.
  *
- *   curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://<app>/api/cron/sync
+ * Schedulers like cron-job.org give up after ~30 s, but a run can take up to
+ * a minute. So by default the route answers 202 at once and does the work in
+ * `after()` (still inside maxDuration); the summary goes to the logs.
+ * `?wait=1` runs inline and returns the summary, for debugging by hand:
+ *
+ *   curl -X POST -H "Authorization: Bearer $CRON_SECRET" "https://<app>/api/cron/sync?wait=1"
  */
+import { after } from "next/server";
+
 import { db } from "@/db";
 import { serverEnv } from "@/env";
 import { notifyNewMatches, type NotifyResult } from "@/lib/discord";
-import { henrikClient } from "@/lib/henrik";
 import { discordKey } from "@/lib/discord/key";
+import { henrikClient } from "@/lib/henrik";
 import { syncDueAccounts } from "@/lib/sync";
 import { isAuthorizedCron } from "@/lib/sync/cron-auth";
 
@@ -22,14 +29,9 @@ const TIME_BUDGET_MS = 40_000;
 /** Stop starting new Discord posts after this (maxDuration is 60 s). */
 const DISCORD_BUDGET_MS = 52_000;
 
-export async function POST(request: Request) {
-  if (!isAuthorizedCron(request.headers.get("authorization"), serverEnv().CRON_SECRET)) {
-    return Response.json(
-      { error: "unauthorized" },
-      { status: 401, headers: { "WWW-Authenticate": "Bearer", "Cache-Control": "no-store" } },
-    );
-  }
+const NO_STORE = { "Cache-Control": "no-store" };
 
+async function run() {
   const startedAt = Date.now();
   const results = await syncDueAccounts({ db: db(), henrik: henrikClient() }, BATCH_SIZE, {
     onlyClaimed: true,
@@ -54,21 +56,41 @@ export async function POST(request: Request) {
     }
   }
 
-  return Response.json(
-    {
-      accounts: results.length,
-      ok: results.filter((r) => r.status === "ok").length,
-      errors: results.filter((r) => r.status === "error").length,
-      newMatches: inserted.length,
-      discord,
-      durationMs: Date.now() - startedAt,
-      results: results.map((r) => ({
-        accountId: r.accountId,
-        status: r.status,
-        newMatches: r.inserted.length,
-        error: r.error,
-      })),
-    },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  return {
+    accounts: results.length,
+    ok: results.filter((r) => r.status === "ok").length,
+    errors: results.filter((r) => r.status === "error").length,
+    newMatches: inserted.length,
+    discord,
+    durationMs: Date.now() - startedAt,
+    results: results.map((r) => ({
+      accountId: r.accountId,
+      status: r.status,
+      newMatches: r.inserted.length,
+      error: r.error,
+    })),
+  };
+}
+
+export async function POST(request: Request) {
+  if (!isAuthorizedCron(request.headers.get("authorization"), serverEnv().CRON_SECRET)) {
+    return Response.json(
+      { error: "unauthorized" },
+      { status: 401, headers: { "WWW-Authenticate": "Bearer", ...NO_STORE } },
+    );
+  }
+
+  if (new URL(request.url).searchParams.get("wait") === "1") {
+    return Response.json(await run(), { headers: NO_STORE });
+  }
+
+  after(async () => {
+    try {
+      const summary = await run();
+      console.info("[cron] sync", JSON.stringify({ ...summary, results: undefined }));
+    } catch (error) {
+      console.error("[cron] sync failed", error);
+    }
+  });
+  return Response.json({ accepted: true }, { status: 202, headers: NO_STORE });
 }
