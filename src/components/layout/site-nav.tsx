@@ -60,8 +60,8 @@ export function SiteNav({ account }: { account?: React.ReactNode }) {
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "relative flex items-center px-3 text-body-sm transition-colors duration-150 ease-out focus-visible:outline-offset-[-2px]",
-                      active ? "text-fg" : "text-fg-secondary hover:text-fg",
+                      "hover-layer press relative flex items-center rounded-control px-3 text-body-sm [--hover-inset:10px_0] focus-visible:outline-offset-[-2px]",
+                      active ? "text-fg" : "text-fg-secondary hover:text-fg focus-visible:text-fg",
                     )}
                   >
                     {item.label}
@@ -94,7 +94,7 @@ export function SiteNav({ account }: { account?: React.ReactNode }) {
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "relative flex h-14 flex-col items-center justify-center gap-1 text-eyebrow focus-visible:outline-offset-[-2px]",
+                    "hover-layer press relative flex h-14 flex-col items-center justify-center gap-1 text-eyebrow focus-visible:outline-offset-[-2px]",
                     active ? "text-fg" : "text-fg-secondary",
                   )}
                 >

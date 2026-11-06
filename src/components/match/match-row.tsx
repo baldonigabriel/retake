@@ -54,7 +54,7 @@ export function MatchRow({
       style={style}
       aria-label={`${RESULT_LABEL[match.result]} em ${match.map}, ${match.teamScore} a ${match.enemyScore}, ${match.agent}, ${kda}, ACS ${matchAcs}, ${when}`}
       className={cn(
-        "group relative flex h-16 items-center gap-3 pr-3 pl-3 transition-colors duration-150 ease-out hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-offset-[-2px] sm:gap-4 sm:pr-4",
+        "group relative hover-layer press [--press-scale:0.99] focus-visible:outline-offset-[-2px] flex h-16 items-center gap-3 pr-3 pl-3 sm:gap-4 sm:pr-4",
         className,
       )}
     >

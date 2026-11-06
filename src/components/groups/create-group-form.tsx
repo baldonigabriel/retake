@@ -85,7 +85,7 @@ export function CreateGroupForm({ className }: { className?: string }) {
         </label>
         <div
           className={cn(
-            "flex min-h-11 items-center rounded-control border border-line bg-surface-2 transition-[border-color,box-shadow] duration-150 ease-out focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/25 hover:border-line-strong sm:min-h-10",
+            "flex min-h-11 items-center rounded-control border border-line bg-surface-2 focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/25 hover:border-line-strong sm:min-h-10",
             slugError && "border-loss ring-3 ring-loss/20",
           )}
         >

@@ -55,13 +55,13 @@ export function CopyInviteButton({
       <span className="relative inline-flex size-4" aria-hidden="true">
         <Copy
           className={cn(
-            "absolute inset-0 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-opacity",
+            "absolute inset-0 transition-[opacity,scale] duration-150 ease-(--ease-out) motion-reduce:transition-opacity",
             copied ? "scale-75 opacity-0" : "scale-100 opacity-100",
           )}
         />
         <Check
           className={cn(
-            "absolute inset-0 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-opacity",
+            "absolute inset-0 transition-[opacity,scale] duration-150 ease-(--ease-out) motion-reduce:transition-opacity",
             copied ? "scale-100 opacity-100" : "scale-75 opacity-0",
           )}
         />

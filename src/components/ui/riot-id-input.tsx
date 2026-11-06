@@ -27,7 +27,7 @@ export function RiotIdInput({
   return (
     <div
       className={cn(
-        "flex min-h-11 w-full items-center rounded-control border border-line bg-surface-2 transition-[border-color,box-shadow] duration-150 ease-out hover:border-line-strong focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/25 sm:min-h-10",
+        "flex min-h-11 w-full items-center rounded-control border border-line bg-surface-2 hover:border-line-strong focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/25 sm:min-h-10",
         invalid && "border-loss ring-3 ring-loss/20",
         className,
       )}

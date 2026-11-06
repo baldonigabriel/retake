@@ -181,7 +181,7 @@ Os KPIs do painel, o ranking e o MVP do grupo, a comparação 1x1 e as metas usa
 
 ### Interação
 
-- Hover só em `@media (hover: hover) and (pointer: fine)`, e só em elementos clicáveis. Muda fundo e/ou borda, nunca tamanho, posição ou peso da fonte.
+- Hover só em `@media (hover: hover) and (pointer: fine)`, e só em elementos clicáveis. Muda fundo e/ou borda, nunca tamanho, posição ou peso da fonte. A exceção são as linhas de tabela (placar, agentes), que destacam a linha inteira para ajudar a leitura, sem transição.
 - Press: `scale(0.97)` em botões, itens de navegação e cards clicáveis. Linhas de lista que ocupam a largura do painel usam `scale(0.99)`, para o recuo em pixels ficar parecido com o de um botão.
 - Foco por teclado é sempre igual ou mais forte que o hover: a mesma camada de fundo do hover mais o anel de 2px em `--accent`.
 

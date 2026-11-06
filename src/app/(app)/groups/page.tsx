@@ -54,7 +54,7 @@ export default async function GroupsPage() {
                 <li key={g.id} style={{ "--i": i } as React.CSSProperties}>
                   <Link
                     href={`/groups/${g.slug}`}
-                    className="group flex min-h-16 items-center gap-3 px-4 py-3 transition-colors duration-150 ease-out hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-offset-[-2px]"
+                    className="group relative hover-layer press [--press-scale:0.99] focus-visible:outline-offset-[-2px] flex min-h-16 items-center gap-3 px-4 py-3"
                   >
                     <span
                       aria-hidden="true"
@@ -74,7 +74,7 @@ export default async function GroupsPage() {
                     </span>
                     <ChevronRight
                       aria-hidden="true"
-                      className="size-4 text-fg-muted transition-transform duration-150 ease-out group-hover:translate-x-0.5 group-hover:text-fg-secondary motion-reduce:transition-none"
+                      className="size-4 text-fg-muted transition-[translate] duration-150 ease-(--ease-out) group-hover:translate-x-0.5 group-hover:text-fg-secondary group-focus-visible:text-fg-secondary motion-reduce:transition-none"
                     />
                   </Link>
                 </li>

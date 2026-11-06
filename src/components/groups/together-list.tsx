@@ -76,7 +76,7 @@ export function TogetherList({ matches, now }: { matches: readonly TogetherMatch
             {youPlayed ? (
               <Link
                 href={`/match/${m.matchId}`}
-                className="relative flex flex-col gap-2 py-3 pr-4 pl-3 transition-colors duration-150 ease-out hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-offset-[-2px]"
+                className="relative hover-layer press [--press-scale:0.99] focus-visible:outline-offset-[-2px] flex flex-col gap-2 py-3 pr-4 pl-3"
               >
                 {body}
               </Link>

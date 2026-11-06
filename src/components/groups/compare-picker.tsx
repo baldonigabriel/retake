@@ -78,7 +78,7 @@ function PlayerSelect({
           id={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="min-h-11 w-full min-w-0 cursor-pointer appearance-none truncate rounded-control border border-line bg-surface-2 py-2.5 pr-9 pl-3 text-base text-fg transition-[border-color,box-shadow] duration-150 ease-out outline-none hover:border-line-strong focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/25 sm:min-h-10 sm:text-body-sm"
+          className="min-h-11 w-full min-w-0 cursor-pointer appearance-none truncate rounded-control border border-line bg-surface-2 py-2.5 pr-9 pl-3 text-base text-fg outline-none hover:border-line-strong focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/25 sm:min-h-10 sm:text-body-sm"
         >
           {options.map((o) => (
             <option key={o.id} value={o.id}>

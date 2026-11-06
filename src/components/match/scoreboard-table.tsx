@@ -114,7 +114,7 @@ export function ScoreboardTable({
                   <th
                     scope="row"
                     className={cn(
-                      "sticky left-0 z-10 border-t border-line px-4 py-2 text-left font-normal transition-colors duration-150",
+                      "sticky left-0 z-10 border-t border-line px-4 py-2 text-left font-normal",
                       rowBg,
                       p.isYou && "shadow-[inset_2px_0_0_var(--color-primary)]",
                     )}
@@ -133,7 +133,7 @@ export function ScoreboardTable({
                     <td
                       key={NUM_COLS[i]}
                       className={cn(
-                        "border-t border-line px-3 py-2 text-right text-fg-secondary transition-colors duration-150 last:pr-4",
+                        "border-t border-line px-3 py-2 text-right text-fg-secondary last:pr-4",
                         i === 0 && "font-medium text-fg",
                         rowBg,
                       )}

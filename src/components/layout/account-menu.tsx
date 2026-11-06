@@ -37,7 +37,7 @@ export function AccountMenu({ name, image }: { name: string; image: string | nul
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
         aria-label={`Sua conta: ${name}`}
-        className="inline-flex size-11 items-center justify-center rounded-full transition-transform duration-150 ease-out active:scale-[0.97] motion-reduce:active:scale-100 sm:size-10"
+        className="hover-layer press relative inline-flex size-11 items-center justify-center rounded-full sm:size-10"
       >
         <Avatar name={name} image={image} />
       </DropdownMenu.Trigger>

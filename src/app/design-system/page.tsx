@@ -158,7 +158,7 @@ export default function DesignSystemPage() {
                 <li key={s.id}>
                   <a
                     href={`#${s.id}`}
-                    className="block rounded-control px-2 py-1.5 text-body-sm text-fg-secondary transition-colors duration-150 ease-out hover:bg-surface-2 hover:text-fg"
+                    className="hover-layer press relative block rounded-control px-2 py-1.5 text-body-sm text-fg-secondary hover:text-fg focus-visible:text-fg"
                   >
                     {s.label}
                   </a>

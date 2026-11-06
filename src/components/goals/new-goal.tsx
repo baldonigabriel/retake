@@ -125,7 +125,7 @@ function GoalForm({ existing, onDone }: { existing: readonly Existing[]; onDone:
               id={`${id}-metric`}
               value={metric}
               onChange={(e) => changeMetric(e.target.value as GoalMetric)}
-              className="min-h-11 w-full cursor-pointer appearance-none rounded-control border border-line bg-surface-2 py-2.5 pr-9 pl-3 text-base text-fg transition-[border-color,box-shadow] duration-150 ease-out outline-none hover:border-line-strong focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/25 sm:min-h-10 sm:text-body-sm"
+              className="min-h-11 w-full cursor-pointer appearance-none rounded-control border border-line bg-surface-2 py-2.5 pr-9 pl-3 text-base text-fg outline-none hover:border-line-strong focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/25 sm:min-h-10 sm:text-body-sm"
             >
               {GOAL_METRICS.map((m) => (
                 <option key={m} value={m}>
@@ -143,7 +143,7 @@ function GoalForm({ existing, onDone }: { existing: readonly Existing[]; onDone:
           </label>
           <div
             className={cn(
-              "flex min-h-11 items-center rounded-control border border-line bg-surface-2 transition-[border-color,box-shadow] duration-150 ease-out focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/25 hover:border-line-strong sm:min-h-10",
+              "flex min-h-11 items-center rounded-control border border-line bg-surface-2 focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/25 hover:border-line-strong sm:min-h-10",
               error && "border-loss ring-3 ring-loss/20",
             )}
           >

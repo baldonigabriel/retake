@@ -37,10 +37,10 @@ export function SegmentedControl<T extends string>({
             aria-pressed={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "min-h-11 shrink-0 rounded-[4px] px-3 text-label whitespace-nowrap sm:min-h-8",
+              "hover-layer press relative min-h-11 shrink-0 rounded-[4px] px-3 text-label whitespace-nowrap [--hover-bg:rgb(255_255_255/0.04)] sm:min-h-8",
               active
                 ? "bg-surface-3 text-fg shadow-key"
-                : "text-fg-secondary hover:text-fg",
+                : "text-fg-secondary hover:text-fg focus-visible:text-fg",
             )}
           >
             {opt.label}

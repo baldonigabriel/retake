@@ -249,6 +249,55 @@
 }
 
 /*
+ * DESIGN.md › Movimento › Interação. Hover and keyboard-focus surface: a
+ * ::before layer that only fades (opacity), so backgrounds and borders never
+ * transition. Tune per element with --hover-bg, --hover-ring and
+ * --hover-inset; the element itself needs a position (relative).
+ */
+@utility hover-layer {
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: var(--hover-inset, 0);
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--hover-bg, var(--color-surface-2));
+    box-shadow: var(--hover-ring, none);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    &:hover::before {
+      opacity: 1;
+    }
+  }
+  /* Keyboard focus is at least as strong as hover: same layer + the 2px ring. */
+  &:focus-visible::before,
+  &[aria-expanded="true"]::before {
+    opacity: 1;
+  }
+}
+
+/*
+ * Press feedback on :active. 0.97 for buttons, nav items and cards; full-width
+ * list rows set --press-scale: 0.99 so the inset in pixels stays button-like.
+ * Uses the `scale` property, so it never fights an element's own transform.
+ */
+@utility press {
+  transition: scale 160ms var(--ease-out);
+  &:active {
+    scale: var(--press-scale, 0.97);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &:active {
+      scale: none;
+    }
+  }
+}
+
+/*
  * NumberFlow pads the digits above and below for its spin mask. Pull that
  * padding back (same formula as the library) so an animated number takes
  * exactly the line of the static text it replaces: no layout shift.
