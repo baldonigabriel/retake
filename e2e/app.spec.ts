@@ -107,8 +107,11 @@ test.describe("onboarded user", () => {
 
   test("mode and period filters live in the URL and never mix modes silently", async ({ page }) => {
     await page.goto("/me");
-    await page.getByRole("group", { name: "Modo" }).getByRole("button", { name: "Sem classificação" }).click();
-    await expect(page).toHaveURL(/mode=unrated/);
+    // Under load a click can land before hydration: retry until the URL follows.
+    await expect(async () => {
+      await page.getByRole("group", { name: "Modo" }).getByRole("button", { name: "Sem classificação" }).click();
+      await expect(page).toHaveURL(/mode=unrated/, { timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
     await expect(page.getByRole("heading", { name: /2 partidas · Sem classificação/ })).toBeVisible();
 
     await page.getByRole("group", { name: "Período" }).getByRole("button", { name: "30 dias" }).click();

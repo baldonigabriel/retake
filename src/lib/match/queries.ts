@@ -44,3 +44,13 @@ export async function getMatchRrForUsers(matchId: string, puuids: readonly strin
     .where(and(inArray(riotAccounts.puuid, [...puuids]), isNotNull(riotAccounts.userId)));
   return new Map(rows.map((r) => [r.puuid, r.rrChange ?? null]));
 }
+
+/** Which of `matchIds` `puuid` played (the match page only opens for its players). */
+export async function getMatchesPlayedBy(puuid: string, matchIds: readonly string[]): Promise<Set<string>> {
+  if (matchIds.length === 0) return new Set();
+  const rows = await db()
+    .select({ id: matchPlayers.matchId })
+    .from(matchPlayers)
+    .where(and(eq(matchPlayers.puuid, puuid), inArray(matchPlayers.matchId, [...matchIds])));
+  return new Set(rows.map((r) => r.id));
+}

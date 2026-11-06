@@ -243,7 +243,17 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
                 <li key={m.userId} className={cn("flex min-h-12 items-center gap-3 px-4 py-2", m.isYou && "on-tint bg-accent-tint/60")}>
                   <Avatar name={m.name} image={m.image} />
                   <span className="flex min-w-0 flex-1 items-baseline gap-1">
-                    <span className="truncate text-fg">{m.name}</span>
+                    {!m.isYou && m.puuid ? (
+                      <Link
+                        href={`/groups/${group.slug}/members/${encodeURIComponent(m.userId)}`}
+                        className="inline-flex min-h-11 min-w-0 items-center truncate text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg sm:min-h-0"
+                        aria-label={`Ver perfil de ${m.name}`}
+                      >
+                        {m.name}
+                      </Link>
+                    ) : (
+                      <span className="truncate text-fg">{m.name}</span>
+                    )}
                     {m.tag ? (
                       <span className="font-mono text-label text-fg-muted">#{m.tag}</span>
                     ) : (

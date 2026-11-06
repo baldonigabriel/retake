@@ -176,3 +176,45 @@ export async function getGroupMatePuuids(userId: string): Promise<Set<string>> {
     .where(eq(mine.userId, userId));
   return new Set(rows.map((r) => r.puuid));
 }
+
+export type GroupMemberProfile = {
+  userId: string;
+  name: string;
+  tag: string | null;
+  image: string | null;
+  puuid: string | null;
+  role: GroupRole;
+};
+
+/**
+ * A member of a group the caller already proved membership of
+ * (getMembership). Null when `userId` isn't in that group: the profile page
+ * answers 404, the same as for a user that doesn't exist.
+ */
+export async function getGroupMember(groupId: string, userId: string): Promise<GroupMemberProfile | null> {
+  if (userId.length === 0 || userId.length > 200) return null;
+  const [row] = await db()
+    .select({
+      userId: users.id,
+      discordName: users.name,
+      image: users.image,
+      role: groupMembers.role,
+      puuid: riotAccounts.puuid,
+      gameName: riotAccounts.gameName,
+      tagLine: riotAccounts.tagLine,
+    })
+    .from(groupMembers)
+    .innerJoin(users, eq(users.id, groupMembers.userId))
+    .leftJoin(riotAccounts, eq(riotAccounts.userId, users.id))
+    .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
+    .limit(1);
+  if (!row) return null;
+  return {
+    userId: row.userId,
+    name: row.gameName ?? row.discordName,
+    tag: row.tagLine,
+    image: row.image,
+    puuid: row.puuid,
+    role: row.role,
+  };
+}
