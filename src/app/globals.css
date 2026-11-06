@@ -535,4 +535,9 @@
   [data-sonner-toaster] [data-sonner-toast] {
     transition: opacity 150ms ease-out !important;
   }
+  /* Spinners keep turning while something loads: a frozen one reads as broken. */
+  .animate-spin {
+    animation-duration: 1.5s !important;
+    animation-iteration-count: infinite !important;
+  }
 }

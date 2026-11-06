@@ -6,7 +6,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { EMPTY_STATE, FRESH_STATE, ONBOARDED_STATE } from "./global-setup";
-import { E2E } from "./support/seed";
+import { E2E, matchId } from "./support/seed";
 
 async function noHorizontalScroll(page: Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -146,6 +146,23 @@ test.describe("onboarded user", () => {
     await page.goto("/match/not-a-real-match");
     await expect(page.getByText("Partida não encontrada")).toBeVisible();
     await expect(page.getByRole("link", { name: "Voltar ao painel" })).toBeVisible();
+  });
+
+  test("data screens keep only short fades with reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/me");
+    await expect(page.locator(".trend-chart")).toBeVisible();
+    // The chart doesn't sweep in and the filter indicator doesn't slide.
+    expect(await page.locator(".trend-reveal-rect").evaluate((r) => getComputedStyle(r).animationName)).toBe("none");
+    const indicator = page.getByRole("group", { name: "Período" }).locator("span[aria-hidden]").first();
+    expect(await indicator.evaluate((s) => getComputedStyle(s).transitionDuration)).toBe("0s");
+    // A win doesn't sheen or grow its bar; it only fades in.
+    await page.goto(`/match/${matchId(0)}`);
+    const card = page.locator(".celebrate");
+    await expect(card).toBeVisible();
+    expect(await card.evaluate((el) => getComputedStyle(el).animationName)).toBe("fade");
+    expect(await page.locator(".celebrate-sheen").evaluate((el) => getComputedStyle(el, "::after").display)).toBe("none");
+    expect(await page.locator(".result-bar-grow").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
   });
 
   test("touch targets are at least 44px on mobile", async ({ page, isMobile }) => {
