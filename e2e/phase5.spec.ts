@@ -99,3 +99,47 @@ test.describe("1x1 comparison", () => {
     });
   });
 });
+
+test.describe("goals", () => {
+  // Desktop uses Tester, mobile uses Parceiro: the two projects run in parallel and must not share goals.
+  test("create, see progress, update the target and remove with confirmation", async ({ browser, isMobile }) => {
+    const context = await browser.newContext({
+      storageState: isMobile ? FRIEND_STATE : ONBOARDED_STATE,
+      ...(isMobile ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : { viewport: { width: 1440, height: 900 } }),
+    });
+    const page = await context.newPage();
+    await page.goto("/me");
+    const panel = page.locator("section", { has: page.getByRole("heading", { name: "Metas da semana" }) });
+    await expect(panel.getByText("Nenhuma meta para esta semana")).toBeVisible();
+
+    await panel.getByRole("button", { name: "Criar meta" }).click();
+    await expect(panel.getByLabel("Métrica", { exact: true })).toBeFocused();
+    const target = panel.getByRole("textbox", { name: "Acima de" });
+    await target.fill("200");
+    await panel.getByRole("button", { name: "Salvar meta" }).click();
+    await expect(panel.getByText("Use um valor entre 1% e 80%.")).toBeVisible();
+    await target.fill("20");
+    await panel.getByRole("button", { name: "Salvar meta" }).click();
+    await expect(page.getByText("Meta criada: HS% acima de 20%")).toBeVisible();
+    await expect(panel.getByRole("progressbar", { name: "Progresso: HS% acima de 20%" })).toBeVisible();
+    await expect(panel.getByText(/Batida|Abaixo|Parcial/).first()).toBeVisible();
+
+    // Same metric again: updates the target instead of a second goal.
+    await panel.getByRole("button", { name: "Nova meta" }).click();
+    await panel.getByLabel("Métrica", { exact: true }).selectOption("hs");
+    await expect(panel.getByText("Você já tem essa meta (20%). Salvar troca o alvo.")).toBeVisible();
+    await panel.getByRole("textbox", { name: "Acima de" }).fill("22");
+    await panel.getByRole("button", { name: "Salvar meta" }).click();
+    await expect(page.getByText("Meta atualizada: HS% acima de 22%")).toBeVisible();
+    await expect(panel.getByRole("progressbar")).toHaveCount(1);
+
+    await panel.getByRole("button", { name: "Remover meta: HS% acima de 22%" }).click();
+    const dialog = page.getByRole("alertdialog", { name: "Remover esta meta?" });
+    await expect(dialog.getByRole("button", { name: "Cancelar" })).toBeFocused();
+    await dialog.getByRole("button", { name: "Remover meta" }).click();
+    await expect(page.getByText("Meta removida")).toBeVisible();
+    await expect(panel.getByText("Nenhuma meta para esta semana")).toBeVisible();
+    await noHorizontalScroll(page);
+    await context.close();
+  });
+});

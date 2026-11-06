@@ -1,5 +1,6 @@
 import { MatchRowSkeleton } from "@/components/match/match-row";
 import { KpiCardSkeleton } from "@/components/stats/kpi-card";
+import { GoalsPanelSkeleton } from "@/components/goals/goals-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** Same shape as /me: header, rank card, filters, KPIs, chart, tables, list. */
@@ -17,6 +18,7 @@ export default function Loading() {
           <Skeleton className="h-10 w-40" />
         </div>
       </div>
+      <GoalsPanelSkeleton />
       <div className="flex gap-2 pt-2">
         <Skeleton className="h-11 w-56 rounded-control sm:h-9" />
         <Skeleton className="h-11 w-44 rounded-control sm:h-9" />

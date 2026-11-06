@@ -1,6 +1,7 @@
 import { CircleAlert, Swords } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { AgentTable } from "@/components/dashboard/agent-table";
 import { FilterBar, FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
@@ -10,6 +11,7 @@ import { MapGrid } from "@/components/dashboard/map-grid";
 import { RankHeader } from "@/components/dashboard/rank-header";
 import { RecentMatches } from "@/components/dashboard/recent-matches";
 import { SyncNowButton } from "@/components/dashboard/sync-now-button";
+import { GoalsPanel, GoalsPanelSkeleton } from "@/components/goals/goals-panel";
 import { TrendChart } from "@/components/stats/trend-chart";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -19,6 +21,7 @@ import { requireViewer } from "@/lib/auth/session";
 import { getPlayerLines, getRankHistory } from "@/lib/dashboard/queries";
 import { verdict } from "@/lib/dashboard/verdict";
 import { formatRelativeTime } from "@/lib/format";
+import { formatWeek, inWeek, previousWeek, weekRange } from "@/lib/groups/week";
 import { modeAdjective, modeLabel } from "@/lib/modes";
 import { ALL_MODES, DEFAULT_MODE, filterByMode } from "@/lib/stats";
 import {
@@ -54,7 +57,7 @@ const PERIOD_PHRASE: Record<Period, string> = { "30d": "nos últimos 30 dias", "
 const RECENT_LIST = 10;
 
 export default async function MePage({ searchParams }: PageProps<"/me">) {
-  const { account } = await requireViewer("/me");
+  const { user, account } = await requireViewer("/me");
   const [params, allLines, rank] = await Promise.all([
     searchParams,
     getPlayerLines(account.puuid),
@@ -74,6 +77,9 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const insights = buildInsights(lines, mode);
   const cooldownUntil = account.lastSyncedAt ? account.lastSyncedAt.getTime() + SYNC_NOW_COOLDOWN_MS : null;
   const mixed = mode === ALL_MODES;
+  // Goals always use this São Paulo week, whatever the filters say.
+  const week = weekRange(now);
+  const lastWeek = previousWeek(week);
 
   return (
     <div className="flex flex-col gap-4 py-8 sm:py-10">
@@ -107,6 +113,17 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
       ) : null}
 
       <RankHeader history={rank} />
+
+      {allLines.length > 0 ? (
+        <Suspense fallback={<GoalsPanelSkeleton />}>
+          <GoalsPanel
+            userId={user.id}
+            weekLines={allLines.filter((l) => inWeek(l.startedAt, week))}
+            lastWeekLines={allLines.filter((l) => inWeek(l.startedAt, lastWeek))}
+            weekLabel={formatWeek(week)}
+          />
+        </Suspense>
+      ) : null}
 
       {allLines.length === 0 ? (
         <Panel>

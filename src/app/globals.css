@@ -254,6 +254,17 @@
   animation-delay: calc(min(var(--i, 0), 12) * 40ms);
 }
 
+/* Goal progress: the bar fills once when it first appears (transform only). */
+.goal-fill {
+  transform-origin: left center;
+  animation: goal-fill 280ms var(--ease-out) both;
+}
+@keyframes goal-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
 /*
  * Landing hero only (DESIGN.md › Imagens): blurred diagonal red shards on the
  * black ground, drifting slowly. Transform-only animation on three layers;

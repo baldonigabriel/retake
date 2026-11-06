@@ -12,6 +12,7 @@
  */
 import {
   boolean,
+  doublePrecision,
   index,
   integer,
   pgEnum,
@@ -28,6 +29,7 @@ const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode
 export const syncStatus = pgEnum("sync_status", ["ok", "error", "pending"]);
 export const groupRole = pgEnum("group_role", ["owner", "member"]);
 export const discordPostStatus = pgEnum("discord_post_status", ["queued", "sending", "sent", "failed"]);
+export const goalMetric = pgEnum("goal_metric", ["hs", "acs", "kd", "adr", "winrate", "matches"]);
 
 /* ---------------------------------------------------------------- auth -- */
 
@@ -265,6 +267,27 @@ export const discordPosts = pgTable(
   ],
 );
 
+/**
+ * Personal weekly goals (src/lib/goals). Only the target is stored: progress
+ * is computed from match_players each time. One goal per metric per user;
+ * the goal repeats every week until removed.
+ */
+export const goals = pgTable(
+  "goals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    metric: goalMetric("metric").notNull(),
+    /** In the unit people type: HS% 25 = 25%, K/D 1.2 = 1,20. */
+    target: doublePrecision("target").notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("goals_user_metric_uq").on(t.userId, t.metric)],
+);
+
 export type User = typeof users.$inferSelect;
 export type RiotAccount = typeof riotAccounts.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
@@ -273,3 +296,4 @@ export type Group = typeof groups.$inferSelect;
 export type GroupRole = (typeof groupRole.enumValues)[number];
 export type DiscordPost = typeof discordPosts.$inferSelect;
 export type NewMmrSnapshot = typeof mmrSnapshots.$inferInsert;
+export type Goal = typeof goals.$inferSelect;

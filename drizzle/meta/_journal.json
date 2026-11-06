@@ -36,6 +36,13 @@
       "when": 1793931323277,
       "tag": "0004_discord_posts",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793939556008,
+      "tag": "0005_goals",
+      "breakpoints": true
     }
   ]
 }
