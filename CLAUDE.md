@@ -28,10 +28,12 @@ src/
   app/
     (marketing)/page.tsx           landing
     (app)/onboarding/              vincular Riot ID
-    (app)/me/                      dashboard pessoal
+    (app)/me/                      dashboard pessoal (agentes, últimas partidas)
+    (app)/me/agents/[agent]/       página de um agente
     (app)/match/[id]/              página da partida
     (app)/groups/                  lista de grupos
     (app)/groups/[slug]/           grupo: ranking, partidas juntos, config
+    (app)/groups/[slug]/members/[userId]/  perfil de um membro (só para o mesmo grupo)
     (app)/settings/
     api/cron/sync/route.ts         sincronização (protegida por CRON_SECRET)
     api/auth/[...all]/route.ts     Better Auth
@@ -41,7 +43,7 @@ src/
   lib/
     henrik/                        cliente HTTP, schemas Zod, rate limiter
     sync/                          lógica de sincronização (independente do Next)
-    stats/                         funções puras de métricas (100% testadas)
+    stats/                         funções puras de métricas (100% testadas): agentes, histórico por dia
     discord/                       montagem e envio de cards por webhook
     ai/                            provedores de texto (Gemini, Groq) com fallback em cadeia
     summary/                       resumo semanal: números por código, texto por IA ou regras

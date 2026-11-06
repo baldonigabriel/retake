@@ -81,9 +81,16 @@ Ao vincular uma conta, importar as partidas que a API retornar no histórico rec
 - Partidas recentes.
 - Filtro de modo (padrão: competitivo) e de período.
 
-**Partida (`/match/[id]`)** — pergunta principal: "como foi essa partida?" Resultado, mapa, placar, data e duração; placar completo dos dois times com a linha do usuário destacada; badges de "jogou com" para membros dos seus grupos.
+- Seção "Agentes" (tabela ordenada por partidas: horas jogadas, V–D, win rate, K/D, ADR, ACS, HS%, DDΔ e melhor mapa; filtro de temporada; o melhor valor de cada coluna sublinhado e mais forte, não só por cor; em 390px vira cards com o resto expansível).
+- "Últimas partidas": resumo das últimas 20 (V–D, win rate, K/D, ADR e os 3 agentes mais jogados), partidas agrupadas por dia com o saldo do dia (V/D e RR) e, em cada linha, agente, mapa, modo, rank na partida, RR ganho ou perdido, placar, posição no time por ACS, K/D/A, HS%, DDΔ e ACS. Filtros por agente e mapa e "carregar mais".
+
+**Agente (`/me/agents/[agent]`)** — pergunta principal: "como eu jogo com esse agente?" KPIs com a variação em relação à média com todos os agentes, evolução partida a partida, desempenho por mapa (com o melhor mapa) e as partidas com ele. Filtros de modo e temporada.
+
+**Partida (`/match/[id]`)** — pergunta principal: "como foi essa partida?" Resultado, mapa, placar, data e duração; placar completo dos dois times com a linha do usuário destacada, o rank de cada jogador naquela partida e o RR ganho ou perdido só para quem usa o Retake; badges de "jogou com" para membros dos seus grupos.
 
 **Grupos (`/groups`, `/groups/[slug]`)** — pergunta principal: "quem mandou bem essa semana?" Ranking semanal com seletor de métrica, destaque de MVP da semana, partidas que membros jogaram juntos, convite por link e configuração do webhook do Discord (só o dono).
+
+**Perfil de membro (`/groups/[slug]/members/[userId]`)** — as seções "Agentes" e "Últimas partidas" de um membro, visíveis só para quem está no mesmo grupo (quem não está recebe o mesmo 404 de um grupo inexistente). As partidas abrem o placar só quando quem está vendo também jogou.
 
 **Configurações (`/settings`)** — conta Riot vinculada, status do último sync e opção de desvincular (apagando os dados do usuário).
 
@@ -107,3 +114,9 @@ Cada fase termina com lint, typecheck e testes passando, verificação visual pe
 *Pronto quando:* jogar uma partida resulta, em até ~15 minutos, num card no servidor do grupo.
 
 **Fase 5 — Pós-MVP.** Insights automáticos, comparação 1x1, metas pessoais e resumo semanal com IA.
+
+## 6. Ideias futuras (fora do escopo atual)
+
+- **Multikills** (2K, 3K, 4K, ás por partida e por agente): exigem ler os eventos de kill de cada round, que o sync hoje não guarda.
+- **Nota própria de desempenho** (no estilo do TRS do Tracker.gg): uma pontuação única por partida combinando várias métricas. Só faz sentido com uma fórmula aberta, documentada aqui e testada, para não virar caixa-preta.
+- KAST e métricas por round, já listadas como fora do MVP.
