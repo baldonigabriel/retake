@@ -4,7 +4,7 @@ import NumberFlow from "@number-flow/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { useValueMotion } from "@/components/motion/motion-scope";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, formatSigned } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** DESIGN.md › Movimento › contagem de números: 700ms, strong ease-out. */
@@ -28,6 +28,7 @@ export function AnimatedNumber({
   value,
   digits = 0,
   suffix,
+  signed = false,
   kind,
   align = "start",
   className,
@@ -37,6 +38,8 @@ export function AnimatedNumber({
   digits?: number;
   /** "%" for rates */
   suffix?: string;
+  /** Show "+" / "−" (true minus) like formatSigned, e.g. DDΔ */
+  signed?: boolean;
   /** The quantity shown (e.g. the ranking metric); changing it never rolls */
   kind?: string;
   align?: "start" | "end";
@@ -55,7 +58,9 @@ export function AnimatedNumber({
   }, [fromZero]);
 
   if (value === null) return <span className={className}>—</span>;
-  const text = `${formatNumber(value, digits)}${suffix ?? ""}`;
+  const text = `${signed ? formatSigned(value, digits) : formatNumber(value, digits)}${suffix ?? ""}`;
+  // The sign is a prefix so NumberFlow rolls the digits and keeps our true minus.
+  const sign = signed ? text.match(/^[+−]/)?.[0] : undefined;
 
   return (
     <span className={cn("inline-grid tabular-nums", className)}>
@@ -68,7 +73,8 @@ export function AnimatedNumber({
       <NumberFlow
         aria-hidden="true"
         className={cn("number-roll col-start-1 row-start-1", align === "end" ? "justify-self-end" : "justify-self-start")}
-        value={fromZero ? 0 : value}
+        value={fromZero ? 0 : sign ? Math.abs(value) : value}
+        prefix={sign}
         locales="pt-BR"
         format={{ minimumFractionDigits: digits, maximumFractionDigits: digits }}
         suffix={suffix}

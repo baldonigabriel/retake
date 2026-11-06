@@ -14,10 +14,10 @@ export function AgentAvatar({
 }: {
   agent: string;
   src?: string;
-  size?: 24 | 28 | 36;
+  size?: 24 | 28 | 36 | 48;
   className?: string;
 }) {
-  const sizeClass = size === 36 ? "size-9 text-label" : size === 28 ? "size-7 text-eyebrow" : "size-6 text-[10px]";
+  const sizeClass = size === 48 ? "size-12 text-body-sm" : size === 36 ? "size-9 text-label" : size === 28 ? "size-7 text-eyebrow" : "size-6 text-[10px]";
   return (
     <span
       className={cn(
