@@ -61,7 +61,7 @@ export function RrDelta({ value, className }: { value: number | null; className?
 }
 
 /** Rank the player had in that match (match_players.tier), with its name for screen readers and on hover. */
-export function TierIcon({ tier, size = 24 }: { tier: number | null; size?: 20 | 24 }) {
+export function TierIcon({ tier, size = 24 }: { tier: number | null; size?: 16 | 20 | 24 }) {
   const src = tierIconUrl(tier);
   const label = tierLabel(tier);
   if (!src) return <span className="sr-only">{label}</span>;

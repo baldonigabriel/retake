@@ -1,7 +1,9 @@
+import { RrDelta, TierIcon } from "@/components/history/history-row";
 import { AgentAvatar } from "@/components/match/agent-avatar";
 import { ResultChip } from "@/components/stats/result-chip";
 import { Badge } from "@/components/ui/badge";
 import { formatNumber, formatPercent } from "@/lib/format";
+import { tierLabel } from "@/lib/ranks";
 import { acs, adr, hsRate, kd, type MatchResult } from "@/lib/stats/metrics";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +24,13 @@ export type ScoreboardPlayer = {
   legshots: number;
   isYou?: boolean;
   inGroup?: boolean;
+  /** Rank in this match; undefined hides the rank column (sample data) */
+  tier?: number | null;
+  /**
+   * RR won or lost: only for Retake users. undefined = not a user (nothing
+   * shown), null = a user whose RR the API didn't report ("—").
+   */
+  rr?: number | null;
 };
 
 export type ScoreboardTeam = {
@@ -43,12 +52,16 @@ export function ScoreboardTable({
   team,
   roundsPlayed,
   headingLevel = "h3",
+  showRr = false,
 }: {
   team: ScoreboardTeam;
   roundsPlayed: number;
   /** h2 when the table is a top-level section of the page */
   headingLevel?: "h2" | "h3";
+  /** Competitive matches: RR column for the players who use Retake */
+  showRr?: boolean;
 }) {
+  const showRank = team.players.some((p) => p.tier !== undefined);
   const Heading = headingLevel;
   const sorted = [...team.players].sort((a, b) => b.score - a.score);
   const headingId = `team-${team.name.replace(/\s+/g, "-").toLowerCase()}`;
@@ -71,18 +84,32 @@ export function ScoreboardTable({
         role="region"
         aria-label={`Placar do ${team.name}, role para o lado para ver todas as colunas`}
       >
-        <table className="num w-full min-w-[640px] border-separate border-spacing-0 text-table [&_tbody_tr:last-child>*:first-child]:rounded-bl-card [&_tbody_tr:last-child>*:last-child]:rounded-br-card">
+        <table className={cn("num w-full table-fixed border-separate border-spacing-0 text-table [&_tbody_tr:last-child>*:first-child]:rounded-bl-card [&_tbody_tr:last-child>*:last-child]:rounded-br-card", showRank && showRr ? "sm:min-w-[820px]" : showRank ? "sm:min-w-[740px]" : "", "min-w-[640px]")}>
           <thead>
             <tr>
               <th
                 scope="col"
                 className={cn(
-                  "sticky left-0 z-20 bg-surface-1 px-4 py-2 text-left text-label text-fg-secondary sm:z-10",
+                  "sticky left-0 z-20 w-[220px] bg-surface-1 px-4 py-2 text-left text-label text-fg-secondary sm:z-10 sm:w-[30%]",
                   "sm:top-14",
                 )}
               >
                 Jogador
               </th>
+              {showRank ? (
+                <th scope="col" className="z-10 hidden w-[15%] bg-surface-1 px-3 py-2 text-left text-label text-fg-secondary sm:sticky sm:top-14 sm:table-cell">
+                  Rank
+                </th>
+              ) : null}
+              {showRr ? (
+                <th
+                  scope="col"
+                  className="z-10 w-[88px] bg-surface-1 px-3 py-2 text-right text-label text-fg-secondary sm:sticky sm:top-14"
+                  title="RR ganho ou perdido; só aparece para quem usa o Retake"
+                >
+                  RR
+                </th>
+              ) : null}
               {NUM_COLS.map((col) => (
                 <th
                   key={col}
@@ -120,7 +147,15 @@ export function ScoreboardTable({
                     )}
                   >
                     <span className="flex items-center gap-2.5">
-                      <AgentAvatar agent={p.agent} src={p.agentIcon} size={28} />
+                      <span className="relative shrink-0">
+                        <AgentAvatar agent={p.agent} src={p.agentIcon} size={28} />
+                        {/* 390px: the rank rides on the avatar; the Rank column is hidden. */}
+                        {showRank ? (
+                          <span className="absolute -right-1.5 -bottom-1 sm:hidden">
+                            <TierIcon tier={p.tier ?? null} size={16} />
+                          </span>
+                        ) : null}
+                      </span>
                       <span className="flex min-w-0 items-baseline gap-1">
                         <span className="max-w-[9rem] truncate font-medium text-fg">{p.name}</span>
                         <span className="font-mono text-label text-fg-muted">#{p.tag}</span>
@@ -129,6 +164,19 @@ export function ScoreboardTable({
                       {p.inGroup ? <Badge variant="outline">grupo</Badge> : null}
                     </span>
                   </th>
+                  {showRank ? (
+                    <td className={cn("hidden border-t border-line px-3 py-2 text-left whitespace-nowrap text-fg-secondary sm:table-cell", rowBg)}>
+                      <span className="flex items-center gap-2">
+                        <TierIcon tier={p.tier ?? null} size={20} />
+                        <span aria-hidden="true">{tierLabel(p.tier)}</span>
+                      </span>
+                    </td>
+                  ) : null}
+                  {showRr ? (
+                    <td className={cn("border-t border-line px-3 py-2 text-right whitespace-nowrap", rowBg)}>
+                      {p.rr === undefined ? null : <RrDelta value={p.rr} />}
+                    </td>
+                  ) : null}
                   {values.map((v, i) => (
                     <td
                       key={NUM_COLS[i]}

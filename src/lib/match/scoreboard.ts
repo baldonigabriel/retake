@@ -24,6 +24,8 @@ export interface BoardPlayer {
   headshots: number;
   bodyshots: number;
   legshots: number;
+  /** Competitive tier in this match (match_players.tier) */
+  tier: number | null;
   isYou: boolean;
 }
 
@@ -76,6 +78,7 @@ export function buildScoreboard(match: MatchRow, players: readonly PlayerRow[], 
     headshots: p.headshots,
     bodyshots: p.bodyshots,
     legshots: p.legshots,
+    tier: p.tier,
     isYou: p.puuid === viewerPuuid,
   });
 

@@ -7,10 +7,10 @@
  */
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
 
 import { db } from "@/db";
-import { matches, matchPlayers } from "@/db/schema";
+import { matches, matchPlayers, mmrSnapshots, riotAccounts } from "@/db/schema";
 
 export type MatchDetail = NonNullable<Awaited<ReturnType<typeof loadMatch>>>;
 
@@ -27,4 +27,20 @@ export async function getMatchForViewer(matchId: string, viewerPuuid: string): P
   const detail = await loadMatch(matchId);
   if (!detail || !detail.players.some((p) => p.puuid === viewerPuuid)) return null;
   return detail;
+}
+
+/**
+ * RR won or lost in this match, only for players who are Retake users (a
+ * riot account linked to a user). Users without a snapshot for the match map
+ * to null ("—"); players who aren't users are absent from the map entirely,
+ * so the page shows nothing for them.
+ */
+export async function getMatchRrForUsers(matchId: string, puuids: readonly string[]): Promise<Map<string, number | null>> {
+  if (puuids.length === 0) return new Map();
+  const rows = await db()
+    .select({ puuid: riotAccounts.puuid, rrChange: mmrSnapshots.rrChange })
+    .from(riotAccounts)
+    .leftJoin(mmrSnapshots, and(eq(mmrSnapshots.puuid, riotAccounts.puuid), eq(mmrSnapshots.matchId, matchId)))
+    .where(and(inArray(riotAccounts.puuid, [...puuids]), isNotNull(riotAccounts.userId)));
+  return new Map(rows.map((r) => [r.puuid, r.rrChange ?? null]));
 }
