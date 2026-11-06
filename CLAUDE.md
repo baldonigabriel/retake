@@ -76,6 +76,9 @@ DESIGN.md                          fonte da verdade visual
 - HS% = `headshots / (headshots + bodyshots + legshots)`
 - ADR = `damage_dealt / rounds_played`
 - Win rate = vitórias / partidas (empates contam como não-vitória e aparecem separados)
+- DDΔ (saldo de dano por round) = `(damage_dealt − damage_received) / rounds_played`. Positivo quando você causa mais dano do que recebe; somado no volume (total causado − total recebido) / total de rounds, como as outras médias
+- Horas jogadas = soma de `game_length_ms` das partidas com duração conhecida
+- Melhor mapa (de um agente) = maior win rate entre os mapas com pelo menos 3 partidas; empate vai para o mapa com mais partidas. Sem mapa com 3 partidas, mostra "—"
 
 KAST e métricas por round ficam fora do MVP.
 

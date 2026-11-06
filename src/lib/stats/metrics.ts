@@ -31,6 +31,14 @@ export function adr(damageDealt: number, roundsPlayed: number): number {
   return roundsPlayed > 0 ? damageDealt / roundsPlayed : 0;
 }
 
+/**
+ * DDΔ (damage delta per round) = (damage_dealt − damage_received) / rounds_played.
+ * Positive: you deal more damage than you take each round. 0 without rounds.
+ */
+export function ddDelta(damageDealt: number, damageReceived: number, roundsPlayed: number): number {
+  return roundsPlayed > 0 ? (damageDealt - damageReceived) / roundsPlayed : 0;
+}
+
 /** Win rate = wins / matches. Draws count as non-wins and are reported separately. */
 export function winRate(results: readonly MatchResult[]): {
   rate: number;

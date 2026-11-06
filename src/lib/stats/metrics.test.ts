@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { acs, adr, hsRate, kd, kda, winRate } from "./metrics";
+import { acs, adr, ddDelta, hsRate, kd, kda, winRate } from "./metrics";
 
 describe("metrics", () => {
   it("ACS = score / rounds", () => {
@@ -21,6 +21,13 @@ describe("metrics", () => {
   it("HS% uses all hits", () => {
     expect(hsRate(31, 72, 6)).toBeCloseTo(31 / 109, 5);
     expect(hsRate(0, 0, 0)).toBe(0);
+  });
+
+  it("DDΔ = (dealt − received) / rounds, signed, 0 without rounds", () => {
+    expect(ddDelta(3000, 2200, 20)).toBe(40);
+    expect(ddDelta(1800, 2400, 20)).toBe(-30);
+    expect(ddDelta(2000, 2000, 20)).toBe(0);
+    expect(ddDelta(500, 100, 0)).toBe(0);
   });
 
   it("ADR = damage / rounds", () => {
