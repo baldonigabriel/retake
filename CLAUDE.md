@@ -34,6 +34,7 @@ src/
     (app)/groups/                  lista de grupos
     (app)/groups/[slug]/           grupo: ranking, partidas juntos, config
     (app)/groups/[slug]/members/[userId]/  perfil de um membro (só para o mesmo grupo)
+    (app)/groups/[slug]/bagre/     Bagre: indicações, votação, resultado e histórico
     (app)/settings/
     api/cron/sync/route.ts         sincronização (protegida por CRON_SECRET)
     api/auth/[...all]/route.ts     Better Auth
@@ -43,11 +44,12 @@ src/
   lib/
     henrik/                        cliente HTTP, schemas Zod, rate limiter
     sync/                          lógica de sincronização (independente do Next)
-    stats/                         funções puras de métricas (100% testadas): agentes, histórico por dia
+    stats/                         funções puras de métricas (100% testadas): agentes, histórico por dia, candidatos do Bagre
     discord/                       montagem e envio de cards por webhook
     ai/                            provedores de texto (Gemini, Groq) com fallback em cadeia
     summary/                       resumo semanal: números por código, texto por IA ou regras
     goals/                         metas pessoais da semana
+    bagre/                         Bagre do grupo: períodos, indicações, votos, encerramento e card
   components/
     ui/                            shadcn (não editar à mão sem necessidade)
     stats/, match/, groups/        componentes do produto
@@ -130,6 +132,7 @@ pnpm db:migrate     aplica migrations
 pnpm sync:once      sincroniza um Riot ID (ex.: pnpm sync:once "Nome#TAG")
 pnpm summary:once   resumo semanal de um grupo (ex.: pnpm summary:once meu-grupo --webhook <url>)
 pnpm rr:backfill    liga o RR às competitivas salvas sem ele (--all inclui contas sem usuário)
+pnpm bagre:once     prévia do resultado do Bagre de um grupo (ex.: pnpm bagre:once meu-grupo --webhook <url>)
 ```
 
 ## Convenções
