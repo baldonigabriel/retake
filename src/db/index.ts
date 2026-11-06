@@ -11,10 +11,14 @@ let instance: Database | undefined;
 /**
  * Lazily created Drizzle client over Neon's HTTP driver (works in Vercel
  * functions). Created on first use so builds don't need DATABASE_URL.
+ *
+ * The app runtime prefers DATABASE_URL_POOLED (Neon pooler, set in
+ * production); migrations and drizzle-kit keep the direct DATABASE_URL.
  */
 export function db(): Database {
   if (!instance) {
-    instance = drizzle({ client: neon(serverEnv().DATABASE_URL), schema });
+    const env = serverEnv();
+    instance = drizzle({ client: neon(env.DATABASE_URL_POOLED ?? env.DATABASE_URL), schema });
   }
   return instance;
 }

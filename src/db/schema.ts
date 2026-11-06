@@ -27,6 +27,7 @@ const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode
 
 export const syncStatus = pgEnum("sync_status", ["ok", "error", "pending"]);
 export const groupRole = pgEnum("group_role", ["owner", "member"]);
+export const discordPostStatus = pgEnum("discord_post_status", ["queued", "sending", "sent", "failed"]);
 
 /* ---------------------------------------------------------------- auth -- */
 
@@ -234,10 +235,41 @@ export const groupMembers = pgTable(
   ],
 );
 
+/**
+ * One Discord card per (group, match): the primary key is the idempotency
+ * guard. Rows are queued by the sync, then claimed one at a time
+ * (queued/failed → sending) by an atomic UPDATE, so two concurrent runs never
+ * post the same card. A row stuck in "sending" (the function died mid-post)
+ * is never retried: a missing card is better than a duplicate.
+ */
+export const discordPosts = pgTable(
+  "discord_posts",
+  {
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    matchId: text("match_id")
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    status: discordPostStatus("status").notNull().default("queued"),
+    attempts: integer("attempts").notNull().default(0),
+    /** Discord message id once posted (?wait=true). */
+    messageId: text("message_id"),
+    lastError: text("last_error"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    sentAt: timestamptz("sent_at"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.groupId, t.matchId] }),
+    index("discord_posts_status_created_idx").on(t.status, t.createdAt),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type RiotAccount = typeof riotAccounts.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
 export type NewMatchPlayer = typeof matchPlayers.$inferInsert;
 export type Group = typeof groups.$inferSelect;
 export type GroupRole = (typeof groupRole.enumValues)[number];
+export type DiscordPost = typeof discordPosts.$inferSelect;
 export type NewMmrSnapshot = typeof mmrSnapshots.$inferInsert;
