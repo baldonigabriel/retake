@@ -16,7 +16,7 @@ Use valores **novos** em produção, diferentes dos do `.env.local`. Atenção: 
 
 ## 1. Banco (Neon)
 
-1. No painel do Neon, abra o projeto e crie um branch `production` (Branches › New branch, a partir do `main`), para não misturar com os dados de desenvolvimento e de teste.
+1. No painel do Neon, abra o projeto e clique em **Create child branch**. Dê um nome diferente do branch de desenvolvimento (ex.: `prod`) e escolha **Branch schema only**, para não levar os dados de desenvolvimento e de teste.
 2. Em **Connect**, copie as duas URLs desse branch:
    - **direta** (host sem `-pooler`) → `DATABASE_URL`
    - **pooled** (host com `-pooler`) → `DATABASE_URL_POOLED`
@@ -27,6 +27,8 @@ Use valores **novos** em produção, diferentes dos do `.env.local`. Atenção: 
    ```
 
    No Git Bash: `DATABASE_URL="postgresql://...direta..." pnpm db:migrate`.
+
+   Um branch "schema only" já traz as tabelas, mas não o registro de migrações do Drizzle. Se o comando acima falhar com "already exists", é isso: anote as migrações como aplicadas (sem alterar tabelas) inserindo uma linha por migração em `drizzle.__drizzle_migrations` (hash = sha256 do arquivo `.sql`, `created_at` = campo `when` de `drizzle/meta/_journal.json`) e rode `pnpm db:migrate` de novo.
 
 ## 2. GitHub
 
