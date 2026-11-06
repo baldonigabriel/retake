@@ -10,10 +10,13 @@
 import { loadEnvConfig } from "@next/env";
 import { betterAuth } from "better-auth";
 import { testUtils } from "better-auth/plugins";
-import { inArray, like } from "drizzle-orm";
+import { eq, inArray, like } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
+  awardNominations,
+  awardRounds,
+  awardVotes,
   groupMembers,
   groups,
   matches,
@@ -26,7 +29,7 @@ import {
 } from "@/db/schema";
 import { serverEnv } from "@/env";
 import { authOptions } from "@/lib/auth/options";
-import { weekRange } from "@/lib/groups/week";
+import { previousWeek, weekRange } from "@/lib/groups/week";
 
 loadEnvConfig(process.cwd(), true, { info: () => {}, error: console.error });
 
@@ -104,6 +107,8 @@ export const THIRD_MATCHES = [
   { own: 9, enemy: 13, kills: 9, deaths: 17, score: 2900 },
 ] as const;
 export const thirdMatchId = (i: number) => `${E2E.matchPrefix}t${i}`;
+/** Last week's closed Bagre in the Bagre group: Tester, nominated by Parceiro, 2 votes. */
+export const PAST_BAGRE_COMMENT = "Comprou Operator no eco e morreu de faca";
 export const matchId = (i: number) => `${E2E.matchPrefix}${String(i).padStart(2, "0")}`;
 
 export function buildMatches(now = new Date()) {
@@ -398,6 +403,55 @@ export async function seed(): Promise<{
     { groupId: bagre!.id, userId: E2E.friendUserId, role: "member", joinedAt: new Date(now.getTime() - 4 * 86_400_000) },
     { groupId: bagre!.id, userId: E2E.thirdUserId, role: "member", joinedAt: new Date(now.getTime() - 3 * 86_400_000) },
   ]);
+
+  // Last week's Bagre, already closed: Tester won with Parceiro's nomination (badge until the end of this week).
+  const lastWeek = previousWeek(weekRange(now));
+  const inLastWeek = (d: Date) => d.getTime() >= lastWeek.start.getTime() && d.getTime() < lastWeek.end.getTime();
+  const pastMatch = matchRows.find((m) => m.queueId === "competitive" && inLastWeek(m.startedAt as Date))!;
+  const testerLastWeek = matchRows.filter((m) => inLastWeek(m.startedAt as Date)).length;
+  const [pastRound] = await database
+    .insert(awardRounds)
+    .values({
+      groupId: bagre!.id,
+      cadence: "weekly",
+      startsAt: lastWeek.start,
+      endsAt: lastWeek.end,
+      status: "closed",
+      outcome: "winner",
+      winnerUserId: E2E.userId,
+      votesCast: 2,
+      badgeUntil: weekRange(now).end,
+      closedAt: new Date(lastWeek.end.getTime() + 10 * 60_000),
+      announceStatus: "sent",
+      sentAt: new Date(lastWeek.end.getTime() + 10 * 60_000),
+    })
+    .returning({ id: awardRounds.id });
+  const [pastNomination] = await database
+    .insert(awardNominations)
+    .values({
+      roundId: pastRound!.id,
+      nomineeId: E2E.userId,
+      nominatorId: E2E.friendUserId,
+      matchId: pastMatch.id,
+      comment: PAST_BAGRE_COMMENT,
+      createdAt: new Date(lastWeek.start.getTime() + 86_400_000),
+    })
+    .returning({ id: awardNominations.id });
+  await database.insert(awardVotes).values(
+    [E2E.friendUserId, E2E.thirdUserId].map((voterId) => ({
+      roundId: pastRound!.id,
+      voterId,
+      nominationId: pastNomination!.id,
+      nomineeId: E2E.userId,
+    })),
+  );
+  await database
+    .update(awardRounds)
+    .set({
+      winnerNominationId: pastNomination!.id,
+      tally: [{ nominationId: pastNomination!.id, nomineeId: E2E.userId, votes: 2, matches: testerLastWeek }],
+    })
+    .where(eq(awardRounds.id, pastRound!.id));
 
   // Rank history for the competitive matches: Platinum 3 → Diamond 1.
   let rr = 40;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Ballot } from "@/components/bagre/ballot";
+import { BagreHistory } from "@/components/bagre/history";
 import { NominateButton, NominateProvider } from "@/components/bagre/nominate-dialog";
 import { ResultCard } from "@/components/bagre/result-card";
 import { Suggestions } from "@/components/bagre/suggestions";
@@ -34,8 +35,12 @@ const RULES = [
  * Question this screen answers: "quem foi o Bagre?". Members only (SPEC
  * §5.5): anyone else gets the same 404 as a group that doesn't exist.
  */
-export default async function BagrePage({ params }: PageProps<"/groups/[slug]/bagre">) {
-  const { slug } = await params;
+const HISTORY_PAGE = 12;
+const HISTORY_ALL = 200;
+
+export default async function BagrePage({ params, searchParams }: PageProps<"/groups/[slug]/bagre">) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const fullHistory = query.historico === "tudo";
   const { user } = await requireViewer(`/groups/${slug}/bagre`);
   const membership = await getMembership(slug, user.id);
   if (!membership) notFound();
@@ -44,10 +49,18 @@ export default async function BagrePage({ params }: PageProps<"/groups/[slug]/ba
   const now = new Date();
   const [screen, results] = await Promise.all([
     loadBagreScreen(db(), group, user.id, now),
-    loadResults(db(), group.id, { viewerId: user.id, limit: 13, skipEmpty: true }),
+    loadResults(db(), group.id, { viewerId: user.id, limit: (fullHistory ? HISTORY_ALL : HISTORY_PAGE) + 1, skipEmpty: true }),
   ]);
   // The last result stays on top until the end of the period after it (the badge window).
   const latest = results[0] && badgeUntil(results[0].cadence, results[0].endsAt).getTime() > now.getTime() ? results[0] : null;
+  const limit = fullHistory ? HISTORY_ALL : HISTORY_PAGE;
+  const history = (
+    <BagreHistory
+      results={results.slice(0, limit)}
+      moreHref={!fullHistory && results.length > limit ? `/groups/${group.slug}/bagre?historico=tudo#history-title` : undefined}
+      firstResult={screen.accepting ? formatDeadline(rangeOf(screen.round!), now) : undefined}
+    />
+  );
   const { round } = screen;
   const cadence = round?.cadence ?? group.bagreCadence;
   const deadline = round ? formatDeadline(rangeOf(round), now) : "";
@@ -97,6 +110,7 @@ export default async function BagrePage({ params }: PageProps<"/groups/[slug]/ba
             }
           />
         </section>
+        {history}
       </div>
     );
   }
@@ -178,6 +192,7 @@ export default async function BagrePage({ params }: PageProps<"/groups/[slug]/ba
             </section>
           </div>
         </div>
+        {history}
       </div>
     </NominateProvider>
   );

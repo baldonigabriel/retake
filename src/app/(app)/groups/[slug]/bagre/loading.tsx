@@ -36,6 +36,7 @@ export default function Loading() {
           <Skeleton className="h-48 rounded-card" />
         </div>
       </div>
+      <Skeleton className="h-40 rounded-card" />
     </div>
   );
 }

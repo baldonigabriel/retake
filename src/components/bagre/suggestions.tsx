@@ -49,21 +49,16 @@ export function Suggestions({ suggestions, accepting }: { suggestions: BagreScre
                   </NominateButton>
                 ) : null}
               </div>
-              <p className="num pl-11 text-body-sm text-fg-secondary">
-                {s.reason}
-                {s.viewerPlayed ? (
-                  <>
-                    {" · "}
-                    <Link
-                      href={`/match/${encodeURIComponent(s.matchId)}`}
-                      className="inline-flex min-h-11 items-center gap-0.5 text-fg-secondary underline decoration-line-strong underline-offset-4 hover:text-fg hover:decoration-fg sm:min-h-0"
-                    >
-                      Ver partida
-                      <ArrowUpRight aria-hidden="true" className="size-3.5" />
-                    </Link>
-                  </>
-                ) : null}
-              </p>
+              <p className="num pl-11 text-body-sm text-fg-secondary">{s.reason}</p>
+              {s.viewerPlayed ? (
+                <Link
+                  href={`/match/${encodeURIComponent(s.matchId)}`}
+                  className="-my-2 ml-11 inline-flex min-h-11 w-fit items-center gap-0.5 text-label text-fg-secondary underline decoration-line-strong underline-offset-4 hover:text-fg hover:decoration-fg sm:my-0 sm:min-h-0"
+                >
+                  Ver partida
+                  <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                </Link>
+              ) : null}
               {s.person.isYou ? <p className="pl-11 text-label font-normal text-fg-muted">Você está na lista. Melhor torcer.</p> : null}
             </li>
           ))}
