@@ -6,7 +6,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { EMPTY_STATE, FRESH_STATE, ONBOARDED_STATE } from "./global-setup";
-import { E2E, matchId } from "./support/seed";
+import { E2E } from "./support/seed";
 
 async function noHorizontalScroll(page: Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -109,7 +109,8 @@ test.describe("onboarded user", () => {
   test("a match opens with the full scoreboard and the user's row highlighted", async ({ page }) => {
     await page.goto("/me");
     await page.getByRole("list", { name: "Partidas recentes" }).getByRole("link").first().click();
-    await expect(page).toHaveURL(new RegExp(`/match/${matchId(0)}$`));
+    // The newest match is a seeded group match of this week (or match 0 right after Monday 00:00).
+    await expect(page).toHaveURL(new RegExp(`/match/${E2E.matchPrefix}`));
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/Vitória|Derrota|Empate/i);
     await expect(page.getByRole("heading", { name: /^Seu time/ })).toBeVisible();

@@ -13,9 +13,20 @@ import { testUtils } from "better-auth/plugins";
 import { inArray, like } from "drizzle-orm";
 
 import { db } from "@/db";
-import { matches, matchPlayers, mmrSnapshots, riotAccounts, users, type NewMatch, type NewMatchPlayer } from "@/db/schema";
+import {
+  groupMembers,
+  groups,
+  matches,
+  matchPlayers,
+  mmrSnapshots,
+  riotAccounts,
+  users,
+  type NewMatch,
+  type NewMatchPlayer,
+} from "@/db/schema";
 import { serverEnv } from "@/env";
 import { authOptions } from "@/lib/auth/options";
+import { weekRange } from "@/lib/groups/week";
 
 loadEnvConfig(process.cwd(), true, { info: () => {}, error: console.error });
 
@@ -23,7 +34,14 @@ export const E2E = {
   userId: "e2e-user",
   newUserId: "e2e-new-user",
   emptyUserId: "e2e-empty-user",
+  friendUserId: "e2e-friend-user",
   puuid: "e2e-puuid-0001",
+  friendPuuid: "e2e-puuid-friend",
+  friendName: "Parceiro",
+  /** Seeded group: Tester (owner) + Parceiro. "Vazio" is the outsider. */
+  groupSlug: "e2e-squad",
+  groupName: "Esquadrão E2E",
+  groupInvite: "e2eSquadInviteCode000001",
   emptyPuuid: "e2e-puuid-empty",
   gameName: "Tester",
   tagLine: "E2E",
@@ -61,6 +79,11 @@ function rng(seed: number) {
 }
 
 export const MATCH_COUNT = 26;
+/** Base matches where Parceiro is on Tester's team. */
+export const FRIEND_MATCHES: readonly number[] = [1, 2, 3, 4];
+/** Extra competitive matches inside the current São Paulo week, Tester + Parceiro together. */
+export const WEEK_MATCH_COUNT = 3;
+export const weekMatchId = (i: number) => `${E2E.matchPrefix}w${i}`;
 export const matchId = (i: number) => `${E2E.matchPrefix}${String(i).padStart(2, "0")}`;
 
 export function buildMatches(now = new Date()) {
@@ -103,8 +126,12 @@ export function buildMatches(now = new Date()) {
 
     for (let p = 0; p < 10; p++) {
       const isUser = p === 0;
+      const isFriend = p === 1 && FRIEND_MATCHES.includes(i);
       const team = p < 5 ? userTeam : userTeam === "Blue" ? "Red" : "Blue";
-      const skill = isUser ? form : 0.8 + rand() * 0.45;
+      // Parceiro is strong (stays the MVP whatever weekday the suite runs);
+      // rand() is still drawn so the other players' numbers don't change.
+      const other = isUser ? 0 : 0.8 + rand() * 0.45;
+      const skill = isUser ? form : isFriend ? 1.6 : other;
       const kills = Math.max(2, Math.round((rounds * 0.72 * skill) + between(-4, 4)));
       const deaths = Math.max(3, Math.round(rounds * 0.68 + between(-4, 4)));
       const hits = kills * between(3, 5);
@@ -112,9 +139,9 @@ export function buildMatches(now = new Date()) {
       const agent = isUser ? AGENTS[[0, 0, 1, 2, 0, 3][i % 6]!]! : AGENTS[(p + i) % AGENTS.length]!;
       playerRows.push({
         matchId: id,
-        puuid: isUser ? E2E.puuid : `e2e-puuid-${String(i).padStart(2, "0")}-${p}`,
-        gameName: isUser ? E2E.gameName : `Jogador ${p}`,
-        tagLine: isUser ? E2E.tagLine : "XYZ",
+        puuid: isUser ? E2E.puuid : isFriend ? E2E.friendPuuid : `e2e-puuid-${String(i).padStart(2, "0")}-${p}`,
+        gameName: isUser ? E2E.gameName : isFriend ? E2E.friendName : `Jogador ${p}`,
+        tagLine: isUser || isFriend ? E2E.tagLine : "XYZ",
         team,
         agentId: agent.id,
         agentName: agent.name,
@@ -135,6 +162,63 @@ export function buildMatches(now = new Date()) {
   return { matchRows, playerRows };
 }
 
+/**
+ * Matches inside the current week (Monday 00:00 São Paulo → now), so the
+ * group ranking and MVP are deterministic whatever day the suite runs.
+ * Parceiro has a much higher ACS than Tester: Parceiro is the MVP.
+ */
+export function buildWeekMatches(now = new Date()) {
+  const { start } = weekRange(now);
+  const span = now.getTime() - start.getTime();
+  const matchRows: NewMatch[] = [];
+  const playerRows: NewMatchPlayer[] = [];
+  for (let i = 0; i < WEEK_MATCH_COUNT; i++) {
+    const id = weekMatchId(i);
+    const map = MAPS[(i + 2) % MAPS.length]!;
+    const rounds = 20;
+    matchRows.push({
+      id,
+      mapId: map.id,
+      mapName: map.name,
+      mode: "Competitive",
+      queueId: "competitive",
+      seasonId: null,
+      startedAt: new Date(start.getTime() + Math.floor((span * (i + 1)) / (WEEK_MATCH_COUNT + 1))),
+      gameLengthMs: rounds * 95_000,
+      roundsPlayed: rounds,
+      blueScore: 13,
+      redScore: 7,
+      winningTeam: "Blue",
+    });
+    for (let p = 0; p < 10; p++) {
+      const who = p === 0 ? "user" : p === 1 ? "friend" : "other";
+      const kills = who === "friend" ? 26 : who === "user" ? 16 : 12;
+      const agent = AGENTS[(p + i) % AGENTS.length]!;
+      playerRows.push({
+        matchId: id,
+        puuid: who === "user" ? E2E.puuid : who === "friend" ? E2E.friendPuuid : `e2e-puuid-w${i}-${p}`,
+        gameName: who === "user" ? E2E.gameName : who === "friend" ? E2E.friendName : `Jogador ${p}`,
+        tagLine: who === "other" ? "XYZ" : E2E.tagLine,
+        team: p < 5 ? "Blue" : "Red",
+        agentId: agent.id,
+        agentName: agent.name,
+        tier: 16,
+        kills,
+        deaths: 12,
+        assists: 4,
+        score: who === "friend" ? 8000 : who === "user" ? 5000 : 4000, // ACS 400 / 250 / 200
+        damageDealt: kills * 150,
+        damageReceived: 1800,
+        headshots: 10,
+        bodyshots: 30,
+        legshots: 2,
+        won: p < 5,
+      });
+    }
+  }
+  return { matchRows, playerRows };
+}
+
 function testAuth() {
   return betterAuth({ ...authOptions(db(), serverEnv()), plugins: [testUtils()] });
 }
@@ -145,13 +229,21 @@ export async function cleanup() {
   await database.delete(matches).where(like(matches.id, `${E2E.matchPrefix}%`));
   await database.delete(mmrSnapshots).where(like(mmrSnapshots.puuid, "e2e-%"));
   await database.delete(riotAccounts).where(like(riotAccounts.puuid, "e2e-%"));
-  await database.delete(users).where(inArray(users.id, [E2E.userId, E2E.newUserId, E2E.emptyUserId]));
+  // Groups owned by these users (seeded or created by tests) go with them (cascade).
+  await database
+    .delete(users)
+    .where(inArray(users.id, [E2E.userId, E2E.newUserId, E2E.emptyUserId, E2E.friendUserId]));
 }
 
 export type SeededSession = { name: string; value: string };
 
-/** Creates both test users, the linked account, matches and rank history. */
-export async function seed(): Promise<{ onboarded: SeededSession; fresh: SeededSession; empty: SeededSession }> {
+/** Creates the test users, linked accounts, matches, rank history and a group. */
+export async function seed(): Promise<{
+  onboarded: SeededSession;
+  fresh: SeededSession;
+  empty: SeededSession;
+  friend: SeededSession;
+}> {
   await cleanup();
   const database = db();
   const ctx = await testAuth().$context;
@@ -161,6 +253,7 @@ export async function seed(): Promise<{ onboarded: SeededSession; fresh: SeededS
     [E2E.userId, "Tester"],
     [E2E.newUserId, "Novato"],
     [E2E.emptyUserId, "Vazio"],
+    [E2E.friendUserId, "Parceiro"],
   ] as const) {
     await ctx.test.saveUser(ctx.test.createUser({ id, name, email: `${id}@retake.example`, emailVerified: true }));
   }
@@ -187,9 +280,29 @@ export async function seed(): Promise<{ onboarded: SeededSession; fresh: SeededS
     syncStatus: "ok",
   });
 
+  await database.insert(riotAccounts).values({
+    userId: E2E.friendUserId,
+    puuid: E2E.friendPuuid,
+    gameName: E2E.friendName,
+    tagLine: E2E.tagLine,
+    linkedAt: new Date(now.getTime() - 10 * 24 * 3_600_000),
+    lastSyncedAt: new Date(now.getTime() - 6 * 60_000),
+    syncStatus: "ok",
+  });
+
   const { matchRows, playerRows } = buildMatches(now);
-  await database.insert(matches).values(matchRows);
-  await database.insert(matchPlayers).values(playerRows);
+  const week = buildWeekMatches(now);
+  await database.insert(matches).values([...matchRows, ...week.matchRows]);
+  await database.insert(matchPlayers).values([...playerRows, ...week.playerRows]);
+
+  const [squad] = await database
+    .insert(groups)
+    .values({ name: E2E.groupName, slug: E2E.groupSlug, ownerId: E2E.userId, inviteCode: E2E.groupInvite })
+    .returning({ id: groups.id });
+  await database.insert(groupMembers).values([
+    { groupId: squad!.id, userId: E2E.userId, role: "owner", joinedAt: new Date(now.getTime() - 7 * 86_400_000) },
+    { groupId: squad!.id, userId: E2E.friendUserId, role: "member", joinedAt: new Date(now.getTime() - 6 * 86_400_000) },
+  ]);
 
   // Rank history for the competitive matches: Platinum 3 → Diamond 1.
   let rr = 40;
@@ -227,5 +340,6 @@ export async function seed(): Promise<{ onboarded: SeededSession; fresh: SeededS
     onboarded: await login(E2E.userId),
     fresh: await login(E2E.newUserId),
     empty: await login(E2E.emptyUserId),
+    friend: await login(E2E.friendUserId),
   };
 }

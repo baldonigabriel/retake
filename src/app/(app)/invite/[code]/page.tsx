@@ -77,7 +77,7 @@ export default async function InvitePage({ params }: PageProps<"/invite/[code]">
           partidas que vocês jogarem juntos. Você pode sair quando quiser.
         </p>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
-          <JoinGroupButton code={code} groupName={invite.name} />
+          <JoinGroupButton code={code} />
           <Link href="/groups" className={buttonVariants({ variant: "quiet", className: "w-full sm:w-fit" })}>
             Agora não
           </Link>

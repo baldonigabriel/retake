@@ -1,38 +1,32 @@
 "use client";
 
-import { LoaderCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
-import { toast } from "sonner";
+import { CircleAlert, LoaderCircle } from "lucide-react";
+import { useActionState } from "react";
 
-import { joinGroupAction } from "@/app/(app)/groups/actions";
+import { joinInviteFormAction } from "@/app/(app)/groups/actions";
 import { Button } from "@/components/ui/button";
 
-export function JoinGroupButton({ code, groupName }: { code: string; groupName: string }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+/**
+ * A real form posting to a Server Action, so "Entrar no grupo" works even if
+ * it's tapped before the page hydrates (slow mobile connections). On success
+ * the action redirects to the group.
+ */
+export function JoinGroupButton({ code }: { code: string }) {
+  const [state, formAction, pending] = useActionState(joinInviteFormAction, null);
 
   return (
-    <Button
-      type="button"
-      className="w-full sm:w-fit"
-      disabled={pending}
-      aria-busy={pending}
-      onClick={() =>
-        startTransition(async () => {
-          const result = await joinGroupAction(code);
-          if (!result.ok) {
-            toast.error("Não deu para entrar", { description: result.message });
-            router.refresh();
-            return;
-          }
-          toast.success(`Você entrou em “${groupName}”`);
-          router.replace(`/groups/${result.slug}`);
-        })
-      }
-    >
-      {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : null}
-      {pending ? "Entrando…" : "Entrar no grupo"}
-    </Button>
+    <form action={formAction} className="flex w-full flex-col gap-3 sm:w-fit" aria-busy={pending}>
+      <input type="hidden" name="code" value={code} />
+      {state ? (
+        <p role="alert" className="flex gap-2 rounded-control bg-loss-tint px-3 py-2.5 text-fg">
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-loss" />
+          {state.message}
+        </p>
+      ) : null}
+      <Button type="submit" className="w-full sm:w-fit" disabled={pending}>
+        {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : null}
+        {pending ? "Entrando…" : "Entrar no grupo"}
+      </Button>
+    </form>
   );
 }

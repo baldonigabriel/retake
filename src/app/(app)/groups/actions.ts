@@ -82,6 +82,18 @@ export async function joinGroupAction(code: unknown): Promise<ActionResult<{ slu
   }
 }
 
+export type JoinFormState = { message: string } | null;
+
+/**
+ * Invite page form (useActionState). Works before hydration too: a plain form
+ * post joins and redirects to the group; errors come back as state.
+ */
+export async function joinInviteFormAction(_prev: JoinFormState, formData: FormData): Promise<JoinFormState> {
+  const result = await joinGroupAction(formData.get("code"));
+  if (!result.ok) return { message: result.message };
+  redirect(`/groups/${result.slug}`);
+}
+
 /** Leaves and goes back to the group list. */
 export async function leaveGroupAction(groupId: unknown): Promise<ActionResult> {
   const user = await getSessionUser();
