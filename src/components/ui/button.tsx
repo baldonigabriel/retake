@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
  * - quiet: borderless icon/text button for toolbars.
  * Press feedback: scale(0.97). Hover only on fine pointers (see globals.css).
  */
-const buttonVariants = cva(
+const buttonVariantsBase = cva(
   "group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-control border border-transparent font-medium whitespace-nowrap select-none transition-[transform,background-color,border-color,color] duration-150 ease-out active:scale-[0.97] motion-reduce:active:scale-100 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
@@ -43,6 +43,12 @@ const buttonVariants = cva(
     },
   }
 )
+
+/**
+ * Merged with tailwind-merge so a variant's border/background beats the base
+ * classes even when used on a <Link> (outside <Button>, which merges too).
+ */
+const buttonVariants = (...args: Parameters<typeof buttonVariantsBase>) => cn(buttonVariantsBase(...args))
 
 function Button({
   className,

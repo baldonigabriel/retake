@@ -1,4 +1,4 @@
-import { Settings, Trophy, UsersRound } from "lucide-react";
+import { Settings, Swords, Trophy, UsersRound } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -72,6 +72,8 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
   const together = togetherMatches(members, togetherLines);
   const weekLabel = formatWeek(week);
   const isOwner = role === "owner";
+  const comparableCount = puuids.length;
+  const viewerCanCompare = members.some((m) => m.isYou && m.puuid);
   const mixed = mode === ALL_MODES;
 
   return (
@@ -85,18 +87,29 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
             {isOwner ? " · você é o dono" : ""}
           </p>
         </div>
-        {isOwner ? (
-          <div className="flex items-center gap-2 sm:shrink-0">
-            <CopyInviteButton code={group.inviteCode} className="flex-1 sm:flex-none" />
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:items-center">
+          {comparableCount >= 2 ? (
             <Link
-              href={`/groups/${group.slug}/settings`}
-              className={buttonVariants({ variant: "ghost", size: "sm", className: "flex-1 sm:flex-none" })}
+              href={`/groups/${group.slug}/compare`}
+              className={buttonVariants({ variant: "ghost", size: "sm", className: isOwner ? "col-span-2" : "col-span-2 sm:w-fit" })}
             >
-              <Settings aria-hidden="true" />
-              Ajustes do grupo
+              <Swords aria-hidden="true" />
+              Comparar 1x1
             </Link>
-          </div>
-        ) : null}
+          ) : null}
+          {isOwner ? (
+            <>
+              <CopyInviteButton code={group.inviteCode} />
+              <Link
+                href={`/groups/${group.slug}/settings`}
+                className={buttonVariants({ variant: "ghost", size: "sm" })}
+              >
+                <Settings aria-hidden="true" />
+                Ajustes do grupo
+              </Link>
+            </>
+          ) : null}
+        </div>
       </header>
 
       <FilterProvider>
@@ -238,6 +251,15 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
                   </span>
                   {m.isYou ? <Badge variant="outline">você</Badge> : null}
                   {m.role === "owner" ? <Badge>dono</Badge> : null}
+                  {!m.isYou && m.puuid && viewerCanCompare ? (
+                    <Link
+                      href={`/groups/${group.slug}/compare?b=${encodeURIComponent(m.userId)}`}
+                      className={buttonVariants({ variant: "quiet", size: "sm", className: "-mr-2 shrink-0" })}
+                      aria-label={`Comparar com ${m.name}`}
+                    >
+                      Comparar
+                    </Link>
+                  ) : null}
                 </li>
               ))}
             </ul>

@@ -6,9 +6,14 @@ import { createContext, use, useTransition } from "react";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { cn } from "@/lib/utils";
 
-const PendingContext = createContext<{ pending: boolean; navigate: (key: string, value: string, fallback: string) => void }>({
+const PendingContext = createContext<{
+  pending: boolean;
+  navigate: (key: string, value: string, fallback: string) => void;
+  startTransition: (callback: () => void) => void;
+}>({
   pending: false,
   navigate: () => {},
+  startTransition: (callback) => callback(),
 });
 
 /**
@@ -31,12 +36,17 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
     startTransition(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
   }
 
-  return <PendingContext value={{ pending, navigate }}>{children}</PendingContext>;
+  return <PendingContext value={{ pending, navigate, startTransition }}>{children}</PendingContext>;
 }
 
 /** `navigate(key, value, fallback)` for filter controls other than FilterBar. */
 export function useFilterNavigation() {
   return use(PendingContext).navigate;
+}
+
+/** The shared transition, for controls that change several params at once. */
+export function useFilterTransition() {
+  return use(PendingContext).startTransition;
 }
 
 export function FilterBar({
