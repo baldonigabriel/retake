@@ -1,8 +1,9 @@
 import { Check, CircleAlert, Clock3, Minus } from "lucide-react";
 
+import { AnimatedNumber } from "@/components/stats/animated-number";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/states";
-import { MAX_GOALS, evaluateGoal, formatTarget, type GoalProgress } from "@/lib/goals/goals";
+import { GOAL_SPEC, MAX_GOALS, evaluateGoal, formatTarget, type GoalProgress } from "@/lib/goals/goals";
 import { listGoals } from "@/lib/goals/queries";
 import type { PlayerMatchLine } from "@/lib/stats/aggregate";
 import { cn } from "@/lib/utils";
@@ -48,7 +49,11 @@ function GoalRow({ id, progress, lastWeek }: { id: string; progress: GoalProgres
       <div className="flex items-center gap-3">
         <p className="num flex shrink-0 items-baseline gap-1">
           <span className="stat text-[24px] leading-none font-semibold text-fg">
-            {progress.value === null ? "—" : formatTarget(progress.metric, progress.value)}
+            <AnimatedNumber
+              value={progress.value}
+              digits={GOAL_SPEC[progress.metric].digits}
+              suffix={GOAL_SPEC[progress.metric].unit || undefined}
+            />
           </span>
           <span className="text-label font-normal text-fg-muted">/ {formatTarget(progress.metric, progress.target)}</span>
         </p>

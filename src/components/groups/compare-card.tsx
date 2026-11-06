@@ -1,23 +1,36 @@
+import { CompareBar } from "@/components/groups/compare-bar";
 import { Avatar } from "@/components/layout/account-menu";
 import { AgentAvatar } from "@/components/match/agent-avatar";
+import { AnimatedNumber } from "@/components/stats/animated-number";
 import { Badge } from "@/components/ui/badge";
 import { agentIconUrl } from "@/lib/assets";
-import { formatNumber, formatPercent } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 import { COMPARE_LABEL, SMALL_SAMPLE, type CompareMetric, type CompareRow, type Comparison, type Side } from "@/lib/groups/compare";
 import { cn } from "@/lib/utils";
 
-function format(metric: CompareMetric, value: number | null): string {
-  if (value === null) return "—";
+/** The number as shown: value, decimals and unit (shared by text and animation). */
+function shown(metric: CompareMetric, value: number): { value: number; digits: number; suffix?: string } {
   switch (metric) {
     case "acs":
     case "adr":
-      return formatNumber(Math.round(value));
+      return { value: Math.round(value), digits: 0 };
     case "kd":
-      return formatNumber(value, 2);
+      return { value, digits: 2 };
     case "hs":
     case "winrate":
-      return formatPercent(value, 0);
+      return { value: value * 100, digits: 0, suffix: "%" };
   }
+}
+
+function format(metric: CompareMetric, value: number | null): string {
+  if (value === null) return "—";
+  const s = shown(metric, value);
+  return `${formatNumber(s.value, s.digits)}${s.suffix ?? ""}`;
+}
+
+function Value({ metric, value }: { metric: CompareMetric; value: number | null }) {
+  if (value === null) return "—";
+  return <AnimatedNumber {...shown(metric, value)} kind={metric} />;
 }
 
 const HINT: Record<CompareMetric, string> = {
@@ -54,21 +67,21 @@ function Identity({ side, align }: { side: Side; align: "left" | "right" }) {
  * One metric: values mirrored around the label, each with a bar scaled to
  * the larger of the two. The leader is brighter AND has the longer bar, and
  * screen readers hear who is ahead: colour never carries it alone.
- * Bars don't animate: switching players or filters happens all the time.
+ * Numbers and bars move together when a filter or player changes them.
  */
 function MetricRow({ row, nameA, nameB }: { row: CompareRow; nameA: string; nameB: string }) {
   const max = Math.max(row.a ?? 0, row.b ?? 0);
-  const width = (v: number | null) => (v === null || max <= 0 ? 0 : Math.max(2, (v / max) * 100));
+  const share = (v: number | null) => (v === null || max <= 0 ? 0 : Math.max(0.02, v / max));
   const ahead = row.leader === "a" ? nameA : row.leader === "b" ? nameB : null;
   return (
     <div className="grid grid-cols-[1fr_64px_1fr] items-center gap-3 border-t border-line px-4 py-3 sm:grid-cols-[1fr_96px_1fr] sm:px-5">
       <div className="flex min-w-0 flex-col items-end gap-1.5">
         {/* Visible numbers are hidden from screen readers: the label column reads the whole row once. */}
         <span aria-hidden="true" className={cn("stat text-[28px] leading-none font-semibold", row.leader === "a" ? "text-fg" : "text-fg-muted")}>
-          {format(row.metric, row.a)}
+          <Value metric={row.metric} value={row.a} />
         </span>
         <span aria-hidden="true" className="flex h-1.5 w-full justify-end overflow-hidden rounded-full bg-surface-2">
-          <span className={cn("h-full rounded-full", row.leader === "b" ? "bg-primary/45" : "bg-primary")} style={{ width: `${width(row.a)}%` }} />
+          <CompareBar ratio={share(row.a)} from="right" className={row.leader === "b" ? "bg-primary/45" : "bg-primary"} />
         </span>
       </div>
       <div className="flex flex-col items-center gap-0.5 text-center">
@@ -82,10 +95,10 @@ function MetricRow({ row, nameA, nameB }: { row: CompareRow; nameA: string; name
       </div>
       <div className="flex min-w-0 flex-col items-start gap-1.5">
         <span aria-hidden="true" className={cn("stat text-[28px] leading-none font-semibold", row.leader === "b" ? "text-fg" : "text-fg-muted")}>
-          {format(row.metric, row.b)}
+          <Value metric={row.metric} value={row.b} />
         </span>
         <span aria-hidden="true" className="flex h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
-          <span className={cn("h-full rounded-full", row.leader === "a" ? "bg-paper/40" : "bg-paper")} style={{ width: `${width(row.b)}%` }} />
+          <CompareBar ratio={share(row.b)} from="left" className={row.leader === "a" ? "bg-paper/40" : "bg-paper"} />
         </span>
       </div>
     </div>

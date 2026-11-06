@@ -248,6 +248,15 @@
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
 }
 
+/*
+ * NumberFlow pads the digits above and below for its spin mask. Pull that
+ * padding back (same formula as the library) so an animated number takes
+ * exactly the line of the static text it replaces: no layout shift.
+ */
+.number-roll {
+  margin-block: calc(-2 * round(nearest, calc(var(--number-flow-mask-height, 0.25em) / 2), 1px));
+}
+
 /* First-load stagger for match lists and rankings (see StaggerList) */
 .stagger-list[data-entering] > li {
   animation: enter 240ms var(--ease-out) both;

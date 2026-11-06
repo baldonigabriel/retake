@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, use, useTransition } from "react";
 
+import { MotionScope } from "@/components/motion/motion-scope";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { cn } from "@/lib/utils";
 
@@ -19,8 +20,9 @@ const PendingContext = createContext<{
 /**
  * Filters live in the URL (?mode=&period=) so a view can be shared. Changing
  * one is a transition: the current numbers stay on screen (dimmed, no
- * skeleton flash) until the new ones arrive. Switching filters is done all
- * day, so nothing moves (DESIGN.md › Movimento).
+ * skeleton flash) until the new ones arrive. The query is also the motion
+ * scope: numbers that change with it roll to the new value, numbers that
+ * change without it (a refresh) don't (DESIGN.md › Movimento).
  */
 export function FilterProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -36,7 +38,11 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
     startTransition(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
   }
 
-  return <PendingContext value={{ pending, navigate, startTransition }}>{children}</PendingContext>;
+  return (
+    <PendingContext value={{ pending, navigate, startTransition }}>
+      <MotionScope value={searchParams.toString()}>{children}</MotionScope>
+    </PendingContext>
+  );
 }
 
 /** `navigate(key, value, fallback)` for filter controls other than FilterBar. */

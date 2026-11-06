@@ -17,7 +17,8 @@ export function KpiCard({
   className,
 }: {
   label: string;
-  value: string;
+  /** Text, or an <AnimatedNumber> for the stat-lg value */
+  value: React.ReactNode;
   delta?: number;
   deltaDigits?: number;
   lowerIsBetter?: boolean;

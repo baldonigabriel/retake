@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { summarize } from "@/lib/stats/aggregate";
 
-import { formatMetric, metricDelta, recordLine } from "./display";
+import { formatMetric, metricDelta, metricNumber, recordLine } from "./display";
 
 describe("formatMetric", () => {
   it("formats each metric in pt-BR", () => {
@@ -10,6 +10,13 @@ describe("formatMetric", () => {
     expect(formatMetric("kd", 1.234)).toBe("1,23");
     expect(formatMetric("winrate", 0.666)).toBe("67%");
     expect(formatMetric("matches", 12)).toBe("12");
+  });
+
+  it("gives the animated number the same value, decimals and unit as the text", () => {
+    expect(metricNumber("acs", 245.6)).toEqual({ value: 246, digits: 0 });
+    expect(metricNumber("kd", 1.234)).toEqual({ value: 1.234, digits: 2 });
+    expect(metricNumber("winrate", 0.666)).toMatchObject({ digits: 0, suffix: "%" });
+    expect(metricNumber("winrate", 0.666).value).toBeCloseTo(66.6);
   });
 });
 

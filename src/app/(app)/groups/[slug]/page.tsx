@@ -10,11 +10,12 @@ import { GroupFilter } from "@/components/groups/group-filters";
 import { MvpCard } from "@/components/groups/mvp-card";
 import { RankingList } from "@/components/groups/ranking-list";
 import { TogetherList } from "@/components/groups/together-list";
+import { AnimatedNumber } from "@/components/stats/animated-number";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/states";
 import { requireViewer } from "@/lib/auth/session";
-import { formatMetric, metricDelta, recordLine } from "@/lib/groups/display";
+import { metricDelta, metricNumber, recordLine } from "@/lib/groups/display";
 import { getGroupMembers, getMemberLines, getMembership, getTogetherLines } from "@/lib/groups/queries";
 import {
   DEFAULT_METRIC,
@@ -184,7 +185,7 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
                   name: e.member.name,
                   tag: e.member.tag,
                   image: e.member.image,
-                  value: formatMetric(metric, e.value),
+                  value: <AnimatedNumber {...metricNumber(metric, e.value)} kind={metric} align="end" />,
                   delta: metricDelta(metric, e.value, e.previous).delta,
                   matches: e.summary.matches,
                   detail: recordLine(e.summary),

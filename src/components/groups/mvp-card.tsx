@@ -1,9 +1,9 @@
 import { Trophy } from "lucide-react";
 
 import { Avatar } from "@/components/layout/account-menu";
+import { AnimatedNumber } from "@/components/stats/animated-number";
 import { Badge } from "@/components/ui/badge";
 import { ChamferCard } from "@/components/ui/chamfer-card";
-import { formatNumber, formatPercent } from "@/lib/format";
 import { MVP_MIN_MATCHES, MVP_RULE, type Mvp } from "@/lib/groups/ranking";
 
 /**
@@ -48,19 +48,23 @@ export function MvpCard({ mvp, weekLabel }: { mvp: Mvp | null; weekLabel: string
             {member.isYou ? <Badge variant="accent" className="mt-1">é você!</Badge> : null}
           </div>
           <p className="flex shrink-0 flex-col items-end">
-            <span className="stat text-stat-lg text-fg">{formatNumber(Math.round(summary.acs))}</span>
+            <AnimatedNumber value={Math.round(summary.acs)} align="end" className="stat text-stat-lg text-fg" />
             <span className="text-eyebrow text-fg-muted uppercase">ACS</span>
           </p>
         </div>
         <dl className="grid grid-cols-3 gap-3 border-t border-accent-line pt-3">
-          {[
-            ["K/D", formatNumber(summary.kd, 2)],
-            ["Vitórias", formatPercent(summary.winRate.rate, 0)],
-            ["Partidas", formatNumber(summary.matches)],
-          ].map(([label, value]) => (
+          {(
+            [
+              ["K/D", { value: summary.kd, digits: 2 }],
+              ["Vitórias", { value: summary.winRate.rate * 100, suffix: "%" }],
+              ["Partidas", { value: summary.matches }],
+            ] as const
+          ).map(([label, shown]) => (
             <div key={label} className="flex flex-col gap-0.5">
               <dt className="text-label text-fg-muted">{label}</dt>
-              <dd className="stat text-[24px] leading-none font-semibold text-fg">{value}</dd>
+              <dd className="stat text-[24px] leading-none font-semibold text-fg">
+                <AnimatedNumber {...shown} />
+              </dd>
             </div>
           ))}
         </dl>

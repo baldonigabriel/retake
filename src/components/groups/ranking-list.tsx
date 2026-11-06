@@ -10,7 +10,8 @@ export type RankingEntry = {
   name: string;
   tag: string | null;
   image?: string | null;
-  value: string;
+  /** Text, or an <AnimatedNumber> */
+  value: React.ReactNode;
   /** Change vs. last week; null when they didn't play last week. */
   delta: number | null;
   matches: number;
@@ -23,7 +24,7 @@ export type RankingEntry = {
  * DESIGN.md › Ranking do grupo: position in Barlow (1º–3º primary, rest muted),
  * avatar, name, highlighted metric value and change vs. last week.
  * The logged-in user is highlighted like in the scoreboard. Rows enter with a
- * stagger on the first load only; switching metric or mode doesn't animate.
+ * stagger on the first load only; values roll when the week or mode changes.
  */
 export function RankingList({
   entries,

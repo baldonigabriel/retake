@@ -1,20 +1,28 @@
 /** Display formatting for the group ranking (pt-BR, pure). */
-import { formatNumber, formatPercent } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 import type { StatSummary } from "@/lib/stats/aggregate";
 
 import type { RankingMetric } from "./ranking";
 
-export function formatMetric(metric: RankingMetric, value: number): string {
+/** A metric as it is shown: the number, its decimal places and unit. */
+export type ShownNumber = { value: number; digits: number; suffix?: string };
+
+export function metricNumber(metric: RankingMetric, value: number): ShownNumber {
   switch (metric) {
     case "acs":
-      return formatNumber(Math.round(value));
+      return { value: Math.round(value), digits: 0 };
     case "kd":
-      return formatNumber(value, 2);
+      return { value, digits: 2 };
     case "winrate":
-      return formatPercent(value, 0);
+      return { value: value * 100, digits: 0, suffix: "%" };
     case "matches":
-      return formatNumber(value);
+      return { value, digits: 0 };
   }
+}
+
+export function formatMetric(metric: RankingMetric, value: number): string {
+  const shown = metricNumber(metric, value);
+  return `${formatNumber(shown.value, shown.digits)}${shown.suffix ?? ""}`;
 }
 
 /** Change vs. last week, in the unit people read: win rate in percentage points. */
