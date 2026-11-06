@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { cn } from "@/lib/utils";
 
 /**
@@ -26,8 +28,8 @@ export function AgentAvatar({
       title={agent}
     >
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- community asset URLs, sized by the parent
-        <img src={src} alt={agent} className="size-full object-cover" loading="lazy" />
+        // Resized by next/image: the source PNG is 1024px.
+        <Image src={src} alt={agent} width={size} height={size} sizes={`${size}px`} className="size-full object-cover" />
       ) : (
         <>
           <span aria-hidden="true">{agent.slice(0, 2)}</span>

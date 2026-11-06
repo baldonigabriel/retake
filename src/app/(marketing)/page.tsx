@@ -59,10 +59,9 @@ const PROMISES = [
   { icon: Ban, title: "Sem scouting", body: "Nunca mostramos números de adversários antes ou durante uma partida." },
 ] as const;
 
-function SectionHeading({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
+function SectionHeading({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
     <div className="flex max-w-[52ch] flex-col gap-3">
-      <p className="text-eyebrow text-fg-muted uppercase">{eyebrow}</p>
       <h2 id={id} className="text-heading text-balance text-fg sm:text-[40px] sm:leading-[1.1] sm:tracking-[-0.01em]">
         {title}
       </h2>
@@ -132,13 +131,12 @@ export default function Home() {
           <HeroBackdrop />
           <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-12 px-4 pt-32 pb-24 sm:gap-16 sm:px-6 sm:pt-40 lg:pb-30">
             <div className="flex max-w-[44rem] flex-col gap-6">
-              <p className="text-eyebrow text-fg-secondary uppercase">Tracker de Valorant para grupos de amigos</p>
               <h1 id="hero-title" className="text-[40px] leading-[1.05] font-semibold tracking-[-0.02em] text-balance text-fg sm:text-hero">
                 Seu Valorant, comparado com o dos seus amigos.
               </h1>
               <p className="max-w-[56ch] text-body text-fg-secondary sm:text-[18px]">
-                ACS, K/D, HS%, ADR e rank de cada partida, um ranking semanal só do seu grupo e um card no Discord em até 15
-                minutos depois do jogo.
+                O tracker de Valorant para grupos de amigos: ACS, K/D, HS%, ADR e rank de cada partida, um ranking semanal só
+                do seu grupo e um card no Discord em até 15 minutos depois do jogo.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="sm:w-56">
@@ -155,7 +153,7 @@ export default function Home() {
 
         <section aria-labelledby="how-title" id="como-funciona" className="scroll-mt-8 border-t border-line">
           <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-10 px-4 py-24 sm:px-6 lg:py-30">
-            <SectionHeading id="how-title" eyebrow="Como funciona" title="Três passos até o primeiro ranking">
+            <SectionHeading id="how-title" title="Três passos até o primeiro ranking">
               Nada para instalar e nada para preencher à mão. Os números vêm direto das suas partidas.
             </SectionHeading>
             <ol className="grid gap-3 md:grid-cols-3 md:gap-4">
@@ -177,7 +175,7 @@ export default function Home() {
 
         <section aria-labelledby="group-title" className="border-t border-line">
           <div className="mx-auto grid w-full max-w-[1200px] items-center gap-10 px-4 py-24 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16 lg:py-30">
-            <SectionHeading id="group-title" eyebrow="Grupos" title="Ranking da semana, só entre vocês">
+            <SectionHeading id="group-title" title="Ranking da semana, só entre vocês">
               Crie um grupo, mande o link para a galera e veja quem mandou bem de segunda a domingo, por ACS, K/D, vitórias ou
               partidas. As partidas que vocês jogaram juntos ficam marcadas.
             </SectionHeading>
@@ -194,7 +192,7 @@ export default function Home() {
         <section aria-labelledby="discord-title" className="border-t border-line">
           <div className="mx-auto grid w-full max-w-[1200px] items-center gap-10 px-4 py-24 sm:px-6 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-16 lg:py-30">
             <div className="lg:order-2">
-              <SectionHeading id="discord-title" eyebrow="Discord" title="Um card no canal depois de cada partida">
+              <SectionHeading id="discord-title" title="Um card no canal depois de cada partida">
                 Terminou o jogo, em até 15 minutos chega no canal do grupo o resultado, o mapa, o agente e os números de quem
                 jogou. Um card por partida, mesmo quando cinco de vocês estavam no mesmo time.
               </SectionHeading>

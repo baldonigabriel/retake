@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Fragment } from "react";
 
 import { formatRelativeTime } from "@/lib/format";
@@ -49,7 +50,7 @@ export function DiscordCardPreview({ payload, now, channel }: { payload: Webhook
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="font-semibold text-fg">{payload.username}</span>
-            <span className="rounded-chip bg-surface-3 px-1 text-[10px] leading-4 font-semibold tracking-wide text-fg-secondary uppercase">
+            <span className="rounded-chip bg-surface-3 px-1 text-[11px] leading-4 font-semibold tracking-wide text-fg-secondary uppercase">
               app
             </span>
             <span className="text-label font-normal text-fg-muted">hoje às 22:22</span>
@@ -78,14 +79,12 @@ export function DiscordCardPreview({ payload, now, channel }: { payload: Webhook
                 ))}
               </dl>
               {embed.image ? (
-                // eslint-disable-next-line @next/next/no-img-element -- community map asset
-                <img src={embed.image.url} alt="" className="mt-1 h-16 w-full rounded-control object-cover" loading="lazy" />
+                <Image src={embed.image.url} alt="" width={456} height={100} sizes="(min-width: 1024px) 400px, 90vw" className="mt-1 h-16 w-full rounded-control object-cover" />
               ) : null}
               {embed.footer ? <p className="text-[11px] text-fg-muted">{embed.footer.text}</p> : null}
             </div>
             {embed.thumbnail ? (
-              // eslint-disable-next-line @next/next/no-img-element -- community agent asset
-              <img src={embed.thumbnail.url} alt="" className="size-12 shrink-0 rounded-control bg-surface-3 object-cover" loading="lazy" />
+              <Image src={embed.thumbnail.url} alt="" width={48} height={48} sizes="48px" className="size-12 shrink-0 rounded-control bg-surface-3 object-cover" />
             ) : null}
           </article>
         </div>
