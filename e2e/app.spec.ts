@@ -23,10 +23,23 @@ test.describe("signed out", () => {
     await expect(page.getByRole("button", { name: "Entrar com Discord" })).toBeEnabled();
   });
 
-  test("the landing leads to login", async ({ page }) => {
+  test("the landing offers Discord sign-in and leads to login", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Entrar com Discord" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Seu Valorant, comparado com o dos seus amigos." })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Entrar com Discord" })).toBeEnabled();
+    await expect(page.getByText("isn't endorsed by Riot Games", { exact: false })).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+    await page.getByRole("link", { name: "Entrar", exact: true }).click();
     await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test("the landing hero stands still with reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    const names = await page.locator(".hero-shard").evaluateAll((els) => els.map((el) => getComputedStyle(el).animationName));
+    expect(names.length).toBeGreaterThan(0);
+    expect(names.every((n) => n === "none")).toBe(true);
   });
 
   test("an OAuth error is explained", async ({ page }) => {
