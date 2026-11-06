@@ -96,6 +96,10 @@ function GoalForm({ existing, onDone }: { existing: readonly Existing[]; onDone:
       }
       toast.success(result.message, { description: "O progresso aparece no seu painel durante a semana." });
       onDone();
+      // From the empty state the trigger is gone after saving: keep keyboard focus in the panel.
+      requestAnimationFrame(() => {
+        if (document.activeElement === document.body) document.getElementById("goals-title")?.focus();
+      });
     });
   }
 

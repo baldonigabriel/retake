@@ -63,7 +63,8 @@ function MetricRow({ row, nameA, nameB }: { row: CompareRow; nameA: string; name
   return (
     <div className="grid grid-cols-[1fr_64px_1fr] items-center gap-3 border-t border-line px-4 py-3 sm:grid-cols-[1fr_96px_1fr] sm:px-5">
       <div className="flex min-w-0 flex-col items-end gap-1.5">
-        <span className={cn("stat text-[28px] leading-none font-semibold", row.leader === "a" ? "text-fg" : "text-fg-muted")}>
+        {/* Visible numbers are hidden from screen readers: the label column reads the whole row once. */}
+        <span aria-hidden="true" className={cn("stat text-[28px] leading-none font-semibold", row.leader === "a" ? "text-fg" : "text-fg-muted")}>
           {format(row.metric, row.a)}
         </span>
         <span aria-hidden="true" className="flex h-1.5 w-full justify-end overflow-hidden rounded-full bg-surface-2">
@@ -71,16 +72,16 @@ function MetricRow({ row, nameA, nameB }: { row: CompareRow; nameA: string; name
         </span>
       </div>
       <div className="flex flex-col items-center gap-0.5 text-center">
-        <span className="text-eyebrow text-fg-secondary uppercase" title={HINT[row.metric]}>
+        <span aria-hidden="true" className="text-eyebrow text-fg-secondary uppercase" title={HINT[row.metric]}>
           {COMPARE_LABEL[row.metric]}
         </span>
         <span className="sr-only">
-          : {nameA} {format(row.metric, row.a)}, {nameB} {format(row.metric, row.b)}.{" "}
+          {COMPARE_LABEL[row.metric]}: {nameA} {format(row.metric, row.a)}, {nameB} {format(row.metric, row.b)}.{" "}
           {ahead ? `${ahead} na frente.` : row.a !== null && row.b !== null ? "Empate." : ""}
         </span>
       </div>
       <div className="flex min-w-0 flex-col items-start gap-1.5">
-        <span className={cn("stat text-[28px] leading-none font-semibold", row.leader === "b" ? "text-fg" : "text-fg-muted")}>
+        <span aria-hidden="true" className={cn("stat text-[28px] leading-none font-semibold", row.leader === "b" ? "text-fg" : "text-fg-muted")}>
           {format(row.metric, row.b)}
         </span>
         <span aria-hidden="true" className="flex h-1.5 w-full overflow-hidden rounded-full bg-surface-2">

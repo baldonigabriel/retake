@@ -23,7 +23,7 @@ test.describe("insights", () => {
 
     test("shows trends in tentative language, with the sample size", async ({ page }) => {
       await page.goto("/me");
-      const panel = page.locator("section", { has: page.getByRole("heading", { name: "Tendências" }) });
+      const panel = page.locator("section", { has: page.getByRole("heading", { name: "Padrões" }) });
       await expect(panel).toBeVisible();
       await expect(panel.getByText("Competitivo · 27 partidas")).toBeVisible();
       const items = panel.getByRole("listitem");
@@ -42,7 +42,7 @@ test.describe("insights", () => {
 
     test("says how many matches are missing instead of guessing", async ({ page }) => {
       await page.goto("/me");
-      const panel = page.locator("section", { has: page.getByRole("heading", { name: "Tendências" }) });
+      const panel = page.locator("section", { has: page.getByRole("heading", { name: "Padrões" }) });
       await expect(panel.getByText(/Faltam \d+ partidas para apontarmos tendências/)).toBeVisible();
       await expect(panel.getByRole("progressbar")).toHaveAttribute("aria-valuemax", "15");
     });

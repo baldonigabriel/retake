@@ -38,7 +38,7 @@ export function InsightsPanel({ result, mode }: { result: InsightsResult; mode: 
     <section aria-labelledby="insights-title" className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
       <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
         <h2 id="insights-title" className="text-body-sm font-semibold text-fg">
-          Tendências
+          Padrões
         </h2>
         <span className="num text-label font-normal text-fg-muted">
           {modeLabel(mode)}
