@@ -83,14 +83,12 @@ export default async function GroupSettingsPage({ params }: PageProps<"/groups/[
 
       <section aria-labelledby="discord-title" className="flex flex-col gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:p-5">
         <div className="flex flex-col gap-1">
-          <h2 id="discord-title" className="flex items-center gap-2 text-body-sm font-semibold text-fg">
+          <h2 id="discord-title" className="text-body-sm font-semibold text-fg">
             Discord
-            <span className="sr-only">,</span>
-            <Badge>em breve</Badge>
           </h2>
           <p className="text-fg-secondary">
-            Depois de cada partida, um card com quem do grupo jogou vai para o canal desse webhook. O envio começa na próxima
-            atualização do Retake; você já pode deixar o canal pronto.
+            Quando alguém do grupo termina uma partida, em até 15 minutos chega nesse canal um card com o resultado, o mapa e os
+            números de quem jogou. Um card por partida, mesmo quando vários de vocês jogaram juntos.
           </p>
         </div>
         <WebhookForm groupId={group.id} masked={webhook.masked} unreadable={webhook.unreadable} />

@@ -1,11 +1,11 @@
 "use client";
 
-import { LoaderCircle, RefreshCw, UserMinus } from "lucide-react";
+import { LoaderCircle, RefreshCw, Send, UserMinus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { removeMemberAction, revokeInviteAction, saveWebhookAction } from "@/app/(app)/groups/actions";
+import { removeMemberAction, revokeInviteAction, saveWebhookAction, sendTestMessageAction } from "@/app/(app)/groups/actions";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -64,6 +64,32 @@ export function RemoveMemberButton({ groupId, userId, name }: { groupId: string;
   );
 }
 
+/** Posts a sample card to the saved webhook. Short cooldown so a double tap doesn't post twice. */
+export function TestMessageButton({ groupId }: { groupId: string }) {
+  const [pending, startTransition] = useTransition();
+  const [cooling, setCooling] = useState(false);
+
+  function send() {
+    startTransition(async () => {
+      const result = await sendTestMessageAction(groupId);
+      if (!result.ok) {
+        toast.error("A mensagem de teste não chegou", { description: result.message });
+        return;
+      }
+      toast.success("Mensagem de teste enviada", { description: "Confira o canal no Discord." });
+      setCooling(true);
+      setTimeout(() => setCooling(false), 5_000);
+    });
+  }
+
+  return (
+    <Button type="button" variant="secondary" size="sm" onClick={send} disabled={pending || cooling} aria-busy={pending}>
+      {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : <Send aria-hidden="true" />}
+      {pending ? "Enviando…" : "Enviar mensagem de teste"}
+    </Button>
+  );
+}
+
 /**
  * Discord webhook. The saved URL never comes back to the browser: the page
  * only gets a masked version. Saving replaces it; removing asks to confirm.
@@ -95,7 +121,7 @@ export function WebhookForm({ groupId, masked, unreadable }: { groupId: string; 
         else toast.error("Não deu para salvar", { description: result.message });
         return;
       }
-      toast.success("Webhook salvo", { description: "Guardado criptografado. Os cards de partida usam esse canal." });
+      toast.success("Webhook salvo", { description: "Mande uma mensagem de teste para conferir o canal." });
       setUrl("");
       setTouched(false);
       setEditing(false);
@@ -118,6 +144,7 @@ export function WebhookForm({ groupId, masked, unreadable }: { groupId: string; 
           </p>
         ) : null}
         <div className="flex flex-wrap gap-2">
+          {unreadable ? null : <TestMessageButton groupId={groupId} />}
           <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
             Trocar webhook
           </Button>

@@ -194,6 +194,11 @@ test.describe("owner", () => {
     expect(row?.hook).toMatch(/^v1\./);
     expect(row?.hook).not.toContain("discord");
 
+    // The webhook above is made up, so Discord refuses the test message and
+    // the owner is told why instead of a silent failure.
+    await page.getByRole("button", { name: "Enviar mensagem de teste" }).click();
+    await expect(page.getByText("A mensagem de teste não chegou")).toBeVisible({ timeout: 20_000 });
+
     await page.getByRole("button", { name: "Remover", exact: true }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Remover webhook" }).click();
     await expect(page.getByLabel("URL do webhook")).toBeVisible();

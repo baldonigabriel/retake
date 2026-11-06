@@ -17,14 +17,23 @@ import { and, asc, eq, ne } from "drizzle-orm";
 
 import type { Database } from "@/db";
 import { groupMembers, groups } from "@/db/schema";
-import { encrypt, serverKey } from "@/lib/crypto";
+import { decrypt, encrypt, serverKey } from "@/lib/crypto";
+import { buildTestCard, postWebhook } from "@/lib/discord";
 
 import { newInviteCode } from "./invite";
 import { webhookContext } from "./webhook-context";
 import { getInvite, getRole } from "./queries";
 import { MAX_MEMBERS } from "./validation";
 
-export type GroupErrorCode = "slug_taken" | "invalid_invite" | "full" | "not_found" | "forbidden" | "self";
+export type GroupErrorCode =
+  | "slug_taken"
+  | "invalid_invite"
+  | "full"
+  | "not_found"
+  | "forbidden"
+  | "self"
+  | "no_webhook"
+  | "webhook_unreadable";
 
 export class GroupError extends Error {
   constructor(readonly code: GroupErrorCode) {
@@ -122,6 +131,27 @@ export async function setWebhook(database: Database, ownerId: string, groupId: s
   await assertOwner(groupId, ownerId);
   const value = url === null ? null : encrypt(url, serverKey(), webhookContext(groupId));
   await database.update(groups).set({ discordWebhookUrl: value }).where(eq(groups.id, groupId));
+}
+
+/**
+ * Owner posts a test card to the saved webhook. Errors from Discord surface as
+ * DiscordWebhookError (the action turns them into instructions).
+ */
+export async function sendTestMessage(database: Database, ownerId: string, groupId: string, appUrl?: string): Promise<void> {
+  await assertOwner(groupId, ownerId);
+  const [group] = await database
+    .select({ name: groups.name, webhook: groups.discordWebhookUrl })
+    .from(groups)
+    .where(eq(groups.id, groupId))
+    .limit(1);
+  if (!group?.webhook) throw new GroupError("no_webhook");
+  let url: string;
+  try {
+    url = decrypt(group.webhook, serverKey(), webhookContext(groupId));
+  } catch {
+    throw new GroupError("webhook_unreadable");
+  }
+  await postWebhook(url, buildTestCard({ groupName: group.name, appUrl, now: new Date() }), { maxWaitMs: 5_000 });
 }
 
 export { webhookContext };

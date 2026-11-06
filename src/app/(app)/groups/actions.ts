@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { db } from "@/db";
+import { serverEnv } from "@/env";
 import { getLinkedAccount, getSessionUser } from "@/lib/auth/session";
+import { DiscordWebhookError } from "@/lib/discord";
 import {
   GroupError,
   createGroup,
@@ -12,6 +14,7 @@ import {
   leaveGroup,
   removeMember,
   revokeInvite,
+  sendTestMessage,
   setWebhook,
   type GroupErrorCode,
 } from "@/lib/groups/mutations";
@@ -36,6 +39,8 @@ const MESSAGES: Record<Code, string> = {
   not_found: "Você não faz mais parte desse grupo.",
   forbidden: "Só quem criou o grupo pode fazer isso.",
   self: "Para sair do grupo, use “Sair do grupo”.",
+  no_webhook: "Salve um webhook antes de mandar o teste.",
+  webhook_unreadable: "Não conseguimos ler o webhook salvo. Cole a URL de novo e salve.",
   unavailable: "Algo falhou do nosso lado. Tente de novo em alguns segundos.",
 };
 
@@ -152,5 +157,40 @@ export async function saveWebhookAction(groupId: unknown, url: unknown): Promise
     return { ok: true };
   } catch (error) {
     return handle(error, "save webhook");
+  }
+}
+
+/** Discord's answer → what the owner should do about it. */
+function webhookMessage(error: DiscordWebhookError): string {
+  switch (error.kind) {
+    case "not_found":
+    case "unauthorized":
+      return "O Discord não encontrou esse webhook. Ele pode ter sido apagado no canal: crie outro e salve aqui.";
+    case "rate_limited": {
+      const seconds = Math.max(1, Math.ceil((error.retryAfterMs ?? 30_000) / 1000));
+      return `O Discord pediu uma pausa nesse canal. Tente de novo em ${seconds} s.`;
+    }
+    case "bad_request":
+      return "O Discord recusou a mensagem. Tente de novo; se continuar, troque o webhook.";
+    default:
+      return "O Discord não respondeu. Tente de novo em alguns segundos.";
+  }
+}
+
+/** "Enviar mensagem de teste": posts a sample card to the saved webhook (owner only). */
+export async function sendTestMessageAction(groupId: unknown): Promise<ActionResult> {
+  const user = await getSessionUser();
+  if (!user) return fail("signed_out");
+  const id = groupIdSchema.safeParse(groupId);
+  if (!id.success) return fail("not_found");
+  try {
+    await sendTestMessage(db(), user.id, id.data, serverEnv().BETTER_AUTH_URL);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof DiscordWebhookError) {
+      console.warn("[groups] test message rejected by Discord", error.kind, error.status);
+      return fail("unavailable", { message: webhookMessage(error) });
+    }
+    return handle(error, "test message");
   }
 }
