@@ -2,7 +2,7 @@
 
 import { ChevronDown, LoaderCircle } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -87,6 +87,20 @@ export function HistoryShell({
     start(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
   }
 
+  // "Carregar mais" unmounts itself on the last page: hand focus to the first
+  // new match so keyboard users continue from there instead of from <body>.
+  const listRef = useRef<HTMLDivElement>(null);
+  const focusFrom = useRef<number | null>(null);
+  useEffect(() => {
+    if (loadingMore || focusFrom.current === null) return;
+    const index = focusFrom.current;
+    focusFrom.current = null;
+    const row = listRef.current?.querySelectorAll<HTMLElement>(".stagger-item > *")[index];
+    if (!row) return;
+    if (!row.matches("a, button, [tabindex]")) row.tabIndex = -1;
+    row.focus();
+  }, [loadingMore, shown]);
+
   const remaining = total - shown;
   const hasFilters = (agents && agents.length > 1) || (maps && maps.length > 1);
 
@@ -116,6 +130,7 @@ export function HistoryShell({
         </div>
       ) : null}
       <div
+        ref={listRef}
         aria-busy={pending || undefined}
         className={cn("transition-opacity duration-150 ease-(--ease-out)", pending && "opacity-60")}
       >
@@ -129,7 +144,10 @@ export function HistoryShell({
             className="w-full"
             disabled={loadingMore}
             aria-busy={loadingMore || undefined}
-            onClick={() => go({ show: String(shown + pageSize) }, startLoadMore)}
+            onClick={() => {
+              focusFrom.current = shown;
+              go({ show: String(shown + pageSize) }, startLoadMore);
+            }}
           >
             {loadingMore ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : null}
             {loadingMore ? "Carregando…" : `Carregar mais (${remaining} ${remaining === 1 ? "restante" : "restantes"})`}

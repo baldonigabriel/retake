@@ -200,6 +200,7 @@ export function AgentCards({
                 <ChevronDown aria-hidden="true" className="size-4 transition-transform duration-150 ease-(--ease-out) group-open/more:rotate-180 motion-reduce:transition-none" />
                 <span className="group-open/more:hidden">Mais números</span>
                 <span className="hidden group-open/more:inline">Menos números</span>
+                <span className="sr-only"> de {a.agentName}</span>
               </summary>
               <dl className="grid grid-cols-3 gap-x-2 gap-y-3 px-4 pt-1 pb-4 group-open/more:animate-[fade_150ms_var(--ease-out)]">
                 {MORE.map((key) => (
