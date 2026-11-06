@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BagreCard } from "@/components/bagre/bagre-card";
 import { FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
 import { Avatar } from "@/components/layout/account-menu";
 import { CopyInviteButton, LeaveGroupButton } from "@/components/groups/group-buttons";
@@ -14,7 +15,9 @@ import { AnimatedNumber } from "@/components/stats/animated-number";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/states";
+import { db } from "@/db";
 import { requireViewer } from "@/lib/auth/session";
+import { loadBagreTeaser } from "@/lib/bagre/teaser";
 import { metricDelta, metricNumber, recordLine } from "@/lib/groups/display";
 import { getGroupMembers, getMemberLines, getMembership, getTogetherLines } from "@/lib/groups/queries";
 import {
@@ -60,9 +63,10 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
 
   const members = await getGroupMembers(group.id, user.id);
   const puuids = members.flatMap((m) => (m.puuid ? [m.puuid] : []));
-  const [lines, togetherLines] = await Promise.all([
+  const [lines, togetherLines, bagre] = await Promise.all([
     getMemberLines(puuids, before.start, week.end),
     getTogetherLines(puuids),
+    group.bagreEnabled ? loadBagreTeaser(db(), group, members, now) : null,
   ]);
 
   const modes = weekModes(lines, week);
@@ -137,8 +141,9 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
           the right column (MVP on row 1, members on row 2) never leaves gaps.
         */}
         <FilteredContent className="grid gap-4 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:items-start">
-          <div className="lg:col-span-5 lg:col-start-8 lg:row-start-1">
+          <div className="flex flex-col gap-4 lg:col-span-5 lg:col-start-8 lg:row-start-1">
             <MvpCard mvp={mvp} weekLabel={weekChoice === "last" ? "semana passada" : "esta semana"} />
+            {bagre ? <BagreCard href={`/groups/${group.slug}/bagre`} teaser={bagre} /> : null}
           </div>
           <div className="flex flex-col gap-4 lg:col-span-7 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <section

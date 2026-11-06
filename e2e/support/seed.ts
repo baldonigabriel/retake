@@ -35,6 +35,14 @@ export const E2E = {
   newUserId: "e2e-new-user",
   emptyUserId: "e2e-empty-user",
   friendUserId: "e2e-friend-user",
+  /** Third member of the Bagre group only (not in Esquadrão). */
+  thirdUserId: "e2e-third-user",
+  thirdPuuid: "e2e-puuid-third",
+  thirdName: "Terceiro",
+  /** Bagre group: Tester (owner) + Parceiro + Terceiro. */
+  bagreSlug: "e2e-bagre",
+  bagreName: "Bagre E2E",
+  bagreInvite: "e2eBagreInviteCode000001",
   puuid: "e2e-puuid-0001",
   friendPuuid: "e2e-puuid-friend",
   friendName: "Parceiro",
@@ -89,6 +97,13 @@ export const FRIEND_MATCHES: readonly number[] = [1, 2, 3, 4];
 /** Extra competitive matches inside the current São Paulo week, Tester + Parceiro together. */
 export const WEEK_MATCH_COUNT = 3;
 export const weekMatchId = (i: number) => `${E2E.matchPrefix}w${i}`;
+/** Terceiro's rough competitive matches this week (no other e2e user in them). */
+export const THIRD_MATCHES = [
+  { own: 4, enemy: 13, kills: 5, deaths: 15, score: 2000 },
+  { own: 6, enemy: 13, kills: 7, deaths: 16, score: 2300 },
+  { own: 9, enemy: 13, kills: 9, deaths: 17, score: 2900 },
+] as const;
+export const thirdMatchId = (i: number) => `${E2E.matchPrefix}t${i}`;
 export const matchId = (i: number) => `${E2E.matchPrefix}${String(i).padStart(2, "0")}`;
 
 export function buildMatches(now = new Date()) {
@@ -224,6 +239,58 @@ export function buildWeekMatches(now = new Date()) {
   return { matchRows, playerRows };
 }
 
+/** Terceiro's matches this week: heavy losses with a low ACS (the Bagre suggestions pick them). */
+export function buildThirdMatches(now = new Date()) {
+  const { start } = weekRange(now);
+  const span = now.getTime() - start.getTime();
+  const matchRows: NewMatch[] = [];
+  const playerRows: NewMatchPlayer[] = [];
+  THIRD_MATCHES.forEach((m, i) => {
+    const id = thirdMatchId(i);
+    const map = MAPS[(i + 3) % MAPS.length]!;
+    const rounds = m.own + m.enemy;
+    matchRows.push({
+      id,
+      mapId: map.id,
+      mapName: map.name,
+      mode: "Competitive",
+      queueId: "competitive",
+      seasonId: SEASONS.current,
+      startedAt: new Date(start.getTime() + Math.floor((span * (2 * i + 1)) / 7)),
+      gameLengthMs: rounds * 95_000,
+      roundsPlayed: rounds,
+      redScore: m.own,
+      blueScore: m.enemy,
+      winningTeam: "Blue",
+    });
+    for (let p = 0; p < 10; p++) {
+      const third = p === 0;
+      const agent = AGENTS[(p + i + 4) % AGENTS.length]!;
+      playerRows.push({
+        matchId: id,
+        puuid: third ? E2E.thirdPuuid : `e2e-puuid-t${i}-${p}`,
+        gameName: third ? E2E.thirdName : `Jogador ${p}`,
+        tagLine: third ? E2E.tagLine : "XYZ",
+        team: p < 5 ? "Red" : "Blue",
+        agentId: agent.id,
+        agentName: agent.name,
+        tier: 14,
+        kills: third ? m.kills : 14,
+        deaths: third ? m.deaths : 10,
+        assists: 3,
+        score: third ? m.score : 4500,
+        damageDealt: third ? m.kills * 120 : 2600,
+        damageReceived: third ? m.deaths * 140 : 1800,
+        headshots: 4,
+        bodyshots: 20,
+        legshots: 3,
+        won: p >= 5,
+      });
+    }
+  });
+  return { matchRows, playerRows };
+}
+
 function testAuth() {
   return betterAuth({ ...authOptions(db(), serverEnv()), plugins: [testUtils()] });
 }
@@ -237,7 +304,7 @@ export async function cleanup() {
   // Groups owned by these users (seeded or created by tests) go with them (cascade).
   await database
     .delete(users)
-    .where(inArray(users.id, [E2E.userId, E2E.newUserId, E2E.emptyUserId, E2E.friendUserId]));
+    .where(inArray(users.id, [E2E.userId, E2E.newUserId, E2E.emptyUserId, E2E.friendUserId, E2E.thirdUserId]));
 }
 
 export type SeededSession = { name: string; value: string };
@@ -248,6 +315,7 @@ export async function seed(): Promise<{
   fresh: SeededSession;
   empty: SeededSession;
   friend: SeededSession;
+  third: SeededSession;
 }> {
   await cleanup();
   const database = db();
@@ -259,6 +327,7 @@ export async function seed(): Promise<{
     [E2E.newUserId, "Novato"],
     [E2E.emptyUserId, "Vazio"],
     [E2E.friendUserId, "Parceiro"],
+    [E2E.thirdUserId, E2E.thirdName],
   ] as const) {
     await ctx.test.saveUser(ctx.test.createUser({ id, name, email: `${id}@retake.example`, emailVerified: true }));
   }
@@ -295,10 +364,21 @@ export async function seed(): Promise<{
     syncStatus: "ok",
   });
 
+  await database.insert(riotAccounts).values({
+    userId: E2E.thirdUserId,
+    puuid: E2E.thirdPuuid,
+    gameName: E2E.thirdName,
+    tagLine: E2E.tagLine,
+    linkedAt: new Date(now.getTime() - 5 * 24 * 3_600_000),
+    lastSyncedAt: new Date(now.getTime() - 7 * 60_000),
+    syncStatus: "ok",
+  });
+
   const { matchRows, playerRows } = buildMatches(now);
   const week = buildWeekMatches(now);
-  await database.insert(matches).values([...matchRows, ...week.matchRows]);
-  await database.insert(matchPlayers).values([...playerRows, ...week.playerRows]);
+  const third = buildThirdMatches(now);
+  await database.insert(matches).values([...matchRows, ...week.matchRows, ...third.matchRows]);
+  await database.insert(matchPlayers).values([...playerRows, ...week.playerRows, ...third.playerRows]);
 
   const [squad] = await database
     .insert(groups)
@@ -307,6 +387,16 @@ export async function seed(): Promise<{
   await database.insert(groupMembers).values([
     { groupId: squad!.id, userId: E2E.userId, role: "owner", joinedAt: new Date(now.getTime() - 7 * 86_400_000) },
     { groupId: squad!.id, userId: E2E.friendUserId, role: "member", joinedAt: new Date(now.getTime() - 6 * 86_400_000) },
+  ]);
+
+  const [bagre] = await database
+    .insert(groups)
+    .values({ name: E2E.bagreName, slug: E2E.bagreSlug, ownerId: E2E.userId, inviteCode: E2E.bagreInvite })
+    .returning({ id: groups.id });
+  await database.insert(groupMembers).values([
+    { groupId: bagre!.id, userId: E2E.userId, role: "owner", joinedAt: new Date(now.getTime() - 5 * 86_400_000) },
+    { groupId: bagre!.id, userId: E2E.friendUserId, role: "member", joinedAt: new Date(now.getTime() - 4 * 86_400_000) },
+    { groupId: bagre!.id, userId: E2E.thirdUserId, role: "member", joinedAt: new Date(now.getTime() - 3 * 86_400_000) },
   ]);
 
   // Rank history for the competitive matches: Platinum 3 → Diamond 1.
@@ -347,5 +437,6 @@ export async function seed(): Promise<{
     fresh: await login(E2E.newUserId),
     empty: await login(E2E.emptyUserId),
     friend: await login(E2E.friendUserId),
+    third: await login(E2E.thirdUserId),
   };
 }

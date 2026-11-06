@@ -57,6 +57,13 @@
       "when": 1793996855684,
       "tag": "0007_bagre_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793997148090,
+      "tag": "0008_bagre_nominations",
+      "breakpoints": true
     }
   ]
 }

@@ -15,3 +15,29 @@ export const bagreSettingsSchema = z.object({
   cadence: z.enum(CADENCES),
 });
 export type BagreSettingsInput = z.infer<typeof bagreSettingsSchema>;
+
+export const COMMENT_MAX = 140;
+
+/** One line: newlines and runs of spaces collapse to one space before counting. */
+export const commentSchema = z
+  .string()
+  .transform((s) => s.replace(/\s+/g, " ").trim())
+  .pipe(
+    z
+      .string()
+      .min(1, "Escreva o motivo em poucas palavras.")
+      .max(COMMENT_MAX, `Use no máximo ${COMMENT_MAX} caracteres.`),
+  );
+
+const userIdSchema = z.string().min(1).max(200);
+const matchIdSchema = z.string().min(1).max(100);
+
+export const nominateSchema = z.object({
+  roundId: z.uuid(),
+  nomineeId: userIdSchema,
+  matchId: matchIdSchema,
+  comment: commentSchema,
+});
+export type NominateInput = z.infer<typeof nominateSchema>;
+
+export const nominationIdSchema = z.uuid();

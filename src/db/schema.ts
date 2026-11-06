@@ -10,8 +10,11 @@
  *   field names of Better Auth's core schema; the Drizzle adapter maps them by
  *   their JS keys, so the SQL columns stay snake_case like the rest.
  */
+import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
+  check,
   doublePrecision,
   index,
   integer,
@@ -356,8 +359,9 @@ export const awardRounds = pgTable(
     status: awardRoundStatus("status").notNull().default("open"),
     outcome: awardOutcome("outcome"),
     winnerUserId: text("winner_user_id").references(() => users.id, { onDelete: "set null" }),
-    /** FK added with award_nominations (ON DELETE SET NULL). */
-    winnerNominationId: uuid("winner_nomination_id"),
+    winnerNominationId: uuid("winner_nomination_id").references((): AnyPgColumn => awardNominations.id, {
+      onDelete: "set null",
+    }),
     /** Frozen count at closing: [{ nominationId, nomineeId, votes, matches }]. */
     tally: jsonb("tally"),
     votesCast: integer("votes_cast"),
@@ -378,6 +382,38 @@ export const awardRounds = pgTable(
   ],
 );
 
+/**
+ * A member nominated in a period, tied to one match of theirs in it (SPEC
+ * §5.3). One nomination per nominee per period (unique), never yourself
+ * (CHECK). A future award_clips table hangs off `id` (SPEC §7).
+ */
+export const awardNominations = pgTable(
+  "award_nominations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    roundId: uuid("round_id")
+      .notNull()
+      .references(() => awardRounds.id, { onDelete: "cascade" }),
+    nomineeId: text("nominee_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Null once the nominator deletes their account; the nomination stays. */
+    nominatorId: text("nominator_id").references(() => users.id, { onDelete: "set null" }),
+    matchId: text("match_id")
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    comment: text("comment").notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("award_nominations_round_nominee_uq").on(t.roundId, t.nomineeId),
+    // Target of award_votes' composite FK: a vote can't point at another round or lie about the nominee.
+    uniqueIndex("award_nominations_id_round_nominee_uq").on(t.id, t.roundId, t.nomineeId),
+    check("award_nominations_not_self", sql`${t.nominatorId} is null or ${t.nominatorId} <> ${t.nomineeId}`),
+    check("award_nominations_comment_length", sql`char_length(${t.comment}) between 1 and 140`),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type RiotAccount = typeof riotAccounts.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
@@ -389,3 +425,4 @@ export type NewMmrSnapshot = typeof mmrSnapshots.$inferInsert;
 export type Goal = typeof goals.$inferSelect;
 export type WeeklySummary = typeof weeklySummaries.$inferSelect;
 export type AwardRound = typeof awardRounds.$inferSelect;
+export type AwardNomination = typeof awardNominations.$inferSelect;

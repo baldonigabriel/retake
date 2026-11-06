@@ -76,3 +76,6 @@ export function inPeriod(date: Date, range: PeriodRange): boolean {
   const t = date.getTime();
   return t >= range.start.getTime() && t < range.end.getTime();
 }
+
+/** A stored round as a range. */
+export const rangeOf = (round: { startsAt: Date; endsAt: Date }): PeriodRange => ({ start: round.startsAt, end: round.endsAt });
