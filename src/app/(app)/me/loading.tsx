@@ -33,6 +33,22 @@ export default function Loading() {
       </div>
       <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
         <div className="border-b border-line px-4 py-3">
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <div className="grid lg:grid-cols-2">
+          {Array.from({ length: 2 }, (_, i) => (
+            <div key={i} className="flex items-start gap-3 px-4 py-3">
+              <Skeleton className="size-9 rounded-control" />
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Skeleton className="h-3.5 w-full max-w-sm" />
+                <Skeleton className="h-3 w-40" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
+        <div className="border-b border-line px-4 py-3">
           <Skeleton className="h-4 w-36" />
         </div>
         {Array.from({ length: 5 }, (_, i) => (

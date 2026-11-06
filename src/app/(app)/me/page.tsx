@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { AgentTable } from "@/components/dashboard/agent-table";
 import { FilterBar, FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
+import { InsightsPanel } from "@/components/dashboard/insights-panel";
 import { KpiRow } from "@/components/dashboard/kpi-row";
 import { MapGrid } from "@/components/dashboard/map-grid";
 import { RankHeader } from "@/components/dashboard/rank-header";
@@ -33,6 +34,7 @@ import {
   trendSeries,
   type Period,
 } from "@/lib/stats/breakdown";
+import { buildInsights } from "@/lib/stats/insights";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -69,6 +71,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const cmp = compareRecent(lines, mode);
   const trend = trendSeries(lines);
   const sentence = verdict(cmp, RECENT_WINDOW);
+  const insights = buildInsights(lines, mode);
   const cooldownUntil = account.lastSyncedAt ? account.lastSyncedAt.getTime() + SYNC_NOW_COOLDOWN_MS : null;
   const mixed = mode === ALL_MODES;
 
@@ -161,6 +164,8 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
                     </div>
                   </Panel>
                 ) : null}
+
+                <InsightsPanel result={insights} mode={mode} />
 
                 <div className="grid gap-4 lg:grid-cols-12 lg:items-start">
                   <Panel title="Por agente" id="agents-title" className="lg:col-span-7">
