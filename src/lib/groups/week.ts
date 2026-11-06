@@ -60,6 +60,12 @@ export function weekRange(now: Date, timeZone = WEEK_TIME_ZONE): WeekRange {
   };
 }
 
+/** The São Paulo calendar day (00:00 to the next 00:00) containing `now`. */
+export function dayRange(now: Date, timeZone = WEEK_TIME_ZONE): WeekRange {
+  const { year, month, day } = wallClock(now, timeZone);
+  return { start: localMidnight(year, month, day, timeZone), end: localMidnight(year, month, day + 1, timeZone) };
+}
+
 /** The week before `week`. */
 export function previousWeek(week: WeekRange, timeZone = WEEK_TIME_ZONE): WeekRange {
   // Any instant in the previous week works; noon on the Sunday before is safe.

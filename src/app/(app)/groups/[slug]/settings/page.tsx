@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { BagreSettings } from "@/components/bagre/bagre-settings";
 import { Avatar } from "@/components/layout/account-menu";
 import { CopyInviteButton, LeaveGroupButton } from "@/components/groups/group-buttons";
 import { RemoveMemberButton, RevokeInviteButton, WebhookForm } from "@/components/groups/settings-controls";
@@ -96,6 +97,19 @@ export default async function GroupSettingsPage({ params }: PageProps<"/groups/[
           A URL fica guardada criptografada e só aparece mascarada aqui. Quem tem a URL consegue postar no canal, então não
           compartilhe.
         </p>
+      </section>
+
+      <section aria-labelledby="bagre-title" className="flex flex-col gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:p-5">
+        <div className="flex flex-col gap-1">
+          <h2 id="bagre-title" className="text-body-sm font-semibold text-fg">
+            Bagre
+          </h2>
+          <p className="text-fg-secondary">
+            A zoeira do grupo: cada período, vocês indicam a atuação mais esquecível de alguém e votam. Quem leva fica com o selo
+            até o fim do período seguinte, e o resultado sai no Discord.
+          </p>
+        </div>
+        <BagreSettings groupId={group.id} enabled={group.bagreEnabled} cadence={group.bagreCadence} />
       </section>
 
       <section aria-labelledby="members-title" className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">

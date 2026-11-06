@@ -33,6 +33,11 @@ export const discordPostStatus = pgEnum("discord_post_status", ["queued", "sendi
 export const summaryStatus = pgEnum("summary_status", ["generating", "ready", "sending", "sent", "failed", "skipped"]);
 export const summaryProvider = pgEnum("summary_provider", ["gemini", "groq", "rules"]);
 export const goalMetric = pgEnum("goal_metric", ["hs", "acs", "kd", "adr", "winrate", "matches"]);
+/** Group awards (docs/SPEC.md §5). Only "bagre" today; new categories are new values. */
+export const awardCategory = pgEnum("award_category", ["bagre"]);
+export const awardCadence = pgEnum("award_cadence", ["weekly", "daily"]);
+export const awardRoundStatus = pgEnum("award_round_status", ["open", "closed"]);
+export const awardOutcome = pgEnum("award_outcome", ["winner", "tie", "no_votes", "empty", "disabled"]);
 
 /* ---------------------------------------------------------------- auth -- */
 
@@ -218,6 +223,9 @@ export const groups = pgTable("groups", {
   inviteCode: text("invite_code").notNull().unique(),
   /** AES-256-GCM ciphertext (src/lib/crypto.ts, key ENCRYPTION_KEY), never the plain URL. */
   discordWebhookUrl: text("discord_webhook_url"),
+  /** Bagre (SPEC §5.1): the owner can turn it off and pick weekly or daily periods. */
+  bagreEnabled: boolean("bagre_enabled").notNull().default(true),
+  bagreCadence: awardCadence("bagre_cadence").notNull().default("weekly"),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
 });
 
@@ -324,6 +332,52 @@ export const weeklySummaries = pgTable(
   (t) => [primaryKey({ columns: [t.groupId, t.weekStart] })],
 );
 
+/**
+ * One voting period of a group award (SPEC §5). Opened lazily when a member
+ * opens the screen; the unique (group, category, starts_at) makes two
+ * concurrent opens create one row. Closed once by the cron with an
+ * UPDATE … WHERE status = 'open'; the result (tally, winner, badge) is frozen
+ * here. The Discord announcement follows the discord_posts pattern:
+ * queued → sending → sent, and "sending" is never retried.
+ */
+export const awardRounds = pgTable(
+  "award_rounds",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    category: awardCategory("category").notNull().default("bagre"),
+    /** The group's cadence when this period opened; later changes don't touch it. */
+    cadence: awardCadence("cadence").notNull(),
+    startsAt: timestamptz("starts_at").notNull(),
+    /** Exclusive. */
+    endsAt: timestamptz("ends_at").notNull(),
+    status: awardRoundStatus("status").notNull().default("open"),
+    outcome: awardOutcome("outcome"),
+    winnerUserId: text("winner_user_id").references(() => users.id, { onDelete: "set null" }),
+    /** FK added with award_nominations (ON DELETE SET NULL). */
+    winnerNominationId: uuid("winner_nomination_id"),
+    /** Frozen count at closing: [{ nominationId, nomineeId, votes, matches }]. */
+    tally: jsonb("tally"),
+    votesCast: integer("votes_cast"),
+    /** The badge shows until this instant (end of the next period). */
+    badgeUntil: timestamptz("badge_until"),
+    closedAt: timestamptz("closed_at"),
+    /** Null when there's nothing to post (no webhook, no result). */
+    announceStatus: discordPostStatus("announce_status"),
+    announceAttempts: integer("announce_attempts").notNull().default(0),
+    messageId: text("message_id"),
+    lastError: text("last_error"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    sentAt: timestamptz("sent_at"),
+  },
+  (t) => [
+    uniqueIndex("award_rounds_group_category_start_uq").on(t.groupId, t.category, t.startsAt),
+    index("award_rounds_status_ends_idx").on(t.status, t.endsAt),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type RiotAccount = typeof riotAccounts.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
@@ -334,3 +388,4 @@ export type DiscordPost = typeof discordPosts.$inferSelect;
 export type NewMmrSnapshot = typeof mmrSnapshots.$inferInsert;
 export type Goal = typeof goals.$inferSelect;
 export type WeeklySummary = typeof weeklySummaries.$inferSelect;
+export type AwardRound = typeof awardRounds.$inferSelect;
