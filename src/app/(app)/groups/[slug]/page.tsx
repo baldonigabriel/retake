@@ -117,14 +117,17 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
           </div>
         </div>
 
+        {/*
+          Mobile: one column in reading order MVP → ranking → together → members.
+          Desktop: two independent columns (no empty gaps when one runs longer):
+          ranking + together on the left, MVP + members on the right. The
+          column wrappers are `display: contents` on mobile, so `order` applies.
+        */}
         <FilteredContent className="grid gap-4 lg:grid-cols-12 lg:items-start">
-          <div className="lg:col-span-5 lg:col-start-8 lg:row-start-1">
-            <MvpCard mvp={mvp} weekLabel={weekChoice === "last" ? "semana passada" : "esta semana"} />
-          </div>
-
+          <div className="contents lg:col-span-7 lg:flex lg:flex-col lg:gap-4">
           <section
             aria-labelledby="ranking-title"
-            className="overflow-hidden rounded-card bg-surface-1 shadow-hairline lg:col-span-7 lg:row-span-2 lg:row-start-1"
+            className="order-2 overflow-hidden rounded-card bg-surface-1 shadow-hairline"
           >
             <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
               <h2 id="ranking-title" className="text-body-sm font-semibold text-fg">
@@ -184,10 +187,41 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
               Variação em relação à semana anterior. Médias ponderadas por round, como no seu painel.
             </p>
           </section>
+          <section
+            aria-labelledby="together-title"
+            className="order-3 overflow-hidden rounded-card bg-surface-1 shadow-hairline"
+          >
+            <header className="flex flex-col gap-0.5 border-b border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+              <h2 id="together-title" className="text-body-sm font-semibold text-fg">
+                Partidas que jogaram juntos
+              </h2>
+              <span className="text-label font-normal text-fg-muted">2+ membros no mesmo time · todos os modos</span>
+            </header>
+            {together.length === 0 ? (
+              <EmptyState
+                icon={UsersRound}
+                title="Nenhuma partida juntos ainda"
+                description={
+                  members.length < 2
+                    ? "Assim que alguém entrar no grupo e vocês jogarem no mesmo time, a partida aparece aqui."
+                    : "Quando dois ou mais membros jogarem no mesmo time, a partida aparece aqui com quem mandou melhor."
+                }
+              />
+            ) : (
+              <TogetherList matches={together} now={now} />
+            )}
+          </section>
+          </div>
+          <div className="contents lg:col-span-5 lg:flex lg:flex-col lg:gap-4">
+          <div className="order-1">
+            <MvpCard mvp={mvp} weekLabel={weekChoice === "last" ? "semana passada" : "esta semana"} />
+          </div>
+
+
 
           <section
             aria-labelledby="members-title"
-            className="overflow-hidden rounded-card bg-surface-1 shadow-hairline lg:col-span-5 lg:col-start-8 lg:row-start-2"
+            className="order-4 overflow-hidden rounded-card bg-surface-1 shadow-hairline"
           >
             <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
               <h2 id="members-title" className="text-body-sm font-semibold text-fg">
@@ -229,31 +263,9 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
               )}
             </footer>
           </section>
+          </div>
 
-          <section
-            aria-labelledby="together-title"
-            className="overflow-hidden rounded-card bg-surface-1 shadow-hairline lg:col-span-12 lg:row-start-3"
-          >
-            <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-              <h2 id="together-title" className="text-body-sm font-semibold text-fg">
-                Partidas que jogaram juntos
-              </h2>
-              <span className="text-label font-normal text-fg-muted">2+ membros no mesmo time · todos os modos</span>
-            </header>
-            {together.length === 0 ? (
-              <EmptyState
-                icon={UsersRound}
-                title="Nenhuma partida juntos ainda"
-                description={
-                  members.length < 2
-                    ? "Assim que alguém entrar no grupo e vocês jogarem no mesmo time, a partida aparece aqui."
-                    : "Quando dois ou mais membros jogarem no mesmo time, a partida aparece aqui com quem mandou melhor."
-                }
-              />
-            ) : (
-              <TogetherList matches={together} now={now} />
-            )}
-          </section>
+
         </FilteredContent>
       </FilterProvider>
     </div>

@@ -60,7 +60,7 @@ export function TogetherList({ matches, now }: { matches: readonly TogetherMatch
                       {formatNumber(Math.round(p.acs))} ACS
                     </span>
                     {standout && m.players.length > 1 ? (
-                      <span className="inline-flex items-center gap-1 rounded-chip bg-accent-tint px-1.5 py-0.5 text-label text-fg shadow-[inset_0_0_0_1px_var(--color-accent-line)]">
+                      <span className="inline-flex items-center gap-1 rounded-chip bg-surface-3 px-1.5 py-0.5 text-label text-fg-secondary">
                         <Star aria-hidden="true" className="size-3 fill-current text-primary" />
                         destaque
                       </span>
