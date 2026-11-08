@@ -1,5 +1,6 @@
 import { CircleAlert, Swords } from "lucide-react";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -14,6 +15,8 @@ import { MapGrid } from "@/components/dashboard/map-grid";
 import { RankHeader } from "@/components/dashboard/rank-header";
 import { SyncNowButton } from "@/components/dashboard/sync-now-button";
 import { GoalsPanel, GoalsPanelSkeleton } from "@/components/goals/goals-panel";
+import { BreakNote } from "@/components/session/break-note";
+import { BREAK_DISMISSED_COOKIE } from "@/components/session/break-cookie";
 import { SessionCard, SessionCardSkeleton } from "@/components/session/session-card";
 import { TrendChart } from "@/components/stats/trend-chart";
 import { Badge } from "@/components/ui/badge";
@@ -45,7 +48,8 @@ import {
 } from "@/lib/stats/breakdown";
 import { filterHistory, historyOptions, historySummary, parseHistoryFilter, parseShow, HISTORY_SUMMARY_WINDOW } from "@/lib/stats/history";
 import { buildInsights } from "@/lib/stats/insights";
-import { currentSession } from "@/lib/stats/session";
+import { getBreakReminder } from "@/lib/preferences/queries";
+import { currentSession, shouldSuggestBreak, summarizeSession } from "@/lib/stats/session";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -109,6 +113,14 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const lastWeek = previousWeek(week);
   // "Sessão de hoje" is about time, not filters: every mode, whatever the period says.
   const session = currentSession(allLines, now);
+  // The break note: session going on, losses in a row, turned on, not closed for this session.
+  const lossStreak = session ? summarizeSession(session.lines.map((l) => ({ ...l, rrChange: null }))).lossStreak : 0;
+  const sessionKey = session?.lines[0]?.matchId ?? "";
+  const suggestBreak =
+    session !== null &&
+    shouldSuggestBreak(session, { lossStreak }) &&
+    (await cookies()).get(BREAK_DISMISSED_COOKIE)?.value !== sessionKey &&
+    (await getBreakReminder(user.id));
 
   return (
     <div className="content-enter flex flex-col gap-4 py-8 sm:py-10">
@@ -143,7 +155,11 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
 
       {session ? (
         <Suspense fallback={<SessionCardSkeleton />}>
-          <SessionCard puuid={account.puuid} session={session} />
+          <SessionCard
+            puuid={account.puuid}
+            session={session}
+            note={suggestBreak ? <BreakNote sessionKey={sessionKey} losses={lossStreak} /> : null}
+          />
         </Suspense>
       ) : null}
 

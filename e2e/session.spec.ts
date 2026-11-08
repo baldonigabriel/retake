@@ -51,3 +51,51 @@ test.describe("without a session", () => {
     await expect(sessionCard(page)).toHaveCount(0);
   });
 });
+
+test.describe("break note", () => {
+  test.use({ storageState: SESSION_STATE });
+  // The settings switch writes Maratona's preference: one project only, in order.
+  test.describe.configure({ mode: "serial" });
+  test.skip(({ isMobile }) => isMobile, "writes a shared preference; desktop only to avoid racing the mobile run");
+
+  const note = (page: Page) => sessionCard(page).getByRole("status").filter({ hasText: "derrotas seguidas" });
+
+  test("suggests a break after 3 losses in a row, friendly and closable for the session", async ({ page }) => {
+    await page.goto("/me");
+    await expect(note(page)).toBeVisible(STREAMED);
+    await expect(note(page)).toContainText("3 derrotas seguidas. Acontece com todo mundo.");
+    await expect(note(page)).toContainText("pausa");
+
+    await note(page).getByRole("button", { name: "Fechar aviso de pausa" }).click();
+    await expect(note(page)).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Sessão de hoje" })).toBeFocused();
+
+    // Closed for this session: it doesn't come back on the next visit.
+    await page.reload();
+    await expect(sessionCard(page)).toBeVisible(STREAMED);
+    await expect(note(page)).toHaveCount(0);
+  });
+
+  test("can be turned off and on in the settings", async ({ page }) => {
+    await page.goto("/me");
+    await note(page).getByRole("link", { name: "Desligar este aviso nos ajustes" }).click(STREAMED);
+    await expect(page).toHaveURL(/\/settings#break-reminder$/);
+
+    const toggle = page.getByRole("switch", { name: "Aviso de pausa" });
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    await expect(page.getByText("Aviso de pausa desligado")).toBeVisible();
+
+    await page.goto("/me");
+    await expect(sessionCard(page)).toBeVisible(STREAMED);
+    await expect(note(page)).toHaveCount(0);
+
+    await page.goto("/settings");
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    await toggle.click();
+    await expect(page.getByText("Aviso de pausa ligado")).toBeVisible();
+    await page.goto("/me");
+    await expect(note(page)).toBeVisible(STREAMED);
+  });
+});

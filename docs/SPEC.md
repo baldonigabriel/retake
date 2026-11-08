@@ -47,6 +47,8 @@ As tabelas de usuário e sessão são criadas pelo Better Auth.
 
 **goals** (Fase 5) — `id`, `user_id` (FK), `metric` (`hs` | `acs` | `kd` | `adr` | `winrate` | `matches`), `target`, `created_at`, `updated_at`; único por (`user_id`, `metric`). Só o alvo é guardado; o progresso é calculado.
 
+**user_preferences** — PK `user_id` (FK users, cascade), `break_reminder` (padrão `true`), `updated_at`. Sem linha = padrões; a linha nasce quando o usuário muda um ajuste.
+
 **weekly_summaries** (Fase 5) — PK (`group_id`, `week_start`), `status`, `provider` (`gemini` | `groq` | `rules`), `model`, `text`, `stats` (números agregados), `attempts`, `message_id`, `last_error`, `created_at`, `updated_at`, `sent_at`.
 
 **Bagre (Fase 6, §5).** As tabelas são genéricas ("premiações" do grupo) para receber novas categorias e clipes sem migração de dados; hoje só existe a categoria `bagre`.
@@ -84,6 +86,7 @@ Ao vincular uma conta, importar as partidas que a API retornar no histórico rec
 
 **Dashboard (`/me`)** — pergunta principal: "estou melhorando?"
 - No topo, card "Sessão de hoje" quando a última sessão está em andamento (última partida terminou há até 2 horas) ou terminou hoje: partidas, V–D na ordem jogada, RR conhecido (com quantas competitivas ainda estão sem RR), ACS médio (avisando se mistura modos) e o melhor jogo (maior ACS) com link. Sessão é por tempo, todos os modos.
+- Aviso de pausa: com a sessão em andamento e 3 ou mais derrotas seguidas no fim dela (empate ou vitória zera), o card mostra um aviso leve sugerindo uma pausa, sem tom de bronca e sem vermelho. Fechar esconde até o fim daquela sessão (cookie com o id da primeira partida); "Aviso de pausa" em Ajustes desliga de vez (`user_preferences.break_reminder`).
 - Cabeçalho com rank atual, RR e mini-gráfico da evolução.
 - KPIs (ACS, K/D, HS%, ADR, win rate), cada um comparando as últimas 20 partidas com a média geral.
 - Gráfico de tendência com seletor de métrica.
@@ -104,7 +107,7 @@ Ao vincular uma conta, importar as partidas que a API retornar no histórico rec
 
 **Perfil de membro (`/groups/[slug]/members/[userId]`)** — as seções "Agentes" e "Últimas partidas" de um membro, visíveis só para quem está no mesmo grupo (quem não está recebe o mesmo 404 de um grupo inexistente). As partidas abrem o placar só quando quem está vendo também jogou.
 
-**Configurações (`/settings`)** — conta Riot vinculada, status do último sync e opção de desvincular (apagando os dados do usuário).
+**Configurações (`/settings`)** — conta Riot vinculada, status do último sync, o liga/desliga do aviso de pausa e opção de desvincular (apagando os dados do usuário).
 
 **Bagre (`/groups/[slug]/bagre`)** — pergunta principal: "quem foi o Bagre?" Ver §5.
 

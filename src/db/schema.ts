@@ -304,6 +304,19 @@ export const goals = pgTable(
 );
 
 /**
+ * Per-user preferences. A missing row means every default (the app never
+ * needs a row to exist); a row is created the first time a setting changes.
+ */
+export const userPreferences = pgTable("user_preferences", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  /** The gentle "take a break" note after losses in a row in the session (src/lib/stats/session.ts). */
+  breakReminder: boolean("break_reminder").notNull().default(true),
+  updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+});
+
+/**
  * One weekly summary per (group, week): the primary key is the "posted once"
  * guarantee, like discord_posts. A run claims the row by inserting it
  * ("generating"), writes the text and the provider that wrote it ("ready"),
@@ -456,6 +469,7 @@ export type GroupRole = (typeof groupRole.enumValues)[number];
 export type DiscordPost = typeof discordPosts.$inferSelect;
 export type NewMmrSnapshot = typeof mmrSnapshots.$inferInsert;
 export type Goal = typeof goals.$inferSelect;
+export type UserPreferences = typeof userPreferences.$inferSelect;
 export type WeeklySummary = typeof weeklySummaries.$inferSelect;
 export type AwardRound = typeof awardRounds.$inferSelect;
 export type AwardNomination = typeof awardNominations.$inferSelect;

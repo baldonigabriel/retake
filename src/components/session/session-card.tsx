@@ -12,7 +12,7 @@ import { modeLabel } from "@/lib/modes";
 import { matchResult } from "@/lib/stats/aggregate";
 import type { DetailedLine } from "@/lib/stats/breakdown";
 import { acs, type MatchResult } from "@/lib/stats/metrics";
-import { summarizeSession, type CurrentSession, type SessionSummary } from "@/lib/stats/session";
+import { summarizeSession, type CurrentSession } from "@/lib/stats/session";
 import { cn } from "@/lib/utils";
 
 type SessionLine = DetailedLine & { rrChange: number | null };
@@ -26,7 +26,7 @@ function Shell({ status, modes, children }: { status: string; modes?: string[]; 
   return (
     <section aria-labelledby="session-title" className="content-enter overflow-hidden rounded-card bg-surface-1 shadow-hairline">
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-line px-4 py-3">
-        <h2 id="session-title" className="text-body-sm font-semibold text-fg">
+        <h2 id="session-title" tabIndex={-1} className="text-body-sm font-semibold text-fg focus-visible:outline-none">
           Sessão de hoje
         </h2>
         <span className="flex flex-wrap items-center gap-2">
@@ -85,12 +85,12 @@ function statusLine(session: CurrentSession<unknown>): string {
 export async function SessionCard({
   puuid,
   session,
-  aside,
+  note,
 }: {
   puuid: string;
   session: CurrentSession<DetailedLine>;
   /** Shown above the numbers (the break note). */
-  aside?: (summary: SessionSummary<SessionLine>) => React.ReactNode;
+  note?: React.ReactNode;
 }) {
   let rrFailed = false;
   let extras: Awaited<ReturnType<typeof getMatchExtras>> = new Map();
@@ -113,7 +113,7 @@ export async function SessionCard({
 
   return (
     <Shell status={statusLine(session)} modes={s.modes}>
-      {aside?.(s)}
+      {note}
       <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-8">
         <div className="flex flex-col gap-4">
           <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">

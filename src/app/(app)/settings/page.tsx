@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 
 import { Avatar } from "@/components/layout/account-menu";
 import { SignOutButton } from "@/components/layout/sign-out-button";
+import { BreakReminderSwitch } from "@/components/session/break-reminder-switch";
 import { Badge } from "@/components/ui/badge";
 import { requireViewer } from "@/lib/auth/session";
 import { formatMatchDate, formatRelativeTime } from "@/lib/format";
+import { getBreakReminder } from "@/lib/preferences/queries";
+import { TILT_STREAK } from "@/lib/stats/session";
 
 export const metadata: Metadata = { title: "Ajustes" };
 
@@ -16,6 +19,7 @@ const STATUS = {
 
 export default async function SettingsPage() {
   const { user, account } = await requireViewer("/settings");
+  const breakReminder = await getBreakReminder(user.id);
   const now = new Date();
   const status = STATUS[account.syncStatus];
 
@@ -57,6 +61,22 @@ export default async function SettingsPage() {
           Sincronizamos sozinhos a cada 15 minutos, mais ou menos. A opção de desvincular a conta (apagando seus dados)
           chega na próxima atualização.
         </p>
+      </section>
+
+      <section
+        id="break-reminder"
+        aria-labelledby="break-title"
+        className="flex scroll-mt-24 items-start justify-between gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:items-center sm:p-5"
+      >
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2 id="break-title" className="text-body-sm font-semibold text-fg">
+            Aviso de pausa
+          </h2>
+          <p id="break-desc" className="text-fg-secondary">
+            Depois de {TILT_STREAK} derrotas seguidas na mesma sessão, o painel sugere uma pausa curta. Ninguém além de você vê.
+          </p>
+        </div>
+        <BreakReminderSwitch on={breakReminder} labelledBy="break-title" describedBy="break-desc" />
       </section>
 
       <section aria-labelledby="discord-title" className="flex flex-col gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:flex-row sm:items-center sm:justify-between sm:p-5">
