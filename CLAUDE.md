@@ -44,7 +44,7 @@ src/
   lib/
     henrik/                        cliente HTTP, schemas Zod, rate limiter
     sync/                          lógica de sincronização (independente do Next)
-    stats/                         funções puras de métricas (100% testadas): agentes, histórico por dia, candidatos do Bagre
+    stats/                         funções puras de métricas (100% testadas): agentes, histórico por dia, candidatos do Bagre, sinergia de duo, sessões
     discord/                       montagem e envio de cards por webhook
     ai/                            provedores de texto (Gemini, Groq) com fallback em cadeia
     summary/                       resumo semanal: números por código, texto por IA ou regras
@@ -83,6 +83,8 @@ DESIGN.md                          fonte da verdade visual
 - DDΔ (saldo de dano por round) = `(damage_dealt − damage_received) / rounds_played`. Positivo quando você causa mais dano do que recebe; somado no volume (total causado − total recebido) / total de rounds, como as outras médias
 - Horas jogadas = soma de `game_length_ms` das partidas com duração conhecida
 - Melhor mapa (de um agente) = maior win rate entre os mapas com pelo menos 3 partidas; empate vai para o mapa com mais partidas. Sem mapa com 3 partidas, mostra "—"
+- Sessão = partidas seguidas com até 2 horas entre o fim de uma (`started_at + game_length_ms`) e o início da próxima. É por tempo, não por modo; médias de uma sessão com mais de um modo dizem isso na UI. RR da sessão = soma do RR conhecido das competitivas, com aviso das que ainda não têm RR
+- Sinergia de duo = win rate, K/D e ACS **do usuário** nas partidas em que outro usuário do Retake de um grupo em comum estava no mesmo time, comparados com a média do usuário no mesmo modo. Aparece a partir de 3 partidas juntos; abaixo de 10, com aviso de amostra pequena e depois das duplas com amostra maior
 
 KAST e métricas por round ficam fora do MVP.
 
