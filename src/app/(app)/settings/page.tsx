@@ -81,10 +81,10 @@ export default async function SettingsPage() {
 
       <section aria-labelledby="discord-title" className="flex flex-col gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex items-center gap-3">
-          <Avatar name={user.name} image={user.image} className="size-10" />
+          <Avatar name={user.providerName} image={user.image} className="size-10" />
           <div className="flex flex-col">
             <h2 id="discord-title" className="text-body-sm font-semibold text-fg">Discord</h2>
-            <p className="text-fg-secondary">Conectado como {user.name}</p>
+            <p className="text-fg-secondary">Conectado como {user.providerName}</p>
           </div>
         </div>
         <SignOutButton />

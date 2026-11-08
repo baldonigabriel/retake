@@ -18,6 +18,7 @@ import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, or, sql } from "driz
 import type { Database } from "@/db";
 import { groupMembers, groups, matches, matchPlayers, riotAccounts, users, weeklySummaries } from "@/db/schema";
 import type { TextProvider } from "@/lib/ai";
+import { accountDisplayName } from "@/lib/auth/display-name";
 import { decrypt } from "@/lib/crypto";
 import { DiscordWebhookError, postWebhook, type Send, type WebhookPayload } from "@/lib/discord";
 import { webhookContext } from "@/lib/groups/webhook-context";
@@ -50,7 +51,7 @@ export async function loadGroupWeek(database: Database, groupId: string, week: W
   const rows = await database
     .select({
       userId: users.id,
-      discordName: users.name,
+      providerName: users.name,
       image: users.image,
       role: groupMembers.role,
       puuid: riotAccounts.puuid,
@@ -65,7 +66,7 @@ export async function loadGroupWeek(database: Database, groupId: string, week: W
   const members: GroupMember[] = rows.map((r) => ({
     userId: r.userId,
     puuid: r.puuid,
-    name: r.gameName ?? r.discordName,
+    name: accountDisplayName(r.providerName, r.gameName),
     tag: r.tagLine,
     image: r.image,
     role: r.role,

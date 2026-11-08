@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { AccountMenu, AccountMenuSkeleton } from "@/components/layout/account-menu";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNav } from "@/components/layout/site-nav";
-import { getSessionUser } from "@/lib/auth/session";
+import { getViewerIdentity } from "@/lib/auth/session";
 
 /**
  * Signed-in area. The nav and footer are static; the account menu and each
@@ -29,7 +29,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 }
 
 async function NavAccount() {
-  const user = await getSessionUser();
+  const user = await getViewerIdentity();
   if (!user) return <AccountMenuSkeleton />;
-  return <AccountMenu name={user.name} image={user.image} />;
+  return <AccountMenu name={user.displayName} image={user.image} />;
 }

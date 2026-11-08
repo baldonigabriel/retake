@@ -10,6 +10,7 @@ import { and, desc, eq, gt, inArray, isNotNull, lt, ne } from "drizzle-orm";
 
 import type { Database } from "@/db";
 import { awardNominations, awardRounds, groupMembers, matches, matchPlayers, riotAccounts, users, type AwardRound } from "@/db/schema";
+import { accountDisplayName } from "@/lib/auth/display-name";
 
 import type { NominatedLine } from "./display";
 import type { Cadence } from "./period";
@@ -110,7 +111,7 @@ export async function buildResults(database: Database, groupId: string, rounds: 
     peopleIds.length === 0
       ? []
       : await database
-          .select({ userId: users.id, discordName: users.name, image: users.image, gameName: riotAccounts.gameName, puuid: riotAccounts.puuid })
+          .select({ userId: users.id, providerName: users.name, image: users.image, gameName: riotAccounts.gameName, puuid: riotAccounts.puuid })
           .from(users)
           .leftJoin(riotAccounts, eq(riotAccounts.userId, users.id))
           .where(inArray(users.id, peopleIds));
@@ -121,7 +122,7 @@ export async function buildResults(database: Database, groupId: string, rounds: 
     const p = byId.get(userId);
     const member = members.has(userId);
     if (!p || !member) return { userId: null, name: EX_MEMBER, image: null, isYou: false, member: false };
-    return { userId, name: p.gameName ?? p.discordName, image: p.image, isYou: userId === options.viewerId, member: true };
+    return { userId, name: accountDisplayName(p.providerName, p.gameName), image: p.image, isYou: userId === options.viewerId, member: true };
   };
 
   // The nominees' own lines in the nominated matches (members only), and whether the viewer played them.

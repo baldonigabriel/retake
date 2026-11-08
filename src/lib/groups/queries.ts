@@ -17,6 +17,7 @@ import { cache } from "react";
 
 import { db } from "@/db";
 import { groupMembers, groups, matches, matchPlayers, riotAccounts, users, type Group, type GroupRole } from "@/db/schema";
+import { accountDisplayName } from "@/lib/auth/display-name";
 import type { GroupLine, GroupMember } from "@/lib/groups/ranking";
 
 import { inviteCodeSchema, slugSchema } from "./validation";
@@ -67,7 +68,7 @@ export async function getGroupMembers(groupId: string, viewerId: string): Promis
   const rows = await db()
     .select({
       userId: users.id,
-      discordName: users.name,
+      providerName: users.name,
       image: users.image,
       role: groupMembers.role,
       joinedAt: groupMembers.joinedAt,
@@ -83,7 +84,7 @@ export async function getGroupMembers(groupId: string, viewerId: string): Promis
   return rows.map((r) => ({
     userId: r.userId,
     puuid: r.puuid,
-    name: r.gameName ?? r.discordName,
+    name: accountDisplayName(r.providerName, r.gameName),
     tag: r.tagLine,
     image: r.image,
     role: r.role,
@@ -196,7 +197,7 @@ export async function getGroupMember(groupId: string, userId: string): Promise<G
   const [row] = await db()
     .select({
       userId: users.id,
-      discordName: users.name,
+      providerName: users.name,
       image: users.image,
       role: groupMembers.role,
       puuid: riotAccounts.puuid,
@@ -211,7 +212,7 @@ export async function getGroupMember(groupId: string, userId: string): Promise<G
   if (!row) return null;
   return {
     userId: row.userId,
-    name: row.gameName ?? row.discordName,
+    name: accountDisplayName(row.providerName, row.gameName),
     tag: row.tagLine,
     image: row.image,
     puuid: row.puuid,
