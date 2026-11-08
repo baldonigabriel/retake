@@ -2,7 +2,6 @@ import { Ban, Link2, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { DiscordSignInButton } from "@/components/auth/discord-sign-in-button";
 import { RankingList } from "@/components/groups/ranking-list";
 import { DiscordCardPreview } from "@/components/landing/discord-card-preview";
 import { HeroBackdrop } from "@/components/landing/hero-backdrop";
@@ -22,8 +21,8 @@ export const metadata: Metadata = {
 
 const STEPS = [
   {
-    title: "Entre com o Discord",
-    body: "Lemos só nome, avatar e e-mail. Nada é postado em seu nome.",
+    title: "Entre com Google ou Discord",
+    body: "Escolha uma conta agora e vincule a outra depois. Nada é publicado em seu nome.",
     fragment: (
       <span className="flex items-center gap-2 text-label font-normal text-fg-secondary">
         <span className="size-2 rounded-full bg-win" aria-hidden="true" />
@@ -139,9 +138,9 @@ export default function Home() {
                 do seu grupo e um card no Discord em até 15 minutos depois do jogo.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="sm:w-56">
-                  <DiscordSignInButton next="/me" />
-                </div>
+                <Link href="/login" className={buttonVariants({ className: "w-full sm:w-56" })}>
+                  Entrar no Retake
+                </Link>
                 <a href="#como-funciona" className={buttonVariants({ variant: "ghost", className: "w-full sm:w-fit" })}>
                   Ver como funciona
                 </a>

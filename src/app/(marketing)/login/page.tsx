@@ -4,7 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { DiscordSignInButton } from "@/components/auth/discord-sign-in-button";
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 import { Logo } from "@/components/layout/logo";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { safeNextPath } from "@/lib/auth/next-path";
@@ -12,15 +12,16 @@ import { getSessionUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Entrar",
-  description: "Entre no Retake com sua conta do Discord.",
+  description: "Entre no Retake com Google ou Discord.",
 };
 
 /** Better Auth redirects back with ?error=<code> when the OAuth flow fails. */
 const ERRORS: Record<string, string> = {
-  access_denied: "Você cancelou o login no Discord. Tente de novo quando quiser.",
-  email_not_found: "Sua conta do Discord não tem e-mail verificado. Verifique o e-mail no Discord e tente de novo.",
+  access_denied: "Você cancelou o login. Tente de novo quando quiser.",
+  email_not_found: "Essa conta não tem e-mail verificado. Verifique o e-mail no provedor e tente de novo.",
+  account_not_linked: "Essa conta ainda não está vinculada. Entre pelo outro método e vincule-a em Ajustes.",
 };
-const GENERIC_ERROR = "Não conseguimos concluir o login com o Discord. Tente de novo em alguns segundos.";
+const GENERIC_ERROR = "Não conseguimos concluir o login. Tente de novo em alguns segundos.";
 
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
@@ -57,7 +58,7 @@ function LoginCard({ next, error }: { next: string; error?: string }) {
           Entrar no Retake
         </h1>
         <p className="text-fg-secondary">
-          Use sua conta do Discord. Em seguida você vincula seu Riot ID e importamos suas partidas recentes.
+          Escolha Google ou Discord. As duas opções levam ao mesmo perfil do Retake.
         </p>
       </div>
 
@@ -68,10 +69,10 @@ function LoginCard({ next, error }: { next: string; error?: string }) {
         </p>
       ) : null}
 
-      <DiscordSignInButton next={next} />
+      <SocialAuthButtons next={next} />
 
       <p className="text-label font-normal text-fg-muted">
-        Lemos só seu nome, avatar e e-mail do Discord. Nada é postado em seu nome.
+        Depois você pode vincular a outra conta em Ajustes. Lemos apenas nome, avatar e e-mail; nada é publicado em seu nome.
       </p>
     </section>
   );

@@ -20,13 +20,14 @@ test.describe("signed out", () => {
     await page.goto("/me");
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole("heading", { level: 1, name: "Entrar no Retake" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Entrar com Google" })).toBeEnabled();
     await expect(page.getByRole("button", { name: "Entrar com Discord" })).toBeEnabled();
   });
 
-  test("the landing offers Discord sign-in and leads to login", async ({ page }) => {
+  test("the landing leads to the provider-neutral login", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "Seu Valorant, comparado com o dos seus amigos." })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Entrar com Discord" })).toBeEnabled();
+    await expect(page.getByRole("link", { name: "Entrar no Retake" })).toBeVisible();
     await expect(page.getByText("isn't endorsed by Riot Games", { exact: false })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
@@ -44,7 +45,7 @@ test.describe("signed out", () => {
 
   test("an OAuth error is explained", async ({ page }) => {
     await page.goto("/login?error=access_denied");
-    await expect(page.getByText("Você cancelou o login no Discord", { exact: false })).toBeVisible();
+    await expect(page.getByText("Você cancelou o login.", { exact: false })).toBeVisible();
   });
 });
 
