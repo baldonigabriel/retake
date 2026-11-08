@@ -208,7 +208,7 @@ function BestMatch({ line }: { line: SessionLine }) {
           <span className="truncate font-medium text-fg">
             {line.agentName ?? "Agente"} na {line.mapName ?? "mapa desconhecido"}
           </span>
-          <span className="num truncate text-label font-normal text-fg-muted">
+          <span className="num truncate text-label font-normal text-fg-secondary">
             <span className={cn(result === "win" ? "text-win" : result === "loss" ? "text-loss" : "text-draw")}>
               {RESULT_LABEL[result]}
             </span>{" "}
@@ -218,9 +218,9 @@ function BestMatch({ line }: { line: SessionLine }) {
         </span>
         <span className="flex shrink-0 flex-col items-end">
           <span className="stat text-[24px] leading-none font-semibold text-fg">{formatNumber(Math.round(acs(line.score, line.roundsPlayed)))}</span>
-          <span className="text-label font-normal text-fg-muted">ACS</span>
+          <span className="text-label font-normal text-fg-secondary">ACS</span>
         </span>
-        <ChevronRight aria-hidden="true" className="-mr-1 size-4 shrink-0 text-fg-muted" />
+        <ChevronRight aria-hidden="true" className="-mr-1 size-4 shrink-0 text-fg-secondary" />
       </Link>
     </div>
   );
