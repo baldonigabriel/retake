@@ -2,10 +2,12 @@ import { Fish, Settings, Swords, Trophy, UsersRound } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { BagreBadge } from "@/components/bagre/bagre-badge";
 import { BagreCard } from "@/components/bagre/bagre-card";
 import { FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
+import { DuosPanel, DuosPanelSkeleton } from "@/components/duos/duos-panel";
 import { Avatar } from "@/components/layout/account-menu";
 import { CopyInviteButton, LeaveGroupButton } from "@/components/groups/group-buttons";
 import { GroupFilter } from "@/components/groups/group-filters";
@@ -51,7 +53,7 @@ const WEEK_OPTIONS = [
 /** Question this screen answers: "quem mandou bem essa semana?" */
 export default async function GroupPage({ params, searchParams }: PageProps<"/groups/[slug]">) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
-  const { user } = await requireViewer(`/groups/${slug}`);
+  const { user, account } = await requireViewer(`/groups/${slug}`);
   // Non-members get exactly what a missing group gets: 404.
   const membership = await getMembership(slug, user.id);
   if (!membership) notFound();
@@ -234,6 +236,18 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
               <TogetherList matches={together} now={now} />
             )}
           </section>
+          <Suspense fallback={<DuosPanelSkeleton />}>
+            <DuosPanel
+              viewerId={user.id}
+              viewerPuuid={account.puuid}
+              mode={mode}
+              groupId={group.id}
+              scope="group"
+              hrefFor={(mate) =>
+                `/me?with=${encodeURIComponent(mate.userId)}${mode !== DEFAULT_MODE ? `&mode=${encodeURIComponent(mode)}` : ""}#history-title`
+              }
+            />
+          </Suspense>
           </div>
           <section
             aria-labelledby="members-title"

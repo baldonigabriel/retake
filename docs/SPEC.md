@@ -99,6 +99,8 @@ Ao vincular uma conta, importar as partidas que a API retornar no histórico rec
 
 **Grupos (`/groups`, `/groups/[slug]`)** — pergunta principal: "quem mandou bem essa semana?" Ranking semanal com seletor de métrica, destaque de MVP da semana, partidas que membros jogaram juntos, convite por link e configuração do webhook do Discord (só o dono).
 
+**Com quem você joga melhor (`/me` e `/groups/[slug]`)** — pergunta: "com quem eu vou melhor?" Ranking das duplas do usuário com outros usuários do Retake de grupos em comum (no grupo, só os membros dele): win rate juntos no mesmo time versus a média do usuário no modo, partidas, V–D, K/D e ACS, e o link para o histórico filtrado (`/me?with=<userId>`, validado no servidor). Mínimo de 3 partidas juntos; abaixo de 10, aviso de amostra pequena. Texto de tendência, nunca de veredito. Jogadores de fora nunca aparecem.
+
 **Perfil de membro (`/groups/[slug]/members/[userId]`)** — as seções "Agentes" e "Últimas partidas" de um membro, visíveis só para quem está no mesmo grupo (quem não está recebe o mesmo 404 de um grupo inexistente). As partidas abrem o placar só quando quem está vendo também jogou.
 
 **Configurações (`/settings`)** — conta Riot vinculada, status do último sync e opção de desvincular (apagando os dados do usuário).

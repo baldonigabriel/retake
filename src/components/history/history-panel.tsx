@@ -92,6 +92,8 @@ export function HistoryPanel({
   agent,
   map,
   emptyAction,
+  toolbarExtra,
+  emptyDescription = "Troque o agente ou o mapa para ver suas outras partidas.",
 }: {
   title?: string;
   id?: string;
@@ -107,6 +109,9 @@ export function HistoryPanel({
   agent?: string;
   map?: string;
   emptyAction?: React.ReactNode;
+  /** Extra filter controls next to agent and map (e.g. the "com fulano" chip). */
+  toolbarExtra?: React.ReactNode;
+  emptyDescription?: string;
 }) {
   return (
     <section aria-labelledby={id} className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
@@ -118,12 +123,12 @@ export function HistoryPanel({
           {items.length < total ? `${items.length} de ${total}` : `${total} ${total === 1 ? "partida" : "partidas"}`}
         </span>
       </header>
-      <HistoryShell agents={agents} maps={maps} agent={agent} map={map} shown={items.length} total={total} pageSize={HISTORY_PAGE}>
+      <HistoryShell agents={agents} maps={maps} agent={agent} map={map} shown={items.length} total={total} pageSize={HISTORY_PAGE} toolbarExtra={toolbarExtra}>
         {total === 0 ? (
           <EmptyState
             icon={Swords}
             title="Nenhuma partida com esses filtros"
-            description="Troque o agente ou o mapa para ver suas outras partidas."
+            description={emptyDescription}
             action={emptyAction}
           />
         ) : (

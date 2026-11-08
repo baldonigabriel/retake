@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { AgentsPanel } from "@/components/agents/agents-panel";
+import { DuosPanel, DuosPanelSkeleton } from "@/components/duos/duos-panel";
+import { WithMateChip } from "@/components/duos/with-mate-chip";
 import { HistoryPanel } from "@/components/history/history-panel";
 import { FilterBar, FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
@@ -21,6 +23,7 @@ import { requireViewer } from "@/lib/auth/session";
 import { withExtras } from "@/lib/dashboard/history";
 import { getPlayerLines, getRankHistory } from "@/lib/dashboard/queries";
 import { verdict } from "@/lib/dashboard/verdict";
+import { getMateAppearances, getMates } from "@/lib/duos/queries";
 import { formatRelativeTime } from "@/lib/format";
 import { formatWeek, inWeek, previousWeek, weekRange } from "@/lib/groups/week";
 import { modeAdjective, modeLabel } from "@/lib/modes";
@@ -84,8 +87,18 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const historyFilters = historyOptions(lines);
   const historyAgent = parseHistoryFilter(params.agent, historyFilters.agents);
   const historyMap = parseHistoryFilter(params.map, historyFilters.maps);
-  const historyLines = filterHistory(lines, { agent: historyAgent, map: historyMap });
+  // ?with=<userId>: matches on the same team as a mate from your groups (validated here, never trusted).
+  const withMate = typeof params.with === "string" && params.with.length <= 200 ? await resolveMate(user.id, account.puuid, params.with) : null;
+  const historyLines = filterHistory(lines, { agent: historyAgent, map: historyMap }).filter(
+    (l) => !withMate || withMate.matchIds.has(l.matchId),
+  );
   const historyItems = await withExtras(account.puuid, historyLines.slice(0, parseShow(params.show)));
+  const keep = (extra: Record<string, string | string[] | undefined>) =>
+    new URLSearchParams(
+      Object.entries({ mode: params.mode, period: params.period, season: params.season, ...extra }).flatMap(([k, v]) =>
+        typeof v === "string" ? [[k, v]] : [],
+      ),
+    );
   const clearHistory = new URLSearchParams(Object.entries({ mode: params.mode, period: params.period, season: params.season }).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : [])));
   const cooldownUntil = account.lastSyncedAt ? account.lastSyncedAt.getTime() + SYNC_NOW_COOLDOWN_MS : null;
   const mixed = mode === ALL_MODES;
@@ -194,6 +207,17 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
                   </Panel>
                 ) : null}
 
+                <Suspense fallback={<DuosPanelSkeleton />}>
+                  <DuosPanel
+                    viewerId={user.id}
+                    viewerPuuid={account.puuid}
+                    lines={lines}
+                    mode={mode}
+                    scope="groups"
+                    hrefFor={(mate) => `/me?${keep({ with: mate.userId })}#history-title`}
+                  />
+                </Suspense>
+
                 <InsightsPanel result={insights} mode={mode} />
 
                 <AgentsPanel
@@ -219,6 +243,14 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
                   maps={historyFilters.maps}
                   agent={historyAgent}
                   map={historyMap}
+                  toolbarExtra={
+                    withMate ? <WithMateChip name={withMate.name} clearHref={`/me?${keep({ agent: params.agent, map: params.map })}#history-title`} /> : undefined
+                  }
+                  emptyDescription={
+                    withMate
+                      ? `Nenhuma partida no mesmo time que ${withMate.name} com esses filtros. Troque o modo, o período, o agente ou o mapa.`
+                      : undefined
+                  }
                   emptyAction={
                     <Link href={`/me${clearHistory.size ? `?${clearHistory}` : ""}`} className={buttonVariants()}>
                       Ver todas as partidas
@@ -232,6 +264,15 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
       )}
     </div>
   );
+}
+
+/** A mate from the viewer's groups and the matches they shared a team in; null for anyone else. */
+async function resolveMate(viewerId: string, viewerPuuid: string, mateUserId: string) {
+  const [mates, all] = await Promise.all([getMates(viewerId), getMateAppearances(viewerId, viewerPuuid)]);
+  const mate = mates.find((m) => m.userId === mateUserId);
+  if (!mate) return null;
+  const appearances = all.get(mate.puuid) ?? [];
+  return { name: mate.name, matchIds: new Set(appearances.map((a) => a.matchId)) };
 }
 
 function Panel({
