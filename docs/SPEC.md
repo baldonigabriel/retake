@@ -83,6 +83,7 @@ Ao vincular uma conta, importar as partidas que a API retornar no histórico rec
 **Onboarding (`/onboarding`)** — campo `Nome#TAG`, validação em tempo real, prévia do card do jogador antes de confirmar, importação com progresso visível.
 
 **Dashboard (`/me`)** — pergunta principal: "estou melhorando?"
+- No topo, card "Sessão de hoje" quando a última sessão está em andamento (última partida terminou há até 2 horas) ou terminou hoje: partidas, V–D na ordem jogada, RR conhecido (com quantas competitivas ainda estão sem RR), ACS médio (avisando se mistura modos) e o melhor jogo (maior ACS) com link. Sessão é por tempo, todos os modos.
 - Cabeçalho com rank atual, RR e mini-gráfico da evolução.
 - KPIs (ACS, K/D, HS%, ADR, win rate), cada um comparando as últimas 20 partidas com a média geral.
 - Gráfico de tendência com seletor de métrica.

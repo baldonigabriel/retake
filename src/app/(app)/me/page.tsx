@@ -14,6 +14,7 @@ import { MapGrid } from "@/components/dashboard/map-grid";
 import { RankHeader } from "@/components/dashboard/rank-header";
 import { SyncNowButton } from "@/components/dashboard/sync-now-button";
 import { GoalsPanel, GoalsPanelSkeleton } from "@/components/goals/goals-panel";
+import { SessionCard, SessionCardSkeleton } from "@/components/session/session-card";
 import { TrendChart } from "@/components/stats/trend-chart";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -44,6 +45,7 @@ import {
 } from "@/lib/stats/breakdown";
 import { filterHistory, historyOptions, historySummary, parseHistoryFilter, parseShow, HISTORY_SUMMARY_WINDOW } from "@/lib/stats/history";
 import { buildInsights } from "@/lib/stats/insights";
+import { currentSession } from "@/lib/stats/session";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -105,6 +107,8 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   // Goals always use this São Paulo week, whatever the filters say.
   const week = weekRange(now);
   const lastWeek = previousWeek(week);
+  // "Sessão de hoje" is about time, not filters: every mode, whatever the period says.
+  const session = currentSession(allLines, now);
 
   return (
     <div className="content-enter flex flex-col gap-4 py-8 sm:py-10">
@@ -135,6 +139,12 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
           O último sync falhou porque o serviço de dados do Valorant não respondeu. Tentamos de novo sozinhos em até 15
           minutos, ou use “Sincronizar agora”.
         </p>
+      ) : null}
+
+      {session ? (
+        <Suspense fallback={<SessionCardSkeleton />}>
+          <SessionCard puuid={account.puuid} session={session} />
+        </Suspense>
       ) : null}
 
       <RankHeader history={rank} />
