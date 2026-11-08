@@ -69,7 +69,6 @@ export default async function GroupsPage() {
                       </span>
                       <span className="num truncate text-label font-normal text-fg-muted">
                         {g.members} {g.members === 1 ? "membro" : "membros"}
-                        <span className="font-mono"> · /groups/{g.slug}</span>
                       </span>
                     </span>
                     <ChevronRight
