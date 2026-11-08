@@ -399,7 +399,7 @@ export const awardRounds = pgTable(
 /**
  * A member nominated in a period, tied to one match of theirs in it (SPEC
  * §5.3). One nomination per nominee per period (unique), never yourself
- * (CHECK). A future award_clips table hangs off `id` (SPEC §7).
+ * (CHECK). A future award_clips table hangs off `id` (SPEC §9).
  */
 export const awardNominations = pgTable(
   "award_nominations",

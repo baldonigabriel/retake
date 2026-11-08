@@ -21,6 +21,7 @@ Observações confirmadas com respostas reais:
 - O histórico v4 já devolve cada partida completa (metadados, times, os 10 jogadores, rounds e kills), com o mesmo conteúdo da rota de partida por id. O sync grava direto a partir do histórico e só usa a rota por id quando precisar de uma partida fora dele.
 - O campo `region` da conta e da partida é o shard da Riot (`na` para contas do Brasil), não a afinidade usada nas URLs. Por isso `riot_accounts.region` guarda a afinidade (`br`) e não o valor que a API devolve.
 - A conta v2 devolve o id do card (`card`), não a URL. A URL vem dos assets da comunidade: `https://media.valorant-api.com/playercards/{card}/smallart.png`.
+- A partida v4 traz `rounds[]` (vencedor, motivo e, por jogador, `damage_events`, economia com a arma comprada e o valor do equipamento) e `kills[]` (round, `time_in_round_in_ms`, quem matou, quem morreu, assistências e arma). Até a Fase 8 o sync ignora esses campos; a Fase 9 passa a gravá-los (§7). Confira os nomes exatos numa resposta real antes de escrever o schema Zod.
 - O modo vem em `metadata.queue.id` (`competitive`, `unrated`, `swiftplay`, `deathmatch`...). É esse valor que os filtros usam.
 
 RR por partida (conferido em docs.henrikdev.xyz em 2026-11-06): cada item dos dois históricos de rank traz `match_id`, `tier`, `rr` (RR depois da partida) e `last_change` (RR ganho ou perdido nela), além de `refunded_rr` e `was_derank_protected`. A rota de partida v4 não traz RR, só o `tier` de cada jogador. Por isso o RR de uma partida vem de `mmr_snapshots`, ligado por (`puuid`, `match_id`): o sync busca o histórico ao entrar competitiva nova e, por até 6 horas, enquanto uma competitiva recente ainda não tiver RR; `pnpm rr:backfill` liga as partidas antigas (histórico armazenado primeiro, depois o ao vivo, só para contas com partida sem RR). Partida sem RR na API aparece com "—", nunca com valor estimado.
@@ -31,7 +32,7 @@ Headers de rate limit em toda resposta: `X-RateLimit-Limit`, `X-RateLimit-Remain
 
 ## 2. Modelo de dados
 
-As tabelas de usuário e sessão são criadas pelo Better Auth.
+As tabelas de usuário, sessão e contas de login são criadas pelo Better Auth. `accounts` tem uma linha por provedor (`discord`, `google`) ligada ao mesmo `user_id`.
 
 **riot_accounts** — `id`, `user_id` (único, FK), `puuid` (único), `game_name`, `tag_line`, `region`, `platform`, `card_url`, `last_synced_at`, `last_match_at`, `sync_status` (`ok` | `error` | `pending`), `sync_error`
 
@@ -49,6 +50,15 @@ As tabelas de usuário e sessão são criadas pelo Better Auth.
 
 **user_preferences** — PK `user_id` (FK users, cascade), `break_reminder` (padrão `true`), `updated_at`. Sem linha = padrões; a linha nasce quando o usuário muda um ajuste.
 
+**profile_settings** (Fase 8, §6) — PK `user_id` (FK users, cascade), `is_public` (padrão `false`), `show_rank`, `show_overview`, `show_agents`, `show_maps`, `show_matches`, `show_weapons` (booleanos, padrão `true`, só valem com `is_public`), `decided_at` (quando o usuário escolheu; nulo = ainda não perguntado), `updated_at`. Sem linha = privado e ainda não perguntado.
+
+**Rounds (Fase 9, §7).**
+
+- **match_rounds** — PK (`match_id`, `round`), `winning_team`, `result` (motivo: eliminação, spike, desarme, tempo), `attacking_team` (lado de ataque daquele round, derivado da metade e da prorrogação).
+- **match_round_players** — PK (`match_id`, `round`, `puuid`), `team`, `weapon_id`, `weapon_name` (arma comprada no round, pode ser nula), `armor`, `loadout_value`, `spent`, `damage`, `headshots`, `bodyshots`, `legshots`, `kills`, `assists`, `survived`.
+- **match_kills** — PK (`match_id`, `round`, `seq`), `time_in_round_ms`, `killer_puuid` (nulo em morte sem autor, ex.: queda), `victim_puuid`, `assistants` (array de puuid), `weapon_id`, `weapon_name`, `weapon_type`.
+- **matches** ganha `rounds_synced_at`: nulo nas partidas gravadas antes da Fase 9, preenchido quando os rounds foram gravados. Tudo cascata a partir de `matches`.
+
 **weekly_summaries** (Fase 5) — PK (`group_id`, `week_start`), `status`, `provider` (`gemini` | `groq` | `rules`), `model`, `text`, `stats` (números agregados), `attempts`, `message_id`, `last_error`, `created_at`, `updated_at`, `sent_at`.
 
 **Bagre (Fase 6, §5).** As tabelas são genéricas ("premiações" do grupo) para receber novas categorias e clipes sem migração de dados; hoje só existe a categoria `bagre`.
@@ -58,7 +68,7 @@ As tabelas de usuário e sessão são criadas pelo Better Auth.
 - **award_nominations** — `id`, `round_id` (FK), `nominee_id` (FK users), `nominator_id` (FK users, nulo se a conta for apagada), `match_id` (FK matches), `comment` (1–140 caracteres), `created_at`. Único por (`round_id`, `nominee_id`); `nominee_id <> nominator_id` garantido por CHECK.
 - **award_votes** — PK (`round_id`, `voter_id`), `nomination_id`, `nominee_id`, `created_at`, `updated_at`. FK composta (`nomination_id`, `round_id`, `nominee_id`) → `award_nominations`, para o voto nunca apontar para outro período nem mentir sobre o indicado; `voter_id <> nominee_id` garantido por CHECK.
 
-Índices: `match_players(puuid, match_id)`, `matches(started_at)`, `mmr_snapshots(puuid, recorded_at)`.
+Índices: `match_players(puuid, match_id)`, `matches(started_at)`, `mmr_snapshots(puuid, recorded_at)`, `match_round_players(puuid, match_id)`, `match_kills(killer_puuid)`, `match_kills(victim_puuid)`, e na Fase 8 um índice para buscar `riot_accounts` por nome sem diferenciar maiúsculas.
 
 Guardar o JSON bruto da partida é opcional e fica desligado por padrão (ocupa muito espaço no plano gratuito do banco).
 
@@ -67,7 +77,7 @@ Guardar o JSON bruto da partida é opcional e fica desligado por padrão (ocupa 
 1. Um agendador externo (cron-job.org ou GitHub Actions) chama `POST /api/cron/sync` a cada 10–15 minutos com `Authorization: Bearer CRON_SECRET`.
 2. A rota pega as N contas com `last_synced_at` mais antigo (N pequeno, para caber no tempo máximo da função).
 3. Para cada conta, consulta o histórico por puuid com `size` pequeno (5).
-4. Descarta os `match_id` que já existem no banco. Para os novos, grava a partida e os 10 jogadores numa transação.
+4. Descarta os `match_id` que já existem no banco. Para os novos, grava a partida e os 10 jogadores numa transação (a partir da Fase 9, junto com rounds e abates, na mesma transação).
 5. Se entrou partida competitiva nova (ou há competitiva das últimas 6 horas ainda sem RR), atualiza o histórico de rank (`mmr_snapshots`, um por partida, ligado pelo `match_id`).
 6. Para cada grupo com webhook em que algum membro estava na partida nova, envia **um** card por partida (listando todos os membros do grupo que jogaram), nunca um card por membro.
 7. Atualiza `last_synced_at`. Em caso de erro, grava `sync_status = error` e segue para a próxima conta.
@@ -80,9 +90,11 @@ Ao vincular uma conta, importar as partidas que a API retornar no histórico rec
 
 ## 4. Telas do MVP
 
-**Landing (`/`)** — o que é, uma prévia do dashboard com dados de exemplo e o botão "Entrar com Discord".
+**Landing (`/`)** — o que é, uma prévia do dashboard com dados de exemplo, o botão "Entrar" (ação principal) e a busca de perfis públicos (§6).
 
-**Onboarding (`/onboarding`)** — campo `Nome#TAG`, validação em tempo real, prévia do card do jogador antes de confirmar, importação com progresso visível.
+**Entrar (`/login`)** — "Entrar com Google" e "Entrar com Discord", com o mesmo peso visual; volta para a página pedida depois do login. Uma linha explica que dá para vincular a outra conta depois em Configurações.
+
+**Onboarding (`/onboarding`)** — campo `Nome#TAG`, validação em tempo real, prévia do card do jogador antes de confirmar, importação com progresso visível. Depois do Riot ID, o passo "Seu perfil" (§6.2) pergunta se o perfil é público e o que aparece.
 
 **Dashboard (`/me`)** — pergunta principal: "estou melhorando?"
 - No topo, card "Sessão de hoje" quando a última sessão está em andamento (última partida terminou há até 2 horas) ou terminou hoje: partidas, V–D na ordem jogada, RR conhecido (com quantas competitivas ainda estão sem RR), ACS médio (avisando se mistura modos) e o melhor jogo (maior ACS) com link. Sessão é por tempo, todos os modos.
@@ -107,7 +119,7 @@ Ao vincular uma conta, importar as partidas que a API retornar no histórico rec
 
 **Perfil de membro (`/groups/[slug]/members/[userId]`)** — as seções "Agentes" e "Últimas partidas" de um membro, visíveis só para quem está no mesmo grupo (quem não está recebe o mesmo 404 de um grupo inexistente). As partidas abrem o placar só quando quem está vendo também jogou.
 
-**Configurações (`/settings`)** — conta Riot vinculada, status do último sync, o liga/desliga do aviso de pausa e opção de desvincular (apagando os dados do usuário).
+**Configurações (`/settings`)** — conta Riot vinculada, status do último sync, o liga/desliga do aviso de pausa e opção de desvincular (apagando os dados do usuário). "Contas de login": Google e Discord com o estado de cada um, botão para vincular a que falta e para desvincular (só se sobrar outra; nunca deixa o usuário sem login). "Perfil público" (Fase 8): o mesmo controle do onboarding, com link para ver o próprio perfil como um visitante vê.
 
 **Bagre (`/groups/[slug]/bagre`)** — pergunta principal: "quem foi o Bagre?" Ver §5.
 
@@ -179,7 +191,75 @@ Rodar o encerramento duas vezes não muda nada nem posta de novo. `pnpm bagre:on
 - **Perfil de membro**: o selo, quando vigente.
 - Estados: carregamento com o formato da tela, vazio ("Ninguém foi indicado ainda, que tal começar?"), Bagre desligado e erro com como resolver.
 
-## 6. Fases
+## 6. Perfil público (Fase 8)
+
+Pergunta principal de quem visita: "como essa pessoa joga?". O diferencial continua sendo o social; o perfil público é a porta de entrada para quem ainda não usa o Retake e o jeito de ver um amigo de fora dos seus grupos.
+
+### 6.1 Quem tem perfil
+
+- Só **usuários do Retake com Riot ID vinculado e `is_public = true`**. Jogadores que não são usuários nunca têm página, não aparecem na busca e não viram link no placar.
+- O padrão é **privado**. Ficar privado vale na hora: a página passa a responder o mesmo 404 de um perfil que não existe, e a pessoa some da busca.
+- **Nunca aparece** num perfil público: grupos, Bagre (indicações, votos, selo), duplas/sinergia, metas, sessão de hoje e o resumo semanal.
+- Sem nada "ao vivo": nem "jogando agora", nem partida em andamento, nem consulta de partida pelo id do adversário (regra de anti-scouting do CLAUDE.md).
+- Páginas de perfil e busca com `robots: noindex`: o perfil é para ser compartilhado, não indexado.
+
+### 6.2 Escolha no cadastro
+
+- Passo "Seu perfil" no onboarding, depois do Riot ID. Duas opções com o mesmo peso, **sem nenhuma pré-selecionada**: "Público" e "Privado", cada uma com uma frase do que significa.
+- Em "Público", a lista do que aparece, todas ligadas por padrão e com uma prévia ao lado: rank e RR, visão geral (KPIs e tendência), agentes, mapas, últimas partidas e armas (quando a Fase 9 existir). Desmarcar tudo é o mesmo que privado e a tela diz isso.
+- Grava `decided_at`. Usuários antigos (sem `decided_at`) veem a mesma pergunta uma vez, num card no topo do `/me`, que dá para adiar; enquanto não escolhem, continuam privados.
+- Tudo muda depois em Configurações.
+
+### 6.3 Página `/u/[riotId]`
+
+- Endereço `Nome-TAG` (o último hífen separa a tag; nome com espaço ou acento vai codificado). Resolve pelo Riot ID atual em `riot_accounts` de **usuários**; quem trocou de nome muda de endereço, e o endereço antigo dá 404. Internamente tudo continua por `puuid`/`user_id`.
+- Funciona **sem login**. Mostra só os campos escolhidos, com o filtro de modo (padrão competitivo) como no `/me`.
+- As últimas partidas mostram só a linha do próprio jogador (agente, mapa, placar, K/D/A, ACS, resultado). Elas só viram link para o placar completo quando quem está vendo também jogou aquela partida, como no perfil de membro.
+- Visitante sem login vê um convite discreto para entrar; usuário logado vê o próprio cabeçalho do app.
+- Estados: carregamento, perfil sem partidas no modo, 404 (perfil privado ou inexistente, mesma mensagem) e erro.
+
+### 6.4 Busca
+
+- Campo na landing, no cabeçalho do app e em `/search?q=`. Busca pelo nome do Riot ID (com ou sem `#TAG`), sem diferenciar maiúsculas e acentos, a partir de 3 caracteres, até 10 resultados (card do jogador, Riot ID e rank se `show_rank`).
+- Só entre perfis públicos. "Nenhum perfil público com esse nome" é a resposta tanto para quem não existe quanto para quem é privado ou não é usuário.
+- Limite simples por IP na rota de busca para não virar raspagem.
+
+### 6.5 Links a partir do app
+
+- No placar (`/match/[id]`), o nome vira link para `/u/...` só se o jogador for usuário com perfil público. Para membros dos seus grupos, o link continua indo para o perfil de membro (que mostra mais).
+- Na busca e no perfil, nada indica se a pessoa está em algum grupo.
+
+## 7. Rounds, armas e economia (Fase 9)
+
+Os dados já vêm na resposta da partida v4 (§1); o que muda é gravar e calcular. Métricas são calculadas das tabelas de rounds (§2), nunca guardadas prontas. Fórmulas no CLAUDE.md.
+
+### 7.1 Sync e backfill
+
+- O sync grava `match_rounds`, `match_round_players` e `match_kills` na mesma transação da partida e preenche `rounds_synced_at`.
+- `pnpm rounds:backfill` busca de novo, pela rota de partida por id, as partidas com `rounds_synced_at` nulo, passando pela fila de rate limit (é a única parte que gasta requisições extras, uma vez por partida antiga). O padrão é só partidas com usuário do Retake; `--all` inclui as outras.
+- Campos que faltarem num round (ex.: arma nula, economia ausente em modos sem compra) ficam nulos e a métrica que depende deles ignora o round, avisando a amostra na UI.
+- Modos sem economia (deathmatch, team deathmatch) não entram nas métricas de economia nem de clutch.
+
+### 7.2 Métricas
+
+- **First blood / first death** por partida e no total (contagem e % dos rounds).
+- **Multi-kills**: 3K, 4K e ás por partida e no total.
+- **Clutch 1vX**: situações e vitórias por X (1v1 a 1v5).
+- **KAST** por partida e na média (janela de troca: 5 s).
+- **Economia do round**, pela média do `loadout_value` do time no início do round: eco abaixo de 2.000, compra parcial/force de 2.000 a 3.899, compra completa a partir de 3.900. Confirme as faixas com dados reais antes de fechar e registre aqui se mudarem. Win rate e ACS por faixa; pistol (primeiro round de cada metade) aparece separado.
+- **Ataque/defesa**: win rate dos rounds de cada lado, por mapa.
+- **Armas**: abates por arma (exato) e HS% por arma (aproximado, pelos tiros dos rounds em que aquela arma foi comprada; a UI diz "aproximado: pela arma comprada no round"). Mostra só armas com pelo menos 10 abates ou 100 tiros no período; abaixo disso, em segundo plano com aviso de amostra.
+
+### 7.3 Telas
+
+- **`/me`**: seção "Armas" (tabela: arma, abates, HS% aproximado, partidas; em 390px vira lista) e seção "Rounds" (FB/FD, KAST, multi-kills, clutches, ataque × defesa, economia). Mesmos filtros de modo e período.
+- **Agente e perfil de membro**: as mesmas métricas filtradas, onde couberem sem poluir.
+- **Partida**: colunas FB, FD, KAST e multi-kill no placar; uma faixa com os rounds (vitória/derrota com ícone e texto, lado, tipo de compra) e, ao abrir um round, os abates em ordem.
+- **Grupo**: o ranking semanal ganha as métricas first bloods, clutches e ases.
+- **Perfil público**: a seção "Armas" quando `show_weapons`.
+- Cards do Discord ficam para depois (fase própria).
+
+## 8. Fases
 
 Cada fase termina com lint, typecheck e testes passando, verificação visual pelo Playwright MCP nas telas tocadas e um `/audit` do Impeccable.
 
@@ -203,11 +283,19 @@ Cada fase termina com lint, typecheck e testes passando, verificação visual pe
 **Fase 6 — Social.** Bagre do grupo (§5).
 *Pronto quando:* membros indicam, votam e trocam o voto; o cron encerra o período uma única vez, dá o selo e posta o resultado no Discord.
 
-## 7. Ideias futuras (fora do escopo atual)
+**Fase 7 — Contas de login.** Login com Google além do Discord, tela `/login`, vinculação e desvinculação das duas contas em Configurações (§4). O nome mostrado no app passa a ser o do Riot ID quando existir, e o do provedor só como reserva (hoje o código chama isso de `discordName`).
+*Pronto quando:* um usuário novo entra pelo Google, vincula o Discord (e vice-versa), entra pelos dois e cai no mesmo usuário, e não consegue desvincular o único login que resta.
+
+**Fase 8 — Perfil público.** Escolha no onboarding e em Configurações, página `/u/[riotId]`, busca e links no placar (§6).
+*Pronto quando:* um visitante sem login acha um perfil público pela busca e vê só os campos escolhidos; um perfil privado e um jogador que não é usuário dão a mesma resposta de "não encontrado"; trocar para privado esconde na hora.
+
+**Fase 9 — Rounds, armas e economia.** Gravar rounds e abates, backfill e as métricas e telas do §7.
+*Pronto quando:* uma partida nova chega com rounds, o backfill completa as antigas sem estourar o rate limit, e as métricas batem com uma partida conferida à mão nos testes.
+
+## 9. Ideias futuras (fora do escopo atual)
 
 - **Clipes nas indicações**: uma indicação poderá ganhar um clipe. O modelo já comporta: uma tabela `award_clips` (`id`, `nomination_id` FK → `award_nominations` com cascade, `provider`, `url` validada por lista de hosts, `added_by`, `created_at`) liga 0 ou mais clipes a uma indicação sem mexer nas tabelas atuais. Upload próprio fica fora; só links de serviços conhecidos, mostrados com o mesmo controle de acesso da indicação.
 - **Jogada da semana** e outras categorias: novo valor no enum `award_category` (ex.: `play_of_week`) e uma linha em `award_rounds` por categoria e período. Indicações, votos, encerramento e histórico já são por `round_id`; o que muda por categoria é o texto, as sugestões e se há selo.
 
-- **Multikills** (2K, 3K, 4K, ás por partida e por agente): exigem ler os eventos de kill de cada round, que o sync hoje não guarda.
 - **Nota própria de desempenho** (no estilo do TRS do Tracker.gg): uma pontuação única por partida combinando várias métricas. Só faz sentido com uma fórmula aberta, documentada aqui e testada, para não virar caixa-preta.
-- KAST e métricas por round, já listadas como fora do MVP.
+- **Cards do Discord repensados**: formato, frequência (ex.: um card por sessão em vez de um por partida) e preferências por membro. A definir.

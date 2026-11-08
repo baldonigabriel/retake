@@ -5,7 +5,7 @@
 
 ## O que o produto faz
 
-O usuário entra com a conta do Discord e vincula o próprio Riot ID. Um processo de sincronização busca as partidas novas periodicamente e salva tudo no nosso banco. O app mostra a evolução pessoal (rank, ACS, K/D, HS%, ADR, win rate, desempenho por mapa e agente), a página de cada partida e grupos de amigos com ranking semanal. Depois de cada partida, um card é postado no Discord do grupo.
+O usuário entra com a conta do Google ou do Discord (e pode vincular as duas) e vincula o próprio Riot ID. Um processo de sincronização busca as partidas novas periodicamente e salva tudo no nosso banco. O app mostra a evolução pessoal (rank, ACS, K/D, HS%, ADR, win rate, desempenho por mapa e agente), a página de cada partida e grupos de amigos com ranking semanal. Depois de cada partida, um card é postado no Discord do grupo.
 
 O diferencial em relação ao Tracker.gg é o lado social: grupos, rankings internos e "partidas que jogamos juntos". Priorize isso nas decisões de produto.
 
@@ -15,7 +15,7 @@ O diferencial em relação ao Tracker.gg é o lado social: grupos, rankings inte
 - **Tailwind CSS** + **shadcn/ui**; componentes do 21st.dev entram pelo CLI do shadcn ou pelo MCP do 21st
 - **Recharts** via componentes de chart do shadcn
 - **PostgreSQL** (Neon ou Supabase) + **Drizzle ORM** com migrations versionadas
-- **Better Auth** com login via Discord
+- **Better Auth** com login via Google e Discord (as duas contas podem ser vinculadas ao mesmo usuário)
 - **Zod** para validar toda resposta da API externa
 - **Vitest** para testes unitários e **Playwright** para e2e e verificação visual
 - **pnpm** como gerenciador de pacotes
@@ -36,6 +36,8 @@ src/
     (app)/groups/[slug]/members/[userId]/  perfil de um membro (só para o mesmo grupo)
     (app)/groups/[slug]/bagre/     Bagre: indicações, votação, resultado e histórico
     (app)/settings/
+    (public)/u/[riotId]/           perfil público opt-in (sem login; só quem ativou)
+    (public)/search/               busca de perfis públicos
     api/cron/sync/route.ts         sincronização (protegida por CRON_SECRET)
     api/auth/[...all]/route.ts     Better Auth
   db/
@@ -44,6 +46,8 @@ src/
   lib/
     henrik/                        cliente HTTP, schemas Zod, rate limiter
     sync/                          lógica de sincronização (independente do Next)
+    rounds/                        leitura dos rounds e abates da partida (first blood, clutch, multi-kill, KAST, economia, arma)
+    profile/                       perfil público: preferências, campos visíveis e regras de acesso
     stats/                         funções puras de métricas (100% testadas): agentes, histórico por dia, candidatos do Bagre, sinergia de duo, sessões
     discord/                       montagem e envio de cards por webhook
     ai/                            provedores de texto (Gemini, Groq) com fallback em cadeia
@@ -70,6 +74,7 @@ DESIGN.md                          fonte da verdade visual
 - Toda estatística é filtrável por modo; o padrão é **competitivo**. Nunca misture modos numa média sem deixar isso explícito na UI.
 - **Rate limit:** o cliente HenrikDev passa por uma fila com teto de ~20 req/min (o limite da chave Basic é 30, deixamos folga). Leia os headers de rate limit, e em caso de 429 espere o `Retry-After` antes de tentar de novo. Nunca faça laços de retry sem espera.
 - **Privacidade:** cada usuário vincula só a própria conta e grupos são por convite. Jogadores que não são usuários aparecem apenas no placar de uma partida; não crie perfis, buscas ou páginas para eles.
+- **Perfil público é opt-in** (SPEC §6): só usuários do Retake que escolheram ser públicos têm página em `/u/...` e aparecem na busca, e só com os campos que escolheram mostrar. O padrão é privado. Grupos, Bagre e duplas nunca aparecem num perfil público. A busca nunca encontra quem não é usuário nem quem é privado: o resultado é o mesmo de um nome que não existe.
 - **Proibido:** qualquer feature de scouting (estatísticas de adversários antes ou durante uma partida).
 
 ### Fórmulas
@@ -86,7 +91,15 @@ DESIGN.md                          fonte da verdade visual
 - Sessão = partidas seguidas com até 2 horas entre o fim de uma (`started_at + game_length_ms`) e o início da próxima. É por tempo, não por modo; médias de uma sessão com mais de um modo dizem isso na UI. RR da sessão = soma do RR conhecido das competitivas, com aviso das que ainda não têm RR
 - Sinergia de duo = win rate, K/D e ACS **do usuário** nas partidas em que outro usuário do Retake de um grupo em comum estava no mesmo time, comparados com a média do usuário no mesmo modo. Aparece a partir de 3 partidas juntos; abaixo de 10, com aviso de amostra pequena e depois das duplas com amostra maior
 
-KAST e métricas por round ficam fora do MVP.
+Métricas por round (Fase 9, SPEC §7), calculadas a partir de `match_rounds`, `match_round_players` e `match_kills`:
+
+- First blood / first death = primeiro abate do round (pelo `time_in_round`) e quem morreu nele. FB% = rounds com first blood / rounds jogados
+- Multi-kill = 3, 4 ou 5 abates do mesmo jogador num round (3K, 4K, ás)
+- Clutch 1vX = o jogador fica como último vivo do time com X adversários vivos e o time ganha o round. Taxa = clutches ganhos / situações de clutch
+- KAST = % de rounds em que o jogador teve abate, assistência, sobreviveu ou foi trocado (o assassino morreu para um aliado em até 5 s)
+- Economia do round = pelo valor médio do equipamento do time no início do round (faixas no SPEC §7); win rate por faixa
+- Ataque/defesa = win rate dos rounds de cada lado, por mapa
+- Abates por arma = contagem exata pelos abates. **HS% por arma é aproximado**: tiros do round atribuídos à arma comprada naquele round (a API não diz a arma de cada tiro); a UI diz isso
 
 ## UI/UX
 
@@ -119,6 +132,10 @@ Depois de qualquer mudança de UI:
 4. Teste os estados de carregamento, vazio e erro.
 
 Antes de concluir qualquer tarefa: `pnpm lint`, `pnpm typecheck` e `pnpm test` passando.
+
+## Bancos de dev e produção
+
+Dev/e2e e produção são bancos **separados**. Dados de teste nunca vão para a produção: o seed do e2e (e qualquer script que crie dados falsos) chama `assertDevDatabase()` de `src/db/dev-guard.ts`, que só deixa seguir se o próprio banco tiver a marca `COMMENT ON DATABASE <nome> IS 'retake:dev'`. Nunca marque o banco de produção nem contorne a trava. Antes de rodar SQL ou script que escreve, confira para qual banco aponta o `DATABASE_URL` carregado.
 
 ## Comandos
 
