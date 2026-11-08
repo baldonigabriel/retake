@@ -12,6 +12,8 @@ const serverSchema = z.object({
   BETTER_AUTH_URL: z.url().optional(),
   DISCORD_CLIENT_ID: z.string().min(1).optional(),
   DISCORD_CLIENT_SECRET: z.string().min(1).optional(),
+  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   HENRIK_API_KEY: z.string().min(1).optional(),
   CRON_SECRET: z.string().min(16).optional(),
   /** Base64 of 32 random bytes (openssl rand -base64 32): AES-256-GCM key for secrets at rest. */

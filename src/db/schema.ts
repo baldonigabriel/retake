@@ -72,7 +72,7 @@ export const sessions = pgTable(
   (t) => [index("sessions_user_id_idx").on(t.userId)],
 );
 
-/** OAuth links (Discord). Tokens are never returned by Better Auth's API. */
+/** OAuth links (Discord or Google). Tokens are never returned by Better Auth's API. */
 export const accounts = pgTable(
   "accounts",
   {
@@ -92,7 +92,10 @@ export const accounts = pgTable(
     createdAt: timestamptz("created_at").notNull().defaultNow(),
     updatedAt: timestamptz("updated_at").notNull().defaultNow(),
   },
-  (t) => [index("accounts_user_id_idx").on(t.userId)],
+  (t) => [
+    index("accounts_user_id_idx").on(t.userId),
+    uniqueIndex("accounts_provider_account_uq").on(t.providerId, t.accountId),
+  ],
 );
 
 /** OAuth state / PKCE verifiers. */
