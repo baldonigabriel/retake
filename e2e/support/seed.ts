@@ -13,6 +13,7 @@ import { testUtils } from "better-auth/plugins";
 import { eq, inArray, like } from "drizzle-orm";
 
 import { db } from "@/db";
+import { assertDevDatabase } from "@/db/dev-guard";
 import {
   awardNominations,
   awardRounds,
@@ -365,6 +366,7 @@ function testAuth() {
 
 /** Removes everything the seed created (safe to run twice). */
 export async function cleanup() {
+  await assertDevDatabase();
   const database = db();
   await database.delete(matches).where(like(matches.id, `${E2E.matchPrefix}%`));
   await database.delete(mmrSnapshots).where(like(mmrSnapshots.puuid, "e2e-%"));
