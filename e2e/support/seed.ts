@@ -15,6 +15,7 @@ import { eq, inArray, like } from "drizzle-orm";
 import { db } from "@/db";
 import { assertDevDatabase } from "@/db/dev-guard";
 import {
+  accounts,
   awardNominations,
   awardRounds,
   awardVotes,
@@ -394,7 +395,7 @@ export async function seed(): Promise<{
   const now = new Date();
 
   for (const [id, name] of [
-    [E2E.userId, "Tester"],
+    [E2E.userId, "Nome do provedor"],
     [E2E.newUserId, "Novato"],
     [E2E.emptyUserId, "Vazio"],
     [E2E.friendUserId, "Parceiro"],
@@ -403,6 +404,21 @@ export async function seed(): Promise<{
   ] as const) {
     await ctx.test.saveUser(ctx.test.createUser({ id, name, email: `${id}@retake.example`, emailVerified: true }));
   }
+
+  await database.insert(accounts).values(
+    [E2E.userId, E2E.newUserId, E2E.emptyUserId, E2E.friendUserId, E2E.thirdUserId, E2E.sessionUserId].map((userId) => ({
+      id: `e2e-discord-${userId}`,
+      accountId: `discord-${userId}`,
+      providerId: "discord",
+      userId,
+    })),
+  );
+  await database.insert(accounts).values({
+    id: `e2e-google-${E2E.friendUserId}`,
+    accountId: `google-${E2E.friendUserId}`,
+    providerId: "google",
+    userId: E2E.friendUserId,
+  });
 
   await database.insert(riotAccounts).values({
     userId: E2E.userId,

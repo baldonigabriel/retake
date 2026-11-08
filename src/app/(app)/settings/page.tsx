@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 
+import { LoginAccounts } from "@/components/auth/login-accounts";
+import type { SocialProvider } from "@/components/auth/social-auth-buttons";
 import { Avatar } from "@/components/layout/account-menu";
 import { SignOutButton } from "@/components/layout/sign-out-button";
 import { BreakReminderSwitch } from "@/components/session/break-reminder-switch";
 import { Badge } from "@/components/ui/badge";
+import { db } from "@/db";
+import { listLoginAccounts } from "@/lib/auth/accounts";
 import { requireViewer } from "@/lib/auth/session";
 import { formatMatchDate, formatRelativeTime } from "@/lib/format";
 import { getBreakReminder } from "@/lib/preferences/queries";
@@ -17,11 +21,14 @@ const STATUS = {
   error: { label: "Falhou", variant: "loss" },
 } as const;
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
   const { user, account } = await requireViewer("/settings");
-  const breakReminder = await getBreakReminder(user.id);
+  const params = await searchParams;
+  const [breakReminder, loginAccounts] = await Promise.all([getBreakReminder(user.id), listLoginAccounts(db(), user.id)]);
   const now = new Date();
   const status = STATUS[account.syncStatus];
+  const linked = socialProvider(params.linked);
+  const linkError = socialProvider(params.linkError);
 
   return (
     <div className="content-enter flex max-w-2xl flex-col gap-4 py-8 sm:py-10">
@@ -79,16 +86,25 @@ export default async function SettingsPage() {
         <BreakReminderSwitch on={breakReminder} labelledBy="break-title" describedBy="break-desc" />
       </section>
 
-      <section aria-labelledby="discord-title" className="flex flex-col gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <LoginAccounts accounts={loginAccounts} linked={linked} linkError={linkError} />
+
+      <section aria-labelledby="session-title" className="flex flex-col gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex items-center gap-3">
-          <Avatar name={user.providerName} image={user.image} className="size-10" />
+          <Avatar name={account.gameName} image={user.image} className="size-10" />
           <div className="flex flex-col">
-            <h2 id="discord-title" className="text-body-sm font-semibold text-fg">Discord</h2>
-            <p className="text-fg-secondary">Conectado como {user.providerName}</p>
+            <h2 id="session-title" className="text-body-sm font-semibold text-fg">Sessão atual</h2>
+            <p className="text-fg-secondary">
+              Conectado como {account.gameName}<span className="font-mono text-label text-fg-muted">#{account.tagLine}</span>
+            </p>
           </div>
         </div>
         <SignOutButton />
       </section>
     </div>
   );
+}
+
+function socialProvider(value: string | string[] | undefined): SocialProvider | undefined {
+  const provider = Array.isArray(value) ? value[0] : value;
+  return provider === "google" || provider === "discord" ? provider : undefined;
 }

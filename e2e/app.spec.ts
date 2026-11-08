@@ -5,7 +5,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { EMPTY_STATE, FRESH_STATE, ONBOARDED_STATE } from "./global-setup";
+import { EMPTY_STATE, FRESH_STATE, FRIEND_STATE, ONBOARDED_STATE } from "./global-setup";
 import { E2E, matchId } from "./support/seed";
 
 async function noHorizontalScroll(page: Page) {
@@ -31,7 +31,7 @@ test.describe("signed out", () => {
     await expect(page.getByText("isn't endorsed by Riot Games", { exact: false })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
-    await page.getByRole("link", { name: "Entrar", exact: true }).click();
+    await page.getByRole("link", { name: "Entrar no Retake" }).click();
     await expect(page).toHaveURL(/\/login$/);
   });
 
@@ -103,6 +103,19 @@ test.describe("onboarded user", () => {
     await expect(page.getByRole("heading", { name: "Por mapa" })).toBeVisible();
     await expect(page.getByRole("list", { name: "Últimas partidas" }).getByRole("link")).toHaveCount(20);
     await expect(page.locator("[data-slot=chamfer-card]")).toHaveCount(1);
+    await noHorizontalScroll(page);
+  });
+
+  test("uses the Riot name and protects the only login in settings", async ({ page }) => {
+    await page.goto("/me");
+    await expect(page.getByRole("button", { name: `Sua conta: ${E2E.gameName}` })).toBeVisible();
+
+    await page.goto("/settings");
+    const logins = page.locator("section", { has: page.getByRole("heading", { name: "Contas de login" }) });
+    await expect(logins.getByText("Discord")).toBeVisible();
+    await expect(logins.getByText("Vinculado ao seu perfil")).toBeVisible();
+    await expect(logins.getByRole("button", { name: "Vincular Google" })).toBeEnabled();
+    await expect(logins.getByRole("button", { name: "Único acesso" })).toBeDisabled();
     await noHorizontalScroll(page);
   });
 
@@ -190,5 +203,25 @@ test.describe("user without matches", () => {
     await expect(page.getByText("Ainda não temos partidas suas")).toBeVisible();
     await expect(page.getByText("Sem rank ainda")).toBeVisible();
     await expect(page.getByRole("button", { name: "Sincronizar agora" })).toBeVisible();
+  });
+});
+
+test.describe("user with both login accounts", () => {
+  test.use({ storageState: FRIEND_STATE });
+  test.skip(({ isMobile }) => isMobile, "changes shared login accounts; run once on desktop");
+
+  test("can unlink one provider and keeps the other login", async ({ page }) => {
+    await page.goto("/settings");
+    const logins = page.locator("section", { has: page.getByRole("heading", { name: "Contas de login" }) });
+    await expect(logins.getByText("Vinculado ao seu perfil")).toHaveCount(2);
+
+    const google = logins.getByRole("listitem").filter({ hasText: "Google" });
+    await google.getByRole("button", { name: "Desvincular" }).click();
+    const dialog = page.getByRole("alertdialog", { name: "Desvincular Google?" });
+    await dialog.getByRole("button", { name: "Desvincular", exact: true }).click();
+
+    await expect(page.getByText("Google desvinculado")).toBeVisible();
+    await expect(google.getByRole("button", { name: "Vincular Google" })).toBeEnabled();
+    await expect(logins.getByRole("button", { name: "Único acesso" })).toBeDisabled();
   });
 });
