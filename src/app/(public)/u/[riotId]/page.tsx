@@ -47,15 +47,19 @@ async function resolve(raw: string): Promise<PublicProfile | null> {
   return parts ? findPublicProfile(parts) : null;
 }
 
+/**
+ * Built from the address only, never from the database: the tab says the
+ * same thing for a public, a private and an unknown Riot ID, so it can't be
+ * used to tell them apart. (Reading the profile here also kept the 404 from
+ * replacing the loading skeleton under Cache Components.)
+ */
 export async function generateMetadata({ params }: PageProps<"/u/[riotId]">): Promise<Metadata> {
-  const profile = await resolve((await params).riotId);
-  // Shared, not indexed (SPEC §6.1).
-  const robots = { index: false, follow: false };
-  if (!profile) return { title: "Perfil não encontrado", robots };
+  const parts = parseProfileSlug((await params).riotId);
   return {
-    title: `${profile.gameName}#${profile.tagLine}`,
-    description: `Perfil público de ${profile.gameName} no Retake.`,
-    robots,
+    title: parts ? `${parts.gameName}#${parts.tagLine}` : "Perfil",
+    description: "Perfil público no Retake.",
+    // Shared, not indexed (SPEC §6.1).
+    robots: { index: false, follow: false },
   };
 }
 
