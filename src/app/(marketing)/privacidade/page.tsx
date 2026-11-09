@@ -99,7 +99,9 @@ export default function PrivacyPage() {
         <Section title="Seus direitos">
           <p>
             Pela Lei Geral de Proteção de Dados (LGPD), você pode pedir acesso, correção ou exclusão dos seus dados. Para
-            apagar sua conta e tudo o que é só seu, ou para qualquer outro pedido, escreva para{" "}
+            apagar sua conta e tudo o que é só seu, use “Apagar minha conta” em Ajustes: vale na hora. Os grupos que você
+            criou passam para o membro mais antigo, ou são apagados se não tiverem mais ninguém. Para qualquer outro
+            pedido, escreva para{" "}
             <a href={`mailto:${CONTACT}`} className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
               {CONTACT}
             </a>

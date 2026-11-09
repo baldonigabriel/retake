@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { db } from "@/db";
+import { deleteAccount } from "@/lib/account/delete";
 import { unlinkLoginAccount } from "@/lib/auth/accounts";
 import { getSessionUser } from "@/lib/auth/session";
 import { setBreakReminder } from "@/lib/preferences/queries";
@@ -96,5 +97,25 @@ export async function postponeProfileQuestionAction(): Promise<{ ok: true } | { 
     });
   }
   revalidatePath("/me");
+  return { ok: true };
+}
+
+/**
+ * Deletes the session's own account (src/lib/account/delete.ts) and clears
+ * the auth cookies. The client then leaves for the landing page.
+ */
+export async function deleteAccountAction(): Promise<{ ok: true } | { ok: false; message: string }> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false, message: "Sua sessão expirou. Entre de novo para continuar." };
+  try {
+    await deleteAccount(user.id);
+  } catch (error) {
+    console.error("[account] delete failed", error);
+    return { ok: false, message: "Não foi possível apagar a conta agora. Nada foi apagado; tente de novo em alguns segundos." };
+  }
+  const jar = await cookies();
+  for (const cookie of jar.getAll()) {
+    if (cookie.name.includes("better-auth.")) jar.delete(cookie.name);
+  }
   return { ok: true };
 }

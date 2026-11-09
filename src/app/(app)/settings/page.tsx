@@ -2,6 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DeleteAccount } from "@/components/account/delete-account";
 import { LoginAccounts } from "@/components/auth/login-accounts";
 import type { SocialProvider } from "@/components/auth/social-auth-buttons";
 import { Avatar } from "@/components/layout/account-menu";
@@ -10,6 +11,8 @@ import { ProfileChoice } from "@/components/profile/profile-choice";
 import { BreakReminderSwitch } from "@/components/session/break-reminder-switch";
 import { Badge } from "@/components/ui/badge";
 import { db } from "@/db";
+import { getOwnedGroupFates } from "@/lib/account/delete";
+import { describeGroupFates } from "@/lib/account/delete-plan";
 import { listLoginAccounts } from "@/lib/auth/accounts";
 import { requireViewer } from "@/lib/auth/session";
 import { formatMatchDate, formatRelativeTime } from "@/lib/format";
@@ -30,10 +33,11 @@ const STATUS = {
 export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
   const { user, account } = await requireViewer("/settings");
   const params = await searchParams;
-  const [breakReminder, loginAccounts, profile] = await Promise.all([
+  const [breakReminder, loginAccounts, profile, groupFates] = await Promise.all([
     getBreakReminder(user.id),
     listLoginAccounts(db(), user.id),
     getProfileSettings(user.id),
+    getOwnedGroupFates(user.id),
   ]);
   const profileVisible = isProfileVisible(profile);
   const now = new Date();
@@ -76,8 +80,8 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           </dd>
         </dl>
         <p className="text-label font-normal text-fg-muted">
-          Sincronizamos sozinhos a cada 15 minutos, mais ou menos. A opção de desvincular a conta (apagando seus dados)
-          chega na próxima atualização.
+          Sincronizamos sozinhos a cada 15 minutos, mais ou menos. Para tirar seus dados do Retake, use “Apagar minha
+          conta” no fim desta página.
         </p>
       </section>
 
@@ -140,6 +144,30 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           </div>
         </div>
         <SignOutButton />
+      </section>
+
+      <section
+        id="apagar-conta"
+        aria-labelledby="delete-title"
+        className="flex scroll-mt-24 flex-col gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:p-5"
+      >
+        <div className="flex flex-col gap-1">
+          <h2 id="delete-title" className="text-body-sm font-semibold text-fg">
+            Apagar conta
+          </h2>
+          <p className="text-fg-secondary">
+            Remove seu login, o vínculo com o Riot ID e tudo o que é só seu no Retake. As partidas continuam no placar de
+            quem jogou com você.
+          </p>
+          {groupFates.length > 0 ? (
+            <ul className="mt-1 flex list-disc flex-col gap-1 pl-5 text-label font-normal text-fg-muted">
+              {describeGroupFates(groupFates).map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+        <DeleteAccount groupNotes={describeGroupFates(groupFates)} />
       </section>
     </div>
   );
