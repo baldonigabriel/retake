@@ -44,6 +44,7 @@ export function ProfileChoice({
   onSaved,
   compact = false,
   secondaryAction,
+  submitVariant = "default",
 }: {
   /** null = never answered: nothing pre-selected. */
   initial: Choice | null;
@@ -54,6 +55,8 @@ export function ProfileChoice({
   compact?: boolean;
   /** Rendered next to the save button (the /me card's "Agora não"). */
   secondaryAction?: React.ReactNode;
+  /** "secondary" where the screen already has its one red button (the /me card). */
+  submitVariant?: "default" | "secondary";
 }) {
   const id = useId();
   const [visibility, setVisibility] = useState<Visibility | null>(initial?.visibility ?? null);
@@ -181,7 +184,7 @@ export function ProfileChoice({
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Button type="submit" disabled={!visibility || pending} aria-busy={pending} className="w-full sm:w-fit">
+        <Button type="submit" variant={submitVariant} disabled={!visibility || pending} aria-busy={pending} className="w-full sm:w-fit">
           {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : null}
           {pending ? "Salvando…" : submitLabel}
         </Button>

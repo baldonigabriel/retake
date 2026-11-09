@@ -29,6 +29,7 @@ export function ProfileQuestionBody({ riotId }: { riotId: { gameName: string; ta
       initial={null}
       riotId={riotId}
       compact
+      submitVariant="secondary"
       onSaved={({ visible }) => {
         toast.success(visible ? "Perfil público" : "Perfil privado", {
           description: "Dá para mudar quando quiser em Ajustes.",
