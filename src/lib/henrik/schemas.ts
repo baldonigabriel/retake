@@ -77,6 +77,72 @@ export const matchTeamSchema = z.object({
 });
 export type HenrikMatchTeam = z.infer<typeof matchTeamSchema>;
 
+const roundPlayerSchema = z.object({
+  puuid: z.string(),
+  name: z.string().optional(),
+  tag: z.string().optional(),
+  team: z.string(),
+});
+
+const roundWeaponSchema = z.object({
+  id: z.string().nullish(),
+  name: z.string().nullish(),
+  type: z.string().nullish(),
+});
+
+export const matchRoundSchema = z.object({
+  id: z.number(),
+  result: z.string().nullish(),
+  winning_team: z.string().nullish(),
+  /** Lets us derive the attacking team even in overtime without guessing halves. */
+  winning_team_role: z.string().nullish(),
+  stats: z
+    .array(
+      z.object({
+        player: roundPlayerSchema,
+        damage_events: z
+          .array(
+            z.object({
+              damage: z.number().nullish(),
+              headshots: z.number().nullish(),
+              bodyshots: z.number().nullish(),
+              legshots: z.number().nullish(),
+            }),
+          )
+          .nullish(),
+        stats: z
+          .object({
+            score: z.number().nullish(),
+            kills: z.number().nullish(),
+            headshots: z.number().nullish(),
+            bodyshots: z.number().nullish(),
+            legshots: z.number().nullish(),
+          })
+          .nullish(),
+        economy: z
+          .object({
+            loadout_value: z.number().nullish(),
+            remaining: z.number().nullish(),
+            weapon: roundWeaponSchema.nullish(),
+            armor: z.object({ id: z.string(), name: z.string().nullish() }).nullish(),
+          })
+          .nullish(),
+      }),
+    )
+    .nullish(),
+});
+export type HenrikMatchRound = z.infer<typeof matchRoundSchema>;
+
+export const matchKillSchema = z.object({
+  round: z.number(),
+  time_in_round_in_ms: z.number(),
+  killer: roundPlayerSchema.nullish(),
+  victim: roundPlayerSchema,
+  assistants: z.array(roundPlayerSchema).nullish(),
+  weapon: roundWeaponSchema.nullish(),
+});
+export type HenrikMatchKill = z.infer<typeof matchKillSchema>;
+
 export const matchSchema = z.object({
   metadata: z.object({
     match_id: z.string().min(1),
@@ -96,8 +162,8 @@ export const matchSchema = z.object({
   }),
   players: z.array(matchPlayerSchema),
   teams: z.array(matchTeamSchema).nullish(),
-  /** Only the count is used (rounds played); round contents are ignored. */
-  rounds: z.array(z.unknown()).nullish(),
+  rounds: z.array(matchRoundSchema).nullish(),
+  kills: z.array(matchKillSchema).nullish(),
 });
 export type HenrikMatch = z.infer<typeof matchSchema>;
 

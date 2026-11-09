@@ -12,10 +12,30 @@
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
 import type { Database } from "@/db";
-import { matches, matchPlayers, mmrSnapshots, riotAccounts, type RiotAccount } from "@/db/schema";
+import {
+  matchKills,
+  matchPlayers,
+  matchRoundPlayers,
+  matchRounds,
+  matches,
+  mmrSnapshots,
+  riotAccounts,
+  type RiotAccount,
+} from "@/db/schema";
 import { playerCardUrl, type HenrikClient, type HenrikMmrEntry, type Platform, type Region } from "@/lib/henrik";
 
-import { COMPETITIVE, includesPlayer, isStorable, queueIdOf, toMatchRow, toPlayerRows, toSnapshotRows } from "./map";
+import {
+  COMPETITIVE,
+  includesPlayer,
+  isStorable,
+  queueIdOf,
+  toKillRows,
+  toMatchRow,
+  toPlayerRows,
+  toRoundPlayerRows,
+  toRoundRows,
+  toSnapshotRows,
+} from "./map";
 
 /** SPEC §3: query history with a small page and only store what's new. */
 export const HISTORY_PAGE_SIZE = 5;
@@ -115,9 +135,19 @@ export async function syncAccount(
 
     for (const match of mine) {
       if (existingIds.has(match.metadata.match_id)) continue;
+      const syncedAt = now();
+      const roundRows = toRoundRows(match);
+      const roundPlayerRows = toRoundPlayerRows(match);
+      const killRows = toKillRows(match);
+      const noOp = () => deps.db.execute(sql`select 1 where false`);
       const [insertedMatch] = await deps.db.batch([
-        deps.db.insert(matches).values(toMatchRow(match)).onConflictDoNothing().returning({ id: matches.id }),
+        deps.db.insert(matches).values(toMatchRow(match, syncedAt)).onConflictDoNothing().returning({ id: matches.id }),
         deps.db.insert(matchPlayers).values(toPlayerRows(match)).onConflictDoNothing(),
+        roundRows.length > 0 ? deps.db.insert(matchRounds).values(roundRows).onConflictDoNothing() : noOp(),
+        roundPlayerRows.length > 0
+          ? deps.db.insert(matchRoundPlayers).values(roundPlayerRows).onConflictDoNothing()
+          : noOp(),
+        killRows.length > 0 ? deps.db.insert(matchKills).values(killRows).onConflictDoNothing() : noOp(),
       ]);
       if (insertedMatch.length > 0) result.inserted.push(match.metadata.match_id);
       else result.alreadyStored++; // a concurrent sync stored it first

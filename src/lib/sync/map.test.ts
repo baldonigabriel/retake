@@ -4,7 +4,18 @@ import { describe, expect, it } from "vitest";
 import { ME_PUUID, rawMatch, rawMmrEntry, rawPlayer } from "@/lib/henrik/fixtures";
 import { matchSchema, mmrHistoryEntrySchema, type HenrikMatch } from "@/lib/henrik/schemas";
 
-import { includesPlayer, isStorable, queueIdOf, roundsPlayedOf, toMatchRow, toPlayerRows, toSnapshotRows } from "./map";
+import {
+  includesPlayer,
+  isStorable,
+  queueIdOf,
+  roundsPlayedOf,
+  toKillRows,
+  toMatchRow,
+  toPlayerRows,
+  toRoundPlayerRows,
+  toRoundRows,
+  toSnapshotRows,
+} from "./map";
 
 const parse = (raw: unknown): HenrikMatch => matchSchema.parse(raw);
 
@@ -73,6 +84,39 @@ describe("toPlayerRows", () => {
     const raw = rawMatch();
     raw.players.push(rawPlayer(0, { puuid: ME_PUUID }));
     expect(toPlayerRows(parse(raw))).toHaveLength(10);
+  });
+});
+
+describe("round persistence mapping", () => {
+  it("maps sides, economy samples and the ordered kill feed", () => {
+    const match = parse(rawMatch());
+    expect(toRoundRows(match)[0]).toMatchObject({
+      round: 0,
+      winningTeam: "Blue",
+      attackingTeam: "Blue",
+      result: "Elimination",
+    });
+    expect(toRoundRows(match)[1]).toMatchObject({ attackingTeam: "Red" });
+    expect(toRoundPlayerRows(match).find((row) => row.puuid === ME_PUUID && row.round === 0)).toMatchObject({
+      weaponName: "Vandal",
+      loadoutValue: 800,
+      spent: null,
+      damage: 100,
+      assists: 0,
+      survived: true,
+    });
+    expect(toKillRows(match)).toEqual([
+      expect.objectContaining({ round: 0, seq: 0, killerPuuid: ME_PUUID, weaponName: "Vandal" }),
+    ]);
+  });
+
+  it("keeps omitted samples null instead of manufacturing zeroes", () => {
+    const raw = rawMatch();
+    raw.rounds[0]!.stats[0]!.economy = null as never;
+    raw.rounds[0]!.stats[0]!.damage_events = null as never;
+    const match = parse(raw);
+    const row = toRoundPlayerRows(match).find((item) => item.puuid === ME_PUUID && item.round === 0);
+    expect(row).toMatchObject({ weaponId: null, loadoutValue: null, damage: null, spent: null });
   });
 });
 

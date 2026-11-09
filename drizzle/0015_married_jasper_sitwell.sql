@@ -1,0 +1,1 @@
+ALTER TABLE "match_round_players" ADD COLUMN "score" integer;

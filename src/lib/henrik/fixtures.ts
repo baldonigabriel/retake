@@ -81,8 +81,42 @@ export function rawMatch(overrides: RawMatchOverrides = {}) {
       { team_id: "Blue", placement: 1, rounds: { won: blue, lost: red }, won: blue > red, premier_roster: null },
       { team_id: "Red", placement: 2, rounds: { won: red, lost: blue }, won: red > blue, premier_roster: null },
     ],
-    rounds: Array.from({ length: blue + red }, (_, i) => ({ id: i, result: "Elimination" })),
-    kills: [],
+    rounds: Array.from({ length: blue + red }, (_, i) => ({
+      id: i,
+      result: "Elimination",
+      winning_team: i < blue ? "Blue" : "Red",
+      winning_team_role: i % 2 === 0 ? "Attack" : "Defense",
+      stats: players.map((player, playerIndex) => ({
+        player: { puuid: player.puuid, name: player.name, tag: player.tag, team: player.team_id },
+        damage_events: [
+          { player: { puuid: "target", name: "Target", tag: "TST", team: player.team_id }, damage: 100, headshots: 1, bodyshots: 2, legshots: 0 },
+        ],
+        stats: { score: 200, kills: playerIndex === 0 ? 1 : 0, headshots: 1, bodyshots: 2, legshots: 0 },
+        economy: {
+          loadout_value: i === 0 || i === 12 ? 800 : 4_100,
+          remaining: 900,
+          weapon: { id: "weapon-vandal", name: "Vandal", type: "Rifle" },
+          armor: { id: "armor-heavy", name: "Heavy Shields" },
+        },
+        was_afk: false,
+        received_penalty: false,
+        stayed_in_spawn: false,
+      })),
+    })),
+    kills: [
+      {
+        round: 0,
+        time_in_round_in_ms: 12_000,
+        time_in_match_in_ms: 12_000,
+        killer: { puuid: ME_PUUID, name: "Tester", tag: "TST", team: "Blue" },
+        victim: { puuid: players[5]!.puuid, name: players[5]!.name, tag: "TST", team: "Red" },
+        assistants: [],
+        weapon: { id: "weapon-vandal", name: "Vandal", type: "Rifle" },
+        secondary_fire_mode: false,
+        location: { x: 0, y: 0 },
+        player_locations: [],
+      },
+    ],
   };
 }
 

@@ -170,6 +170,8 @@ export const matches = pgTable(
     blueScore: integer("blue_score"),
     /** "Red" | "Blue"; null on a draw (or modes without teams). */
     winningTeam: text("winning_team"),
+    /** Null on matches saved before Phase 9 or when the API omitted rounds. */
+    roundsSyncedAt: timestamptz("rounds_synced_at"),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (t) => [index("matches_started_at_idx").on(t.startedAt)],
@@ -203,6 +205,78 @@ export const matchPlayers = pgTable(
   (t) => [
     primaryKey({ columns: [t.matchId, t.puuid] }),
     index("match_players_puuid_match_idx").on(t.puuid, t.matchId),
+  ],
+);
+
+/** Raw round result. Derived metrics live in src/lib/rounds, never here. */
+export const matchRounds = pgTable(
+  "match_rounds",
+  {
+    matchId: text("match_id")
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    round: integer("round").notNull(),
+    winningTeam: text("winning_team"),
+    result: text("result"),
+    /** Team on attack for this round; null when the payload cannot establish it. */
+    attackingTeam: text("attacking_team"),
+  },
+  (t) => [primaryKey({ columns: [t.matchId, t.round] })],
+);
+
+/** One player's raw, nullable round sample (SPEC §7). */
+export const matchRoundPlayers = pgTable(
+  "match_round_players",
+  {
+    matchId: text("match_id")
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    round: integer("round").notNull(),
+    puuid: text("puuid").notNull(),
+    team: text("team").notNull(),
+    weaponId: text("weapon_id"),
+    weaponName: text("weapon_name"),
+    armor: text("armor"),
+    loadoutValue: integer("loadout_value"),
+    /** The v4 round payload currently omits spent; keep it null rather than infer it. */
+    spent: integer("spent"),
+    damage: integer("damage"),
+    /** Raw combat score for this round; needed for ACS by economy band. */
+    score: integer("score"),
+    headshots: integer("headshots"),
+    bodyshots: integer("bodyshots"),
+    legshots: integer("legshots"),
+    kills: integer("kills"),
+    assists: integer("assists"),
+    survived: boolean("survived"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.matchId, t.round, t.puuid] }),
+    index("match_round_players_puuid_match_idx").on(t.puuid, t.matchId),
+  ],
+);
+
+/** Ordered raw kill feed for each round. */
+export const matchKills = pgTable(
+  "match_kills",
+  {
+    matchId: text("match_id")
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    round: integer("round").notNull(),
+    seq: integer("seq").notNull(),
+    timeInRoundMs: integer("time_in_round_ms").notNull(),
+    killerPuuid: text("killer_puuid"),
+    victimPuuid: text("victim_puuid").notNull(),
+    assistants: text("assistants").array().notNull(),
+    weaponId: text("weapon_id"),
+    weaponName: text("weapon_name"),
+    weaponType: text("weapon_type"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.matchId, t.round, t.seq] }),
+    index("match_kills_killer_puuid_idx").on(t.killerPuuid),
+    index("match_kills_victim_puuid_idx").on(t.victimPuuid),
   ],
 );
 
@@ -505,6 +579,9 @@ export type User = typeof users.$inferSelect;
 export type RiotAccount = typeof riotAccounts.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
 export type NewMatchPlayer = typeof matchPlayers.$inferInsert;
+export type NewMatchRound = typeof matchRounds.$inferInsert;
+export type NewMatchRoundPlayer = typeof matchRoundPlayers.$inferInsert;
+export type NewMatchKill = typeof matchKills.$inferInsert;
 export type Group = typeof groups.$inferSelect;
 export type GroupRole = (typeof groupRole.enumValues)[number];
 export type DiscordPost = typeof discordPosts.$inferSelect;
