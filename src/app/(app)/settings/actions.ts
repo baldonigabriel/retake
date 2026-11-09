@@ -1,12 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { db } from "@/db";
 import { unlinkLoginAccount } from "@/lib/auth/accounts";
 import { getSessionUser } from "@/lib/auth/session";
 import { setBreakReminder } from "@/lib/preferences/queries";
+import { PROFILE_LATER_COOKIE, PROFILE_LATER_DAYS } from "@/lib/profile/later";
+import { getProfileSettings, saveProfileChoice } from "@/lib/profile/queries";
+import { isProfileVisible, profileChoiceSchema } from "@/lib/profile/settings";
 
 export type PreferenceActionResult = { ok: true; on: boolean } | { ok: false; message: string };
 export type UnlinkAccountActionResult = { ok: true } | { ok: false; message: string };
@@ -52,5 +56,45 @@ export async function unlinkLoginAccountAction(input: unknown): Promise<UnlinkAc
   }
 
   revalidatePath("/settings");
+  return { ok: true };
+}
+
+export type ProfileActionResult = { ok: true; visible: boolean } | { ok: false; message: string };
+
+/**
+ * Saves the public/private answer (onboarding, the /me card, Ajustes). It
+ * takes effect at once: /u/... and the search read it on every request.
+ */
+export async function saveProfileAction(input: unknown): Promise<ProfileActionResult> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false, message: "Sua sessão expirou. Entre de novo para continuar." };
+  const parsed = profileChoiceSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: "Não entendemos o pedido. Atualize a página e tente de novo." };
+  try {
+    const saved = await saveProfileChoice(user.id, parsed.data);
+    revalidatePath("/settings");
+    revalidatePath("/me");
+    return { ok: true, visible: isProfileVisible(saved) };
+  } catch (error) {
+    console.error("[profile] save failed", error);
+    return { ok: false, message: "Algo falhou do nosso lado. Tente de novo em alguns segundos." };
+  }
+}
+
+/** "Agora não" on the /me card: hides the question for a while; the profile stays private. */
+export async function postponeProfileQuestionAction(): Promise<{ ok: true } | { ok: false; message: string }> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false, message: "Sua sessão expirou. Entre de novo para continuar." };
+  const settings = await getProfileSettings(user.id);
+  if (!settings.decidedAt) {
+    (await cookies()).set(PROFILE_LATER_COOKIE, user.id, {
+      maxAge: PROFILE_LATER_DAYS * 86_400,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
+  }
+  revalidatePath("/me");
   return { ok: true };
 }
