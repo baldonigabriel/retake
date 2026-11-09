@@ -205,6 +205,7 @@ const PREVIEW_BLOCKS: Record<keyof ProfileFields, { label: string; className: st
   showOverview: { label: "Visão geral", className: "h-14" },
   showAgents: { label: "Agentes", className: "h-12" },
   showMaps: { label: "Mapas", className: "h-10" },
+  showWeapons: { label: "Armas", className: "h-10" },
   showMatches: { label: "Últimas partidas", className: "h-14" },
 };
 

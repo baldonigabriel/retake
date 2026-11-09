@@ -511,11 +511,11 @@ export async function seed(): Promise<{
 
   // Public profile answers (Vazio and Vitrine have no row: never asked).
   const decided = new Date(now.getTime() - 86_400_000);
-  const allOn = { showRank: true, showOverview: true, showAgents: true, showMaps: true, showMatches: true };
+  const allOn = { showRank: true, showOverview: true, showAgents: true, showMaps: true, showWeapons: true, showMatches: true };
   await database.insert(profileSettings).values([
     { userId: E2E.userId, ...allOn, isPublic: false, decidedAt: decided },
     { userId: E2E.thirdUserId, ...allOn, isPublic: false, decidedAt: decided },
-    { userId: E2E.friendUserId, ...allOn, showOverview: false, showMaps: false, isPublic: true, decidedAt: decided },
+    { userId: E2E.friendUserId, ...allOn, showOverview: false, showMaps: false, showWeapons: false, isPublic: true, decidedAt: decided },
     { userId: E2E.sessionUserId, ...allOn, isPublic: true, decidedAt: decided },
   ]);
 

@@ -14,7 +14,7 @@ import {
   visibleFields,
 } from "./settings";
 
-const NONE = { showRank: false, showOverview: false, showAgents: false, showMaps: false, showMatches: false };
+const NONE = { showRank: false, showOverview: false, showAgents: false, showMaps: false, showWeapons: false, showMatches: false };
 
 describe("profile visibility", () => {
   it("is private by default (no row)", () => {
@@ -30,7 +30,7 @@ describe("profile visibility", () => {
   });
 
   it("lists the visible sections in page order", () => {
-    expect(visibleFields({ ...NONE, showMatches: true, showRank: true })).toEqual(["showRank", "showMatches"]);
+    expect(visibleFields({ ...NONE, showMatches: true, showWeapons: true, showRank: true })).toEqual(["showRank", "showWeapons", "showMatches"]);
   });
 
   it("stores public with nothing checked as private, keeping the section choices", () => {

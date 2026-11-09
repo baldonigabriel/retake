@@ -45,9 +45,10 @@ test.describe("visitor (signed out)", () => {
     await expect(page.getByText("Rank competitivo")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Agentes" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Últimas partidas" })).toBeVisible();
-    // Overview and maps were left out by Parceiro.
+    // Overview, maps and weapons were left out by Parceiro.
     await expect(page.getByRole("heading", { name: "Tendência" })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Por mapa" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Armas", exact: true })).toHaveCount(0);
     // Never on a public profile: groups, Bagre, duos, goals, session.
     for (const text of [E2E.groupName, E2E.bagreName, "Bagre", "Com quem você joga melhor", "Metas", "Sessão de hoje"]) {
       await expect(page.getByText(text, { exact: false })).toHaveCount(0);
@@ -181,7 +182,7 @@ test.describe("going public and back to private", () => {
     // Public with every section unchecked is private too, and the screen says so.
     await page.reload();
     await section.getByText("Público", { exact: true }).click();
-    for (const label of ["Rank e RR", "Visão geral", "Agentes", "Últimas partidas"]) await section.getByText(label, { exact: true }).click();
+    for (const label of ["Rank e RR", "Visão geral", "Agentes", "Armas", "Últimas partidas"]) await section.getByText(label, { exact: true }).click();
     await expect(section.getByText("Sem nenhuma seção marcada, seu perfil fica privado.")).toBeVisible();
     await section.getByRole("button", { name: "Salvar escolha" }).click();
     await expect(section.getByText("Salvo. Seu perfil está privado.")).toBeVisible();

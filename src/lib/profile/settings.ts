@@ -11,19 +11,16 @@ export const PROFILE_FIELDS = [
   { key: "showOverview", label: "Visão geral", description: "ACS, K/D, HS%, ADR, vitórias e a tendência." },
   { key: "showAgents", label: "Agentes", description: "Partidas, vitórias e números por agente." },
   { key: "showMaps", label: "Mapas", description: "Vitórias e números por mapa." },
+  { key: "showWeapons", label: "Armas", description: "Abates e HS% aproximado por arma." },
   { key: "showMatches", label: "Últimas partidas", description: "Só a sua linha em cada partida, sem os outros jogadores." },
 ] as const;
 
 export type ProfileField = (typeof PROFILE_FIELDS)[number]["key"];
 export type ProfileFields = Record<ProfileField, boolean>;
 
-/**
- * Stored preferences. `showWeapons` is kept (the column exists, SPEC §2) but
- * not offered until Phase 9 ships the weapon stats.
- */
+/** Stored preferences (profile_settings). */
 export type ProfileSettings = ProfileFields & {
   isPublic: boolean;
-  showWeapons: boolean;
   /** When the user answered the public/private question; null = never asked. */
   decidedAt: Date | null;
 };
@@ -33,6 +30,7 @@ export const ALL_FIELDS_ON: ProfileFields = {
   showOverview: true,
   showAgents: true,
   showMaps: true,
+  showWeapons: true,
   showMatches: true,
 };
 
@@ -40,7 +38,6 @@ export const ALL_FIELDS_ON: ProfileFields = {
 export const DEFAULT_PROFILE_SETTINGS: ProfileSettings = {
   ...ALL_FIELDS_ON,
   isPublic: false,
-  showWeapons: true,
   decidedAt: null,
 };
 
@@ -67,6 +64,7 @@ export const profileChoiceSchema = z.object({
       showOverview: z.boolean(),
       showAgents: z.boolean(),
       showMaps: z.boolean(),
+      showWeapons: z.boolean(),
       showMatches: z.boolean(),
     })
     .strict(),
@@ -91,6 +89,7 @@ export function choiceFromSettings(settings: ProfileSettings): ProfileChoice | n
     showOverview: settings.showOverview,
     showAgents: settings.showAgents,
     showMaps: settings.showMaps,
+    showWeapons: settings.showWeapons,
     showMatches: settings.showMatches,
   };
   return { visibility: settings.isPublic ? "public" : "private", fields };
