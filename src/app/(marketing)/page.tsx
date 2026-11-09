@@ -5,9 +5,11 @@ import Link from "next/link";
 import { RankingList } from "@/components/groups/ranking-list";
 import { DiscordCardPreview } from "@/components/landing/discord-card-preview";
 import { HeroBackdrop } from "@/components/landing/hero-backdrop";
+import { HeaderSearch } from "@/components/layout/header-search";
 import { Logo } from "@/components/layout/logo";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MatchRow } from "@/components/match/match-row";
+import { ProfileSearchForm } from "@/components/profile/profile-search-form";
 import { KpiCard } from "@/components/stats/kpi-card";
 import { buttonVariants } from "@/components/ui/button";
 import { LANDING_NOW, landingCard, landingKpis, landingMatches, landingRanking } from "@/lib/landing-sample";
@@ -119,9 +121,12 @@ export default function Home() {
           <Link href="/" aria-label="Retake, início" className="flex min-h-11 items-center rounded-control">
             <Logo />
           </Link>
-          <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-            Entrar
-          </Link>
+          <div className="flex items-center gap-2">
+            <HeaderSearch />
+            <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+              Entrar
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -199,6 +204,16 @@ export default function Home() {
             <div className="lg:order-1">
               <DiscordCardPreview payload={landingCard} now={LANDING_NOW} channel="retake" />
             </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="search-title" className="border-t border-line">
+          <div className="mx-auto grid w-full max-w-[1200px] items-end gap-10 px-4 py-24 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16 lg:py-30">
+            <SectionHeading id="search-title" title="Veja como um amigo joga">
+              Quem quiser pode deixar o perfil público e escolher o que aparece. Procure pelo Riot ID. Grupos e votações
+              nunca aparecem num perfil público.
+            </SectionHeading>
+            <ProfileSearchForm id="landing-search" buttonVariant="ghost" className="rounded-card bg-surface-1 p-6 shadow-hairline" />
           </div>
         </section>
 
