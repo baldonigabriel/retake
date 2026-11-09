@@ -1,4 +1,5 @@
 import { Trophy } from "lucide-react";
+import Link from "next/link";
 
 import { Avatar } from "@/components/layout/account-menu";
 import { AnimatedNumber } from "@/components/stats/animated-number";
@@ -10,7 +11,7 @@ import { MVP_MIN_MATCHES, MVP_RULE, type Mvp } from "@/lib/groups/ranking";
  * DESIGN.md › Destaque de MVP: the screen's one chamfered card, accent tint +
  * soft red glow. The selection rule is always printed in one line.
  */
-export function MvpCard({ mvp, weekLabel }: { mvp: Mvp | null; weekLabel: string }) {
+export function MvpCard({ mvp, weekLabel, href }: { mvp: Mvp | null; weekLabel: string; href?: string | null }) {
   if (!mvp) {
     return (
       <ChamferCard>
@@ -42,7 +43,17 @@ export function MvpCard({ mvp, weekLabel }: { mvp: Mvp | null; weekLabel: string
           <Avatar name={member.name} image={member.image} className="size-12 text-body-sm" />
           <div className="flex min-w-0 flex-1 flex-col">
             <p className="flex min-w-0 items-baseline gap-1">
-              <span className="truncate text-subheading text-fg">{member.name}</span>
+              {href ? (
+                <Link
+                  href={href}
+                  aria-label={`Ver perfil de ${member.name}`}
+                  className="truncate text-subheading text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg"
+                >
+                  {member.name}
+                </Link>
+              ) : (
+                <span className="truncate text-subheading text-fg">{member.name}</span>
+              )}
               {member.tag ? <span className="font-mono text-label text-fg-muted">#{member.tag}</span> : null}
             </p>
             {member.isYou ? <Badge variant="accent" className="mt-1">é você!</Badge> : null}

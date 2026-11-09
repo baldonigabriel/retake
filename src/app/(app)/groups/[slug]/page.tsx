@@ -102,6 +102,9 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
   const comparableCount = puuids.length;
   const viewerCanCompare = members.some((m) => m.isYou && m.puuid);
   const mixed = mode === ALL_MODES;
+  // Everyone else in the ranking opens their member profile (same-group only, like the members list).
+  const memberHref = (m: { userId: string; isYou: boolean; puuid: string | null }) =>
+    !m.isYou && m.puuid ? `/groups/${group.slug}/members/${encodeURIComponent(m.userId)}` : null;
 
   return (
     <div className="content-enter flex flex-col gap-4 py-8 sm:py-10">
@@ -164,7 +167,7 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
         */}
         <FilteredContent className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:items-start">
           <div className="flex min-w-0 flex-col gap-4 lg:col-span-5 lg:col-start-8 lg:row-start-1">
-            <MvpCard mvp={mvp} weekLabel={weekChoice === "last" ? "semana passada" : "esta semana"} />
+            <MvpCard mvp={mvp} href={mvp ? memberHref(mvp.member) : null} weekLabel={weekChoice === "last" ? "semana passada" : "esta semana"} />
             {bagre ? <BagreCard href={`/groups/${group.slug}/bagre`} teaser={bagre} /> : null}
           </div>
           <div className="flex min-w-0 flex-col gap-4 lg:col-span-7 lg:col-start-1 lg:row-span-2 lg:row-start-1">
@@ -225,6 +228,7 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
                       ? recordLine(e.summary)
                       : `${recordLine(e.summary)} · amostra: ${e.roundSample} rounds`,
                   isYou: e.member.isYou,
+                  href: memberHref(e.member),
                 }))}
               />
             )}

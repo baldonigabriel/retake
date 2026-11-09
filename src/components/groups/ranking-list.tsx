@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { StaggerList } from "@/components/dashboard/stagger-list";
 import { Avatar } from "@/components/layout/account-menu";
 import { DeltaChip } from "@/components/stats/delta-chip";
@@ -18,6 +20,8 @@ export type RankingEntry = {
   /** Optional second line, e.g. "4 partidas · 3V 1D". */
   detail?: string;
   isYou?: boolean;
+  /** Member profile; the whole row becomes a link. */
+  href?: string | null;
 };
 
 /**
@@ -49,10 +53,11 @@ export function RankingList({
             aria-current={e.isYou ? "true" : undefined}
             style={{ "--i": i } as React.CSSProperties}
             className={cn(
-              "flex min-h-14 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0",
+              "border-t border-line first:border-t-0",
               e.isYou && "on-tint bg-accent-tint shadow-[inset_2px_0_0_var(--color-primary)]",
             )}
           >
+            <RowShell href={e.href} label={`Ver perfil de ${e.name}`}>
             <span
               className={cn(
                 "stat w-7 shrink-0 text-[22px] leading-none font-bold",
@@ -86,9 +91,21 @@ export function RankingList({
                 <DeltaChip value={e.delta} digits={deltaDigits} suffix={deltaSuffix} />
               )}
             </span>
+            </RowShell>
           </li>
         );
       })}
     </StaggerList>
+  );
+}
+
+const ROW = "flex min-h-14 items-center gap-3 px-4 py-2";
+
+function RowShell({ href, label, children }: { href?: string | null; label: string; children: React.ReactNode }) {
+  if (!href) return <div className={ROW}>{children}</div>;
+  return (
+    <Link href={href} title={label} className={cn(ROW, "hover-layer press relative [--press-scale:0.99] focus-visible:outline-offset-[-2px]")}>
+      {children}
+    </Link>
   );
 }
