@@ -2,6 +2,7 @@ import { AgentsBreakdownSkeleton } from "@/components/agents/agents-table";
 import { HistoryRowSkeleton } from "@/components/history/history-row";
 import { KpiCardSkeleton } from "@/components/stats/kpi-card";
 import { GoalsPanelSkeleton } from "@/components/goals/goals-panel";
+import { RoundBreakdownsSkeleton } from "@/components/rounds/rounds-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** Same shape as /me: header, rank card, filters, KPIs, chart, tables, list. */
@@ -34,6 +35,7 @@ export default function Loading() {
         <Skeleton className="h-4 w-32" />
         <Skeleton className="h-56 w-full sm:h-64" />
       </div>
+      <RoundBreakdownsSkeleton />
       <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
           <div className="flex flex-col gap-1.5">

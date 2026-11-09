@@ -1,6 +1,7 @@
 import { AgentsBreakdownSkeleton } from "@/components/agents/agents-table";
 import { HistoryRowSkeleton } from "@/components/history/history-row";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RoundBreakdownsSkeleton } from "@/components/rounds/rounds-skeleton";
 
 /** Same shape as the member profile: header, mode filter, agents, matches. */
 export default function Loading() {
@@ -21,6 +22,7 @@ export default function Loading() {
         </div>
         <AgentsBreakdownSkeleton />
       </div>
+      <RoundBreakdownsSkeleton />
       <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
         <div className="border-b border-line px-4 py-3">
           <Skeleton className="h-4 w-36" />

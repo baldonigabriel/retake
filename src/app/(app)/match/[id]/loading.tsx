@@ -29,6 +29,12 @@ export default function Loading() {
         <Skeleton className="h-12 w-64" />
         <Skeleton className="h-3 w-52" />
       </div>
+      <div className="overflow-hidden rounded-card bg-surface-1 p-4 shadow-hairline">
+        <Skeleton className="h-4 w-28" />
+        <div className="mt-3 flex gap-2 overflow-hidden">
+          {Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-12 w-44 shrink-0 rounded-control" />)}
+        </div>
+      </div>
       <TableSkeleton />
       <TableSkeleton />
     </div>

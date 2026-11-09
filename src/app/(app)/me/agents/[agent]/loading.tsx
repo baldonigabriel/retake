@@ -1,6 +1,7 @@
 import { HistoryRowSkeleton } from "@/components/history/history-row";
 import { BackLink } from "@/components/match/back-link";
 import { KpiCardSkeleton } from "@/components/stats/kpi-card";
+import { RoundBreakdownsSkeleton } from "@/components/rounds/rounds-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** Same shape as the agent page: header, filters, 6 KPIs, chart, maps, matches. */
@@ -41,6 +42,7 @@ export default function Loading() {
           </div>
         ))}
       </div>
+      <RoundBreakdownsSkeleton />
       <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
         {Array.from({ length: 4 }, (_, i) => (
           <HistoryRowSkeleton key={i} />
