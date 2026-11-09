@@ -489,7 +489,7 @@ export const awardRounds = pgTable(
  * `decidedAt` is set the first time the user answers (onboarding, the /me
  * card or Ajustes). The show_* flags only matter while `isPublic`; a public
  * profile with nothing to show is treated as private (src/lib/profile).
- * `showWeapons` waits for Phase 9 (round and weapon stats).
+ * `showWeapons` controls the Phase 9 weapon statistics on the public profile.
  */
 export const profileSettings = pgTable(
   "profile_settings",
