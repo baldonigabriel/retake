@@ -1,6 +1,7 @@
 import "server-only";
 
 import { headers } from "next/headers";
+import { connection } from "next/server";
 
 import { WindowLimiter, clientIp } from "./rate-limit";
 
@@ -13,6 +14,8 @@ const limiter = new WindowLimiter(process.env.NODE_ENV === "production" ? 20 : 1
 
 /** Counts one search for the requesting IP; false once it's over the limit. */
 export async function takeSearchQuota(): Promise<boolean> {
+  // Request time only: the clock must never be read while prerendering.
+  await connection();
   const h = await headers();
   return limiter.take(clientIp((name) => h.get(name)), Date.now());
 }
