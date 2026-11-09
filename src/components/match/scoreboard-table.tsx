@@ -61,6 +61,7 @@ export function ScoreboardTable({
   roundsPlayed,
   headingLevel = "h3",
   showRr = false,
+  highlightLabel = "você",
 }: {
   team: ScoreboardTeam;
   roundsPlayed: number;
@@ -68,6 +69,8 @@ export function ScoreboardTable({
   headingLevel?: "h2" | "h3";
   /** Competitive matches: RR column for the players who use Retake */
   showRr?: boolean;
+  /** What screen readers hear on the highlighted row: "você", or the player the page is seen from. */
+  highlightLabel?: string;
 }) {
   const showRank = team.players.some((p) => p.tier !== undefined);
   const showRounds = team.players.some((p) => p.roundStats !== undefined);
@@ -181,7 +184,7 @@ export function ScoreboardTable({
                         )}
                         <span className="font-mono text-label text-fg-muted">#{p.tag}</span>
                       </span>
-                      {p.isYou ? <span className="sr-only">(você)</span> : null}
+                      {p.isYou ? <span className="sr-only">({highlightLabel})</span> : null}
                       {p.inGroup ? <Badge variant="outline">grupo</Badge> : null}
                     </span>
                   </th>

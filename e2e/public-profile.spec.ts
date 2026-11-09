@@ -107,13 +107,19 @@ test.describe("signed-in viewer", () => {
     await expect(page.getByRole("link", { name: E2E.gameName, exact: true })).toHaveCount(0);
   });
 
-  test("a public profile opens the scoreboard only for matches the viewer also played", async ({ page }) => {
+  test("a public profile opens every match's scoreboard, seen from the owner's side", async ({ page }) => {
     await page.goto(profile(E2E.sessionName));
     await expect(page.getByRole("heading", { level: 1 })).toContainText(E2E.sessionName);
     await expect(page.getByRole("heading", { name: "Por mapa" })).toBeVisible();
     const history = page.locator("section", { has: page.getByRole("heading", { name: "Últimas partidas" }) });
-    await expect(history.locator(`a[href="/match/${matchId(PUBLIC_RIVAL_MATCH)}"]`)).toHaveCount(1);
-    await expect(history.locator('a[href^="/match/"]')).toHaveCount(1);
+    const links = history.locator('a[href^="/match/"]');
+    expect(await links.count()).toBeGreaterThan(1);
+    for (const href of await links.evaluateAll((as) => as.map((a) => a.getAttribute("href")))) expect(href).toMatch(/\?as=/);
+
+    // A match the viewer didn't play opens from the owner's side.
+    const other = history.locator(`a[href^="/match/"]:not([href^="/match/${matchId(PUBLIC_RIVAL_MATCH)}?"])`).first();
+    await other.click();
+    await expect(page.getByText(`Partida vista pelo lado de ${E2E.sessionName}`)).toBeVisible();
   });
 
   test("the user's own private profile is not found either", async ({ page }) => {

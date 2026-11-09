@@ -111,13 +111,13 @@ Ao vincular uma conta, importar as partidas que a API retornar no histórico rec
 
 **Agente (`/me/agents/[agent]`)** — pergunta principal: "como eu jogo com esse agente?" KPIs com a variação em relação à média com todos os agentes, evolução partida a partida, desempenho por mapa (com o melhor mapa) e as partidas com ele. Filtros de modo e temporada.
 
-**Partida (`/match/[id]`)** — pergunta principal: "como foi essa partida?" Resultado, mapa, placar, data e duração; placar completo dos dois times com a linha do usuário destacada, o rank de cada jogador naquela partida e o RR ganho ou perdido só para quem usa o Retake; badges de "jogou com" para membros dos seus grupos.
+**Partida (`/match/[id]`)** — pergunta principal: "como foi essa partida?" Abre para quem jogou, para quem tem no grupo alguém que jogou e para qualquer usuário logado quando um dos jogadores tem perfil público com partidas visíveis; fora isso, 404. Quando quem vê não jogou, a página mostra o lado desse jogador (`?as=<userId>`, validado no servidor) e esconde rank e RR de quem escondeu o rank no perfil público. Resultado, mapa, placar, data e duração; placar completo dos dois times com a linha do usuário destacada, o rank de cada jogador naquela partida e o RR ganho ou perdido só para quem usa o Retake; badges de "jogou com" para membros dos seus grupos.
 
 **Grupos (`/groups`, `/groups/[slug]`)** — pergunta principal: "quem mandou bem essa semana?" Ranking semanal com seletor de métrica, destaque de MVP da semana, partidas que membros jogaram juntos, convite por link e configuração do webhook do Discord (só o dono).
 
 **Com quem você joga melhor (`/me` e `/groups/[slug]`)** — pergunta: "com quem eu vou melhor?" Ranking das duplas do usuário com outros usuários do Retake de grupos em comum (no grupo, só os membros dele): win rate juntos no mesmo time versus a média do usuário no modo, partidas, V–D, K/D e ACS, e o link para o histórico filtrado (`/me?with=<userId>`, validado no servidor). Mínimo de 3 partidas juntos; abaixo de 10, aviso de amostra pequena. Texto de tendência, nunca de veredito. Jogadores de fora nunca aparecem.
 
-**Perfil de membro (`/groups/[slug]/members/[userId]`)** — as seções "Agentes" e "Últimas partidas" de um membro, visíveis só para quem está no mesmo grupo (quem não está recebe o mesmo 404 de um grupo inexistente). As partidas abrem o placar só quando quem está vendo também jogou.
+**Perfil de membro (`/groups/[slug]/members/[userId]`)** — as seções "Agentes" e "Últimas partidas" de um membro, visíveis só para quem está no mesmo grupo (quem não está recebe o mesmo 404 de um grupo inexistente). Cada partida abre o placar completo, visto pelo lado do membro.
 
 **Configurações (`/settings`)** — conta Riot vinculada, status do último sync, o liga/desliga do aviso de pausa e opção de desvincular (apagando os dados do usuário). "Contas de login": Google e Discord com o estado de cada um, botão para vincular a que falta e para desvincular (só se sobrar outra; nunca deixa o usuário sem login). "Perfil público" (Fase 8): o mesmo controle do onboarding, com link para ver o próprio perfil como um visitante vê.
 
@@ -214,7 +214,7 @@ Pergunta principal de quem visita: "como essa pessoa joga?". O diferencial conti
 
 - Endereço `Nome-TAG` (o último hífen separa a tag; nome com espaço ou acento vai codificado). Resolve pelo Riot ID atual em `riot_accounts` de **usuários**; quem trocou de nome muda de endereço, e o endereço antigo dá 404. Internamente tudo continua por `puuid`/`user_id`.
 - Funciona **sem login**. Mostra só os campos escolhidos, com o filtro de modo (padrão competitivo) como no `/me`.
-- As últimas partidas mostram só a linha do próprio jogador (agente, mapa, placar, K/D/A, ACS, resultado). Elas só viram link para o placar completo quando quem está vendo também jogou aquela partida, como no perfil de membro.
+- As últimas partidas mostram só a linha do próprio jogador (agente, mapa, placar, K/D/A, ACS, resultado). Para quem está logado, cada uma abre o placar completo visto pelo lado do dono do perfil; visitante sem login vê só as linhas.
 - Visitante sem login vê um convite discreto para entrar; usuário logado vê o próprio cabeçalho do app.
 - Estados: carregamento, perfil sem partidas no modo, 404 (perfil privado ou inexistente, mesma mensagem) e erro.
 

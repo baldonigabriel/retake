@@ -16,6 +16,8 @@ import { cache } from "react";
 import { db } from "@/db";
 import { foldName as foldColumn, groupMembers, groups, mmrSnapshots, profileSettings, riotAccounts } from "@/db/schema";
 
+import type { MatchSubject } from "@/lib/match/access";
+
 import { profilePath, type RiotIdParts } from "./path";
 import { SEARCH_LIMIT, escapeLike, rankResults, type SearchQuery } from "./search";
 import {
@@ -170,6 +172,37 @@ export async function getPublicProfilePaths(puuids: readonly string[]): Promise<
     .innerJoin(profileSettings, eq(profileSettings.userId, riotAccounts.userId))
     .where(and(inArray(riotAccounts.puuid, [...puuids]), eq(profileSettings.isPublic, true)));
   return new Map(rows.filter((r) => isProfileVisible(r)).map((r) => [r.puuid, profilePath(r)]));
+}
+
+/**
+ * Retake users among a match's players, with what their public profile lets
+ * a stranger see (src/lib/match/access.ts decides who opens the match).
+ * Players who aren't users are simply absent.
+ */
+export async function getMatchSubjects(
+  puuids: readonly string[],
+): Promise<Array<MatchSubject & { publicRank: boolean }>> {
+  if (puuids.length === 0) return [];
+  const rows = await db()
+    .select({ puuid: riotAccounts.puuid, userId: riotAccounts.userId, ...settingsColumns })
+    .from(riotAccounts)
+    .leftJoin(profileSettings, eq(profileSettings.userId, riotAccounts.userId))
+    .where(and(inArray(riotAccounts.puuid, [...puuids]), isNotNull(riotAccounts.userId)));
+  return rows.map((r) => {
+    // No settings row (left join) = private, never asked.
+    const visible =
+      r.isPublic === true &&
+      isProfileVisible({
+        isPublic: true,
+        showRank: r.showRank === true,
+        showOverview: r.showOverview === true,
+        showAgents: r.showAgents === true,
+        showMaps: r.showMaps === true,
+        showMatches: r.showMatches === true,
+        showWeapons: r.showWeapons === true,
+      });
+    return { puuid: r.puuid, userId: r.userId!, publicMatches: visible && r.showMatches === true, publicRank: visible && r.showRank === true };
+  });
 }
 
 /**

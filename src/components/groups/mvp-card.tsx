@@ -46,7 +46,6 @@ export function MvpCard({ mvp, weekLabel, href }: { mvp: Mvp | null; weekLabel: 
               {href ? (
                 <Link
                   href={href}
-                  aria-label={`Ver perfil de ${member.name}`}
                   className="truncate text-subheading text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg"
                 >
                   {member.name}

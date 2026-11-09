@@ -19,7 +19,7 @@ import { currentBadges } from "@/lib/bagre/results";
 import { withExtras } from "@/lib/dashboard/history";
 import { getPlayerLines } from "@/lib/dashboard/queries";
 import { getGroupMember, getMembership } from "@/lib/groups/queries";
-import { getMatchesPlayedBy } from "@/lib/match/queries";
+import { matchHref } from "@/lib/match/access";
 import { modeLabel } from "@/lib/modes";
 import { calculatePlayerRoundMetrics } from "@/lib/rounds";
 import { getRoundDataset } from "@/lib/rounds/queries";
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
 export default async function MemberProfilePage({ params, searchParams }: PageProps<"/groups/[slug]/members/[userId]">) {
   const [{ slug, userId: rawUserId }, query] = await Promise.all([params, searchParams]);
   const userId = decodeURIComponent(rawUserId);
-  const { user, account } = await requireViewer(`/groups/${slug}/members/${rawUserId}`);
+  const { user } = await requireViewer(`/groups/${slug}/members/${rawUserId}`);
   const membership = await getMembership(slug, user.id);
   if (!membership) notFound();
   const { group } = membership;
@@ -111,11 +111,6 @@ export default async function MemberProfilePage({ params, searchParams }: PagePr
   const map = parseHistoryFilter(query.map, filters.maps);
   const historyLines = filterHistory(lines, { agent, map });
   const items = await withExtras(member.puuid, historyLines.slice(0, parseShow(query.show)));
-  // The match page only opens for its players: link the matches the viewer was in.
-  const played = await getMatchesPlayedBy(
-    account.puuid,
-    items.map((i) => i.matchId),
-  );
   const now = new Date();
 
   return (
@@ -161,15 +156,12 @@ export default async function MemberProfilePage({ params, searchParams }: PagePr
                   items={items}
                   total={historyLines.length}
                   now={now}
-                  hrefFor={(item) => (played.has(item.matchId) ? `/match/${item.matchId}` : null)}
+                  hrefFor={(item) => matchHref(item.matchId, member.userId)}
                   agents={filters.agents}
                   maps={filters.maps}
                   agent={agent}
                   map={map}
                 />
-                <p className="text-label font-normal text-fg-muted">
-                  Só as partidas em que você também jogou abrem o placar completo.
-                </p>
               </>
             )}
           </FilteredContent>

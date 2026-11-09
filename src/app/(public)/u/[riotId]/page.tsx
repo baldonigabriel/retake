@@ -17,7 +17,7 @@ import { EmptyState } from "@/components/ui/states";
 import { getLinkedAccount, getSessionUser } from "@/lib/auth/session";
 import { withExtras } from "@/lib/dashboard/history";
 import { getPlayerLines, getRankHistory } from "@/lib/dashboard/queries";
-import { getMatchesPlayedBy } from "@/lib/match/queries";
+import { matchHref } from "@/lib/match/access";
 import { modeLabel } from "@/lib/modes";
 import { parseProfileSlug, profilePath } from "@/lib/profile/path";
 import { findPublicProfile, type PublicProfile } from "@/lib/profile/queries";
@@ -68,7 +68,7 @@ export async function generateMetadata({ params }: PageProps<"/u/[riotId]">): Pr
  * out and shows only the sections the owner chose. Never shows groups,
  * Bagre, duos, goals, today's session or the weekly summary, and nothing
  * live. Matches show only the owner's own line; they open the full
- * scoreboard only for a viewer who also played that match.
+ * scoreboard for any signed-in viewer (src/lib/match/access.ts).
  */
 export default async function PublicProfilePage({ params, searchParams }: PageProps<"/u/[riotId]">) {
   const [{ riotId }, query] = await Promise.all([params, searchParams]);
@@ -109,13 +109,9 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
   const rawItems = settings.showMatches ? await withExtras(profile.puuid, historyLines.slice(0, parseShow(query.show))) : [];
   // Rank and RR hidden by the owner never leave the server.
   const items = settings.showRank ? rawItems : rawItems.map((i) => ({ ...i, tier: null, rrChange: null }));
-  // The match page only opens for its players: link only matches the viewer also played.
-  const played = viewerAccount
-    ? await getMatchesPlayedBy(
-        viewerAccount.puuid,
-        items.map((i) => i.matchId),
-      )
-    : new Set<string>();
+  // A public profile that shows matches opens each one's full scoreboard for any
+  // signed-in viewer with a Riot ID (src/lib/match/access.ts); visitors get plain rows.
+  const canOpenMatches = viewerAccount !== null;
   const now = new Date();
   const name = profile.gameName;
 
@@ -229,7 +225,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
                         items={items}
                         total={historyLines.length}
                         now={now}
-                        hrefFor={(item) => (played.has(item.matchId) ? `/match/${item.matchId}` : null)}
+                        hrefFor={(item) => (canOpenMatches ? matchHref(item.matchId, isOwner ? null : profile.userId) : null)}
                         agents={filters.agents}
                         maps={filters.maps}
                         agent={agent}
@@ -238,7 +234,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
                         emptyDescription="Troque o agente ou o mapa para ver as outras partidas."
                       />
                       <p className="text-label font-normal text-fg-muted">
-                        Cada partida mostra só a linha de {name}. O placar completo abre apenas para quem também jogou.
+                        {canOpenMatches ? `Abra uma partida para ver o placar completo pelo lado de ${name}.` : `Cada partida mostra só a linha de ${name}. Entre no Retake para abrir o placar completo.`}
                       </p>
                     </>
                   ) : null}
