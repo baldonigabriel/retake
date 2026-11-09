@@ -74,6 +74,20 @@ export const E2E = {
   showcaseUserId: "e2e-showcase-user",
   showcasePuuid: "e2e-puuid-showcase",
   showcaseName: "Vitrine",
+  /**
+   * Account deletion (desktop project only): Saída owns "Saída E2E" (with
+   * Herdeiro and, joined later, Caçula) and "Solo E2E" (alone).
+   */
+  leavingUserId: "e2e-leaving-user",
+  leavingPuuid: "e2e-puuid-leaving",
+  leavingName: "Saida",
+  heirUserId: "e2e-heir-user",
+  heirName: "Herdeiro",
+  youngestUserId: "e2e-youngest-user",
+  leavingGroupSlug: "e2e-leaving",
+  leavingGroupName: "Saída E2E",
+  soloGroupSlug: "e2e-solo",
+  soloGroupName: "Solo E2E",
 } as const;
 
 /** Tester's match where Maratona (public, no shared group) was on the enemy team, as player 6. */
@@ -399,6 +413,9 @@ export async function cleanup() {
         E2E.thirdUserId,
         E2E.sessionUserId,
         E2E.showcaseUserId,
+        E2E.leavingUserId,
+        E2E.heirUserId,
+        E2E.youngestUserId,
       ]),
     );
 }
@@ -414,6 +431,7 @@ export async function seed(): Promise<{
   third: SeededSession;
   session: SeededSession;
   showcase: SeededSession;
+  leaving: SeededSession;
 }> {
   await cleanup();
   const database = db();
@@ -428,12 +446,26 @@ export async function seed(): Promise<{
     [E2E.thirdUserId, E2E.thirdName],
     [E2E.sessionUserId, E2E.sessionName],
     [E2E.showcaseUserId, E2E.showcaseName],
+    [E2E.leavingUserId, E2E.leavingName],
+    [E2E.heirUserId, E2E.heirName],
+    [E2E.youngestUserId, "Caçula"],
   ] as const) {
     await ctx.test.saveUser(ctx.test.createUser({ id, name, email: `${id}@retake.example`, emailVerified: true }));
   }
 
   await database.insert(accounts).values(
-    [E2E.userId, E2E.newUserId, E2E.emptyUserId, E2E.friendUserId, E2E.thirdUserId, E2E.sessionUserId, E2E.showcaseUserId].map((userId) => ({
+    [
+      E2E.userId,
+      E2E.newUserId,
+      E2E.emptyUserId,
+      E2E.friendUserId,
+      E2E.thirdUserId,
+      E2E.sessionUserId,
+      E2E.showcaseUserId,
+      E2E.leavingUserId,
+      E2E.heirUserId,
+      E2E.youngestUserId,
+    ].map((userId) => ({
       id: `e2e-discord-${userId}`,
       accountId: `discord-${userId}`,
       providerId: "discord",
@@ -509,6 +541,40 @@ export async function seed(): Promise<{
     syncStatus: "ok",
   });
 
+  await database.insert(riotAccounts).values({
+    userId: E2E.leavingUserId,
+    puuid: E2E.leavingPuuid,
+    gameName: E2E.leavingName,
+    tagLine: E2E.tagLine,
+    linkedAt: new Date(now.getTime() - 3 * 24 * 3_600_000),
+    lastSyncedAt: new Date(now.getTime() - 5 * 60_000),
+    syncStatus: "ok",
+  });
+  await database.insert(mmrSnapshots).values({
+    puuid: E2E.leavingPuuid,
+    tier: 12,
+    tierName: "Gold 1",
+    rr: 40,
+    rrChange: 12,
+    recordedAt: new Date(now.getTime() - 86_400_000),
+  });
+  const [leavingGroup] = await database
+    .insert(groups)
+    .values({ name: E2E.leavingGroupName, slug: E2E.leavingGroupSlug, ownerId: E2E.leavingUserId, inviteCode: "e2eLeavingInviteCode0001" })
+    .returning({ id: groups.id });
+  await database.insert(groupMembers).values([
+    { groupId: leavingGroup!.id, userId: E2E.leavingUserId, role: "owner", joinedAt: new Date(now.getTime() - 9 * 86_400_000) },
+    { groupId: leavingGroup!.id, userId: E2E.youngestUserId, role: "member", joinedAt: new Date(now.getTime() - 2 * 86_400_000) },
+    { groupId: leavingGroup!.id, userId: E2E.heirUserId, role: "member", joinedAt: new Date(now.getTime() - 8 * 86_400_000) },
+  ]);
+  const [soloGroup] = await database
+    .insert(groups)
+    .values({ name: E2E.soloGroupName, slug: E2E.soloGroupSlug, ownerId: E2E.leavingUserId, inviteCode: "e2eSoloInviteCode0000001" })
+    .returning({ id: groups.id });
+  await database
+    .insert(groupMembers)
+    .values({ groupId: soloGroup!.id, userId: E2E.leavingUserId, role: "owner", joinedAt: new Date(now.getTime() - 9 * 86_400_000) });
+
   // Public profile answers (Vazio and Vitrine have no row: never asked).
   const decided = new Date(now.getTime() - 86_400_000);
   const allOn = { showRank: true, showOverview: true, showAgents: true, showMaps: true, showWeapons: true, showMatches: true };
@@ -517,6 +583,7 @@ export async function seed(): Promise<{
     { userId: E2E.thirdUserId, ...allOn, isPublic: false, decidedAt: decided },
     { userId: E2E.friendUserId, ...allOn, showOverview: false, showMaps: false, showWeapons: false, isPublic: true, decidedAt: decided },
     { userId: E2E.sessionUserId, ...allOn, isPublic: true, decidedAt: decided },
+    { userId: E2E.leavingUserId, ...allOn, isPublic: true, decidedAt: decided },
   ]);
 
   const { matchRows, playerRows } = buildMatches(now);
@@ -653,5 +720,6 @@ export async function seed(): Promise<{
     third: await login(E2E.thirdUserId),
     session: await login(E2E.sessionUserId),
     showcase: await login(E2E.showcaseUserId),
+    leaving: await login(E2E.leavingUserId),
   };
 }
