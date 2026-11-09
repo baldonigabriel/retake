@@ -238,6 +238,7 @@ Os dados já vêm na resposta da partida v4 (§1); o que muda é gravar e calcul
 - O sync grava `match_rounds`, `match_round_players` e `match_kills` na mesma transação da partida e preenche `rounds_synced_at`.
 - `pnpm rounds:backfill` busca de novo, pela rota de partida por id, as partidas com `rounds_synced_at` nulo, passando pela fila de rate limit (é a única parte que gasta requisições extras, uma vez por partida antiga). O padrão é só partidas com usuário do Retake; `--all` inclui as outras.
 - Campos que faltarem num round (ex.: arma nula, economia ausente em modos sem compra) ficam nulos e a métrica que depende deles ignora o round, avisando a amostra na UI.
+- Contrato v4 conferido no OpenAPI da HenrikDev em 2026-11-09: a economia por round traz `loadout_value`, `remaining`, arma e armadura, mas não traz `spent`; por isso `spent` fica nulo, sem estimativa.
 - Modos sem economia (deathmatch, team deathmatch) não entram nas métricas de economia nem de clutch.
 
 ### 7.2 Métricas

@@ -151,6 +151,7 @@ pnpm db:migrate     aplica migrations
 pnpm sync:once      sincroniza um Riot ID (ex.: pnpm sync:once "Nome#TAG")
 pnpm summary:once   resumo semanal de um grupo (ex.: pnpm summary:once meu-grupo --webhook <url>)
 pnpm rr:backfill    liga o RR às competitivas salvas sem ele (--all inclui contas sem usuário)
+pnpm rounds:backfill completa rounds e abates das partidas antigas (--all inclui contas sem usuário)
 pnpm bagre:once     prévia do resultado do Bagre de um grupo (ex.: pnpm bagre:once meu-grupo --webhook <url>)
 ```
 
