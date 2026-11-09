@@ -15,6 +15,7 @@ import { MapGrid } from "@/components/dashboard/map-grid";
 import { RankHeader } from "@/components/dashboard/rank-header";
 import { SyncNowButton } from "@/components/dashboard/sync-now-button";
 import { GoalsPanel, GoalsPanelSkeleton } from "@/components/goals/goals-panel";
+import { ProfileQuestionCard } from "@/components/profile/profile-question-card";
 import { BreakNote } from "@/components/session/break-note";
 import { BREAK_DISMISSED_COOKIE } from "@/components/session/break-cookie";
 import { SessionCard, SessionCardSkeleton } from "@/components/session/session-card";
@@ -152,6 +153,10 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
           minutos, ou use “Sincronizar agora”.
         </p>
       ) : null}
+
+      <Suspense fallback={null}>
+        <ProfileQuestionCard userId={user.id} riotId={account} />
+      </Suspense>
 
       {session ? (
         <Suspense fallback={<SessionCardSkeleton />}>

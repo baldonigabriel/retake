@@ -10,6 +10,7 @@ import {
   previewAccountAction,
   type ActionError,
 } from "@/app/(app)/onboarding/actions";
+import { ProfileChoice } from "@/components/profile/profile-choice";
 import { Button } from "@/components/ui/button";
 import { RiotIdInput } from "@/components/ui/riot-id-input";
 import { IMPORT_LIMIT, IMPORT_PAGES } from "@/lib/accounts/initial-import";
@@ -21,10 +22,12 @@ type Step =
   | { kind: "preview"; preview: RiotAccountPreview }
   | { kind: "importing"; preview: RiotAccountPreview; page: number; imported: number }
   | { kind: "import-error"; preview: RiotAccountPreview; page: number; imported: number; message: string }
-  | { kind: "done"; preview: RiotAccountPreview; imported: number };
+  | { kind: "done"; preview: RiotAccountPreview; imported: number }
+  | { kind: "profile"; preview: RiotAccountPreview };
 
-const STEPS = ["Riot ID", "Confirmar", "Importar"] as const;
-const stepIndex = (step: Step) => (step.kind === "form" ? 0 : step.kind === "preview" ? 1 : 2);
+const STEPS = ["Riot ID", "Confirmar", "Importar", "Seu perfil"] as const;
+const stepIndex = (step: Step) =>
+  step.kind === "form" ? 0 : step.kind === "preview" ? 1 : step.kind === "profile" ? 3 : 2;
 
 /** Live format check, mirroring parseRiotId (name 3–16, tag 3–5 letters/digits). */
 export function riotIdIssue(gameName: string, tagLine: string): string | null {
@@ -61,10 +64,10 @@ export function OnboardingFlow({ next = "/me" }: { next?: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <ol aria-label="Etapas" className="flex items-center gap-2 text-label">
+      <ol aria-label="Etapas" className="flex flex-wrap items-center gap-x-2 gap-y-2 text-label">
         {STEPS.map((label, i) => (
           <li key={label} className="flex items-center gap-2">
-            {i > 0 ? <span aria-hidden="true" className="h-px w-6 bg-line" /> : null}
+            {i > 0 ? <span aria-hidden="true" className="h-px w-3 bg-line sm:w-6" /> : null}
             <span
               aria-current={i === current ? "step" : undefined}
               className={cn(
@@ -98,7 +101,10 @@ export function OnboardingFlow({ next = "/me" }: { next?: string }) {
           />
         ) : null}
         {step.kind === "importing" || step.kind === "import-error" ? <ImportProgress step={step} next={next} onRetry={() => void runImport(step.preview, step.page, step.imported)} /> : null}
-        {step.kind === "done" ? <ImportDone preview={step.preview} imported={step.imported} next={next} /> : null}
+        {step.kind === "done" ? (
+          <ImportDone preview={step.preview} imported={step.imported} onContinue={() => setStep({ kind: "profile", preview: step.preview })} />
+        ) : null}
+        {step.kind === "profile" ? <ProfileStep preview={step.preview} next={next} /> : null}
       </div>
     </div>
   );
@@ -339,9 +345,7 @@ function ImportProgress({
   );
 }
 
-function ImportDone({ preview, imported, next }: { preview: RiotAccountPreview; imported: number; next: string }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+function ImportDone({ preview, imported, onContinue }: { preview: RiotAccountPreview; imported: number; onContinue: () => void }) {
   return (
     <div className="flex flex-col gap-4">
       <PlayerCard preview={preview} />
@@ -357,15 +361,32 @@ function ImportDone({ preview, imported, next }: { preview: RiotAccountPreview; 
             : "Assim que você jogar, a partida aparece no seu painel em até 15 minutos."}
         </p>
       </div>
-      <Button
-        type="button"
-        onClick={() => startTransition(() => router.push(next))}
-        disabled={pending}
-        className="w-full sm:w-fit"
-      >
-        {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : null}
-        {next.startsWith("/invite/") ? "Continuar para o convite" : "Abrir meu painel"}
+      <Button type="button" onClick={onContinue} className="w-full sm:w-fit">
+        Continuar
       </Button>
+    </div>
+  );
+}
+
+/** SPEC §6.2: public or private, nothing pre-selected; saving moves on to `next`. */
+function ProfileStep({ preview, next }: { preview: RiotAccountPreview; next: string }) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="font-medium text-fg">Seu perfil</h2>
+        <p className="text-fg-secondary">
+          Quer que outras pessoas vejam seus números por um link ou pela busca do Retake? Seus grupos continuam vendo você de
+          qualquer jeito.
+        </p>
+      </div>
+      <ProfileChoice
+        initial={null}
+        riotId={preview}
+        submitLabel={next.startsWith("/invite/") ? "Salvar e ir para o convite" : "Salvar e abrir o painel"}
+        onSaved={() => startTransition(() => router.push(next))}
+      />
     </div>
   );
 }

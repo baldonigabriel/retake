@@ -1,9 +1,12 @@
+import { ArrowUpRight } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LoginAccounts } from "@/components/auth/login-accounts";
 import type { SocialProvider } from "@/components/auth/social-auth-buttons";
 import { Avatar } from "@/components/layout/account-menu";
 import { SignOutButton } from "@/components/layout/sign-out-button";
+import { ProfileChoice } from "@/components/profile/profile-choice";
 import { BreakReminderSwitch } from "@/components/session/break-reminder-switch";
 import { Badge } from "@/components/ui/badge";
 import { db } from "@/db";
@@ -11,6 +14,9 @@ import { listLoginAccounts } from "@/lib/auth/accounts";
 import { requireViewer } from "@/lib/auth/session";
 import { formatMatchDate, formatRelativeTime } from "@/lib/format";
 import { getBreakReminder } from "@/lib/preferences/queries";
+import { profilePath } from "@/lib/profile/path";
+import { getProfileSettings } from "@/lib/profile/queries";
+import { choiceFromSettings, isProfileVisible } from "@/lib/profile/settings";
 import { TILT_STREAK } from "@/lib/stats/session";
 
 export const metadata: Metadata = { title: "Ajustes" };
@@ -24,7 +30,12 @@ const STATUS = {
 export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
   const { user, account } = await requireViewer("/settings");
   const params = await searchParams;
-  const [breakReminder, loginAccounts] = await Promise.all([getBreakReminder(user.id), listLoginAccounts(db(), user.id)]);
+  const [breakReminder, loginAccounts, profile] = await Promise.all([
+    getBreakReminder(user.id),
+    listLoginAccounts(db(), user.id),
+    getProfileSettings(user.id),
+  ]);
+  const profileVisible = isProfileVisible(profile);
   const now = new Date();
   const status = STATUS[account.syncStatus];
   const linked = socialProvider(params.linked);
@@ -84,6 +95,36 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           </p>
         </div>
         <BreakReminderSwitch on={breakReminder} labelledBy="break-title" describedBy="break-desc" />
+      </section>
+
+      <section
+        id="perfil"
+        aria-labelledby="profile-title"
+        className="flex scroll-mt-24 flex-col gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:p-5"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h2 id="profile-title" className="flex items-center gap-2 text-body-sm font-semibold text-fg">
+              Perfil público
+              <Badge variant={profileVisible ? "accent" : "default"}>{profileVisible ? "Público" : "Privado"}</Badge>
+            </h2>
+            <p className="text-fg-secondary">
+              {profileVisible
+                ? "Qualquer pessoa vê as seções marcadas pelo link ou pela busca. Grupos, Bagre e duplas nunca aparecem."
+                : "Ninguém fora dos seus grupos vê seus números, e seu nome não aparece na busca."}
+            </p>
+          </div>
+          {profileVisible ? (
+            <Link
+              href={profilePath(account)}
+              className="hover-layer press relative inline-flex min-h-11 shrink-0 items-center gap-1.5 self-start rounded-control px-2 text-body-sm text-fg-secondary hover:text-fg sm:min-h-8"
+            >
+              Ver como visitante
+              <ArrowUpRight aria-hidden="true" className="size-4" />
+            </Link>
+          ) : null}
+        </div>
+        <ProfileChoice initial={choiceFromSettings(profile)} riotId={account} />
       </section>
 
       <LoginAccounts accounts={loginAccounts} linked={linked} linkError={linkError} />
