@@ -12,7 +12,14 @@ const ladder = (p: RankPoint) => p.elo ?? p.tier * 100 + p.rr;
  * DESIGN.md › the screen's single chamfered highlight: current rank, RR,
  * last change and a mini chart of the recent competitive history.
  */
-export function RankHeader({ history }: { history: readonly RankPoint[] }) {
+export function RankHeader({
+  history,
+  emptyHint = "Jogue uma competitiva para acompanhar seu rank e RR aqui.",
+}: {
+  history: readonly RankPoint[];
+  /** Copy when there's no rank yet (someone else's profile says it differently). */
+  emptyHint?: string;
+}) {
   const current = history.at(-1);
 
   if (!current) {
@@ -21,7 +28,7 @@ export function RankHeader({ history }: { history: readonly RankPoint[] }) {
         <div className="flex flex-col gap-1">
           <p className="text-eyebrow text-fg-muted uppercase">Rank competitivo</p>
           <p className="stat text-stat-md text-fg">Sem rank ainda</p>
-          <p className="text-fg-secondary">Jogue uma competitiva para acompanhar seu rank e RR aqui.</p>
+          <p className="text-fg-secondary">{emptyHint}</p>
         </div>
       </ChamferCard>
     );

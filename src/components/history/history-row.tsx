@@ -83,7 +83,8 @@ function Stat({ label, value, className }: { label: string; value: string; class
  * 390px: the same facts on three short lines. The whole row links to the
  * match when `href` is set; otherwise it's static (no hover, no press).
  */
-export function HistoryRow({ item, now, href }: { item: HistoryItem; now: Date; href: string | null }) {
+/** `showRank: false` hides the rank and RR (a public profile whose owner hid them). */
+export function HistoryRow({ item, now, href, showRank = true }: { item: HistoryItem; now: Date; href: string | null; showRank?: boolean }) {
   const result = matchResult(item);
   const score = playerScore(item);
   const matchAcs = Math.round(acs(item.score, item.roundsPlayed));
@@ -95,8 +96,8 @@ export function HistoryRow({ item, now, href }: { item: HistoryItem; now: Date; 
   const mode = modeLabel(item.queueId, item.mode);
   const when = formatRelativeTime(item.startedAt, now);
   const place = item.teamPosition !== null && item.teamSize > 1 ? `${item.teamPosition}º` : null;
-  const rr = rrText(item);
-  const competitive = item.queueId === "competitive";
+  const rr = showRank ? rrText(item) : null;
+  const competitive = showRank && item.queueId === "competitive";
 
   const label = [
     `${RESULT_LABEL[result]} em ${map}`,

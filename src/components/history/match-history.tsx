@@ -12,11 +12,14 @@ export function MatchHistory({
   now,
   hrefFor,
   label = "Últimas partidas",
+  showRank = true,
 }: {
   items: readonly HistoryItem[];
   now: Date;
   hrefFor: (item: HistoryItem) => string | null;
   label?: string;
+  /** false: no rank or RR anywhere (public profile with the rank hidden). */
+  showRank?: boolean;
 }) {
   const days = groupByDay(items, now);
   let index = 0;
@@ -36,13 +39,13 @@ export function MatchHistory({
                   {day.draws ? `, ${day.draws} ${day.draws === 1 ? "empate" : "empates"}` : ""}
                 </span>
               </span>
-              {day.competitive > 0 ? <RrDelta value={day.rr} /> : null}
+              {showRank && day.competitive > 0 ? <RrDelta value={day.rr} /> : null}
             </span>
           </h3>
           <ul className="divide-y divide-line">
             {day.items.map((item) => (
               <li key={item.matchId} className="stagger-item" style={{ "--i": index++ } as React.CSSProperties}>
-                <HistoryRow item={item} now={now} href={hrefFor(item)} />
+                <HistoryRow item={item} now={now} href={hrefFor(item)} showRank={showRank} />
               </li>
             ))}
           </ul>

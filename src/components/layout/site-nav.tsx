@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Settings, Users } from "lucide-react";
 import { Suspense } from "react";
 
+import { HeaderSearch } from "@/components/layout/header-search";
 import { Logo } from "@/components/layout/logo";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +76,10 @@ export function SiteNav({ account }: { account?: React.ReactNode }) {
           </ul>
           )}</WithPathname>
 
-          <div className="flex items-center justify-end gap-2">{account}</div>
+          <div className="flex items-center justify-end gap-2">
+            <HeaderSearch />
+            {account}
+          </div>
         </nav>
       </header>
 

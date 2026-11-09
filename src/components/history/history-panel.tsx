@@ -94,6 +94,7 @@ export function HistoryPanel({
   emptyAction,
   toolbarExtra,
   emptyDescription = "Troque o agente ou o mapa para ver suas outras partidas.",
+  showRank = true,
 }: {
   title?: string;
   id?: string;
@@ -112,6 +113,8 @@ export function HistoryPanel({
   /** Extra filter controls next to agent and map (e.g. the "com fulano" chip). */
   toolbarExtra?: React.ReactNode;
   emptyDescription?: string;
+  /** false hides rank and RR in the rows (public profile with the rank hidden). */
+  showRank?: boolean;
 }) {
   return (
     <section aria-labelledby={id} className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
@@ -134,7 +137,7 @@ export function HistoryPanel({
         ) : (
           <>
             {summary && summaryCaption ? <HistorySummaryBlock summary={summary} caption={summaryCaption} /> : null}
-            <MatchHistory items={items} now={now} hrefFor={hrefFor} label={title} />
+            <MatchHistory items={items} now={now} hrefFor={hrefFor} label={title} showRank={showRank} />
           </>
         )}
       </HistoryShell>
