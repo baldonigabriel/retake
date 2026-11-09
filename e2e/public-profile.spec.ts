@@ -80,9 +80,30 @@ test.describe("visitor (signed out)", () => {
     await expect(page.getByText("Digite pelo menos 3 letras do nome")).toBeVisible();
   });
 
+  test("suggests public profiles while typing, from the 3rd letter", async ({ page }) => {
+    await page.goto("/search");
+    const field = page.getByRole("combobox", { name: "Buscar perfil público", exact: true });
+    await field.pressSequentially("Pa");
+    await expect(page.getByRole("listbox")).toBeHidden();
+    await field.pressSequentially("r");
+    const list = page.getByRole("listbox", { name: "Perfis públicos encontrados" });
+    await expect(list.getByRole("option", { name: /Parceiro/ })).toBeVisible();
+    // A private user never shows up as a suggestion either.
+    await field.fill("");
+    await field.pressSequentially(E2E.thirdName.slice(0, 6));
+    await expect(list.getByText("Nenhum perfil público com esse nome.")).toBeVisible();
+    // Keyboard: ↓ + Enter opens the profile.
+    await field.fill("");
+    await field.pressSequentially("Parc");
+    await expect(list.getByRole("option", { name: /Parceiro/ })).toBeVisible();
+    await field.press("ArrowDown");
+    await field.press("Enter");
+    await expect(page).toHaveURL(new RegExp(`${profile(E2E.friendName)}$`));
+  });
+
   test("the landing has the profile search", async ({ page }) => {
     await page.goto("/");
-    const field = page.getByRole("searchbox", { name: "Buscar perfil público" }).last();
+    const field = page.getByRole("combobox", { name: "Buscar perfil público", exact: true });
     await field.fill("Parceiro");
     await field.press("Enter");
     await expect(page).toHaveURL(/\/search\?q=Parceiro/);

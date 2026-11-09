@@ -19,3 +19,16 @@ export async function takeSearchQuota(): Promise<boolean> {
   const h = await headers();
   return limiter.take(clientIp((name) => h.get(name)), Date.now());
 }
+
+/**
+ * Suggestions while typing (debounced, from the 3rd letter): a person typing
+ * one name uses a handful, so the ceiling is a bit higher than full searches
+ * but still far from what walking the user list would need.
+ */
+const suggestLimiter = new WindowLimiter(process.env.NODE_ENV === "production" ? 40 : 1_000, 60_000);
+
+export async function takeSuggestQuota(): Promise<boolean> {
+  await connection();
+  const h = await headers();
+  return suggestLimiter.take(clientIp((name) => h.get(name)), Date.now());
+}
