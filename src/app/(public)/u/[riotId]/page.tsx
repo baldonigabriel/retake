@@ -10,6 +10,7 @@ import { MapGrid } from "@/components/dashboard/map-grid";
 import { RankHeader } from "@/components/dashboard/rank-header";
 import { GroupFilter } from "@/components/groups/group-filters";
 import { HistoryPanel } from "@/components/history/history-panel";
+import { WeaponsPanel } from "@/components/rounds/weapons-panel";
 import { TrendChart } from "@/components/stats/trend-chart";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/states";
@@ -20,6 +21,8 @@ import { getMatchesPlayedBy } from "@/lib/match/queries";
 import { modeLabel } from "@/lib/modes";
 import { parseProfileSlug, profilePath } from "@/lib/profile/path";
 import { findPublicProfile, type PublicProfile } from "@/lib/profile/queries";
+import { calculatePlayerRoundMetrics } from "@/lib/rounds";
+import { getRoundDataset } from "@/lib/rounds/queries";
 import { filterBySeason, parseSeason, seasonOptions } from "@/lib/seasons";
 import { getSeasonCatalog } from "@/lib/seasons-api";
 import { ALL_MODES, DEFAULT_MODE, filterByMode } from "@/lib/stats/aggregate";
@@ -72,7 +75,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
   const viewer = await getSessionUser();
   const viewerAccount = viewer ? await getLinkedAccount(viewer.id) : null;
   const isOwner = viewer?.id === profile.userId;
-  const needsLines = settings.showOverview || settings.showAgents || settings.showMaps || settings.showMatches;
+  const needsLines = settings.showOverview || settings.showAgents || settings.showMaps || settings.showMatches || settings.showWeapons;
 
   const [allLines, rank, catalog] = await Promise.all([
     needsLines ? getPlayerLines(profile.puuid) : Promise.resolve([]),
@@ -83,6 +86,12 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
   const modes = modeOptions(allLines);
   const mode = parseMode(query.mode, modes);
   const lines = filterByMode(allLines, mode);
+  const weaponMetrics = settings.showWeapons
+    ? calculatePlayerRoundMetrics({
+        puuid: profile.puuid,
+        ...(await getRoundDataset(lines.map((line) => line.matchId))),
+      }).weapons
+    : [];
   const cmp = compareRecent(lines, mode);
   const trend = trendSeries(lines);
   const seasons = settings.showAgents && catalog ? seasonOptions(lines, catalog) : [];
@@ -205,6 +214,8 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
                       <MapGrid maps={byMap(lines, mode)} className="lg:grid-cols-4" />
                     </Panel>
                   ) : null}
+
+                  {settings.showWeapons ? <WeaponsPanel weapons={weaponMetrics} /> : null}
 
                   {settings.showMatches ? (
                     <>

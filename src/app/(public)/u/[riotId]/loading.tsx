@@ -1,5 +1,6 @@
 import { AgentsBreakdownSkeleton } from "@/components/agents/agents-table";
 import { HistoryRowSkeleton } from "@/components/history/history-row";
+import { WeaponsPanelSkeleton } from "@/components/rounds/rounds-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** Same shape as the public profile: header, rank, mode filter, KPIs, agents, matches. */
@@ -20,6 +21,7 @@ export default function Loading() {
           <Skeleton key={i} className="h-32 rounded-card" />
         ))}
       </div>
+      <WeaponsPanelSkeleton />
       <div className="overflow-hidden rounded-card bg-surface-1 shadow-hairline">
         <div className="border-b border-line px-4 py-3">
           <Skeleton className="h-4 w-24" />
