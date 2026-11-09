@@ -229,6 +229,16 @@ Pergunta principal de quem visita: "como essa pessoa joga?". O diferencial conti
 - No placar (`/match/[id]`), o nome vira link para `/u/...` só se o jogador for usuário com perfil público. Para membros dos seus grupos, o link continua indo para o perfil de membro (que mostra mais).
 - Na busca e no perfil, nada indica se a pessoa está em algum grupo.
 
+### 6.6 Decisões de implementação
+
+- Regra única de acesso em `src/lib/profile/settings.ts` (`isProfileVisible`): `is_public` **e** pelo menos uma seção marcada. "Público" sem nenhuma seção é gravado como privado (as escolhas das seções ficam guardadas).
+- A busca compara nomes com `retake_fold` (função SQL `IMMUTABLE`, migration 0013: minúsculas + acentos latinos comuns), espelhada por `foldName` no TypeScript; o nome é buscado por "contém", e com `#` a tag por prefixo. Ordem: nome exato, depois começo do nome, depois o resto.
+- Limite da busca: 20 por minuto por IP, em memória por instância (`src/lib/profile/rate-limit.ts`). Acima disso a tela pede um minuto de espera.
+- "Agora não" no card do `/me` guarda um cookie por 7 dias (só neste navegador); a pergunta volta depois enquanto não houver resposta.
+- O 404 do perfil é o mesmo componente e o mesmo título para privado, não usuário, inexistente e endereço malformado. Como a página carrega com streaming, o status HTTP pode sair 200 nos quatro casos; o que importa é que nada os distingue.
+- Rank e RR das partidas não saem do servidor quando `show_rank` está desligado.
+- A seção "Armas" entra na escolha junto com as outras desde que a Fase 9 passou a mostrá-la no perfil.
+
 ## 7. Rounds, armas e economia (Fase 9)
 
 Os dados já vêm na resposta da partida v4 (§1); o que muda é gravar e calcular. Métricas são calculadas das tabelas de rounds (§2), nunca guardadas prontas. Fórmulas no CLAUDE.md.
