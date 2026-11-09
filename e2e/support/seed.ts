@@ -24,6 +24,7 @@ import {
   matches,
   matchPlayers,
   mmrSnapshots,
+  profileSettings,
   riotAccounts,
   users,
   type NewMatch,
@@ -63,7 +64,20 @@ export const E2E = {
   sessionUserId: "e2e-session-user",
   sessionPuuid: "e2e-puuid-session",
   sessionName: "Maratona",
+  /**
+   * Public profiles (SPEC §6): Parceiro is public with only rank, agents and
+   * matches; Maratona is public with everything and played against Tester in
+   * PUBLIC_RIVAL_MATCH (no shared group, so the scoreboard links to /u/...).
+   * Tester and Terceiro chose private; Vazio never answered (the /me card).
+   */
+  /** Starts without an answer; the e2e flips it public → private → public (desktop project only). */
+  showcaseUserId: "e2e-showcase-user",
+  showcasePuuid: "e2e-puuid-showcase",
+  showcaseName: "Vitrine",
 } as const;
+
+/** Tester's match where Maratona (public, no shared group) was on the enemy team, as player 6. */
+export const PUBLIC_RIVAL_MATCH = 10;
 
 const MAPS = [
   { id: "7eaecc1b-4337-bbf6-6ab9-04b8f06b3319", name: "Ascent" },
@@ -166,6 +180,7 @@ export function buildMatches(now = new Date()) {
     for (let p = 0; p < 10; p++) {
       const isUser = p === 0;
       const isFriend = p === 1 && FRIEND_MATCHES.includes(i);
+      const isRival = p === 6 && i === PUBLIC_RIVAL_MATCH;
       const team = p < 5 ? userTeam : userTeam === "Blue" ? "Red" : "Blue";
       // Parceiro is strong (stays the MVP whatever weekday the suite runs);
       // rand() is still drawn so the other players' numbers don't change.
@@ -178,9 +193,9 @@ export function buildMatches(now = new Date()) {
       const agent = isUser ? AGENTS[[0, 0, 1, 2, 0, 3][i % 6]!]! : AGENTS[(p + i) % AGENTS.length]!;
       playerRows.push({
         matchId: id,
-        puuid: isUser ? E2E.puuid : isFriend ? E2E.friendPuuid : `e2e-puuid-${String(i).padStart(2, "0")}-${p}`,
-        gameName: isUser ? E2E.gameName : isFriend ? E2E.friendName : `Jogador ${p}`,
-        tagLine: isUser || isFriend ? E2E.tagLine : "XYZ",
+        puuid: isUser ? E2E.puuid : isFriend ? E2E.friendPuuid : isRival ? E2E.sessionPuuid : `e2e-puuid-${String(i).padStart(2, "0")}-${p}`,
+        gameName: isUser ? E2E.gameName : isFriend ? E2E.friendName : isRival ? E2E.sessionName : `Jogador ${p}`,
+        tagLine: isUser || isFriend || isRival ? E2E.tagLine : "XYZ",
         team,
         agentId: agent.id,
         agentName: agent.name,
@@ -375,7 +390,17 @@ export async function cleanup() {
   // Groups owned by these users (seeded or created by tests) go with them (cascade).
   await database
     .delete(users)
-    .where(inArray(users.id, [E2E.userId, E2E.newUserId, E2E.emptyUserId, E2E.friendUserId, E2E.thirdUserId, E2E.sessionUserId]));
+    .where(
+      inArray(users.id, [
+        E2E.userId,
+        E2E.newUserId,
+        E2E.emptyUserId,
+        E2E.friendUserId,
+        E2E.thirdUserId,
+        E2E.sessionUserId,
+        E2E.showcaseUserId,
+      ]),
+    );
 }
 
 export type SeededSession = { name: string; value: string };
@@ -388,6 +413,7 @@ export async function seed(): Promise<{
   friend: SeededSession;
   third: SeededSession;
   session: SeededSession;
+  showcase: SeededSession;
 }> {
   await cleanup();
   const database = db();
@@ -401,12 +427,13 @@ export async function seed(): Promise<{
     [E2E.friendUserId, "Parceiro"],
     [E2E.thirdUserId, E2E.thirdName],
     [E2E.sessionUserId, E2E.sessionName],
+    [E2E.showcaseUserId, E2E.showcaseName],
   ] as const) {
     await ctx.test.saveUser(ctx.test.createUser({ id, name, email: `${id}@retake.example`, emailVerified: true }));
   }
 
   await database.insert(accounts).values(
-    [E2E.userId, E2E.newUserId, E2E.emptyUserId, E2E.friendUserId, E2E.thirdUserId, E2E.sessionUserId].map((userId) => ({
+    [E2E.userId, E2E.newUserId, E2E.emptyUserId, E2E.friendUserId, E2E.thirdUserId, E2E.sessionUserId, E2E.showcaseUserId].map((userId) => ({
       id: `e2e-discord-${userId}`,
       accountId: `discord-${userId}`,
       providerId: "discord",
@@ -471,6 +498,26 @@ export async function seed(): Promise<{
     lastSyncedAt: new Date(now.getTime() - 3 * 60_000),
     syncStatus: "ok",
   });
+
+  await database.insert(riotAccounts).values({
+    userId: E2E.showcaseUserId,
+    puuid: E2E.showcasePuuid,
+    gameName: E2E.showcaseName,
+    tagLine: E2E.tagLine,
+    linkedAt: new Date(now.getTime() - 24 * 3_600_000),
+    lastSyncedAt: new Date(now.getTime() - 5 * 60_000),
+    syncStatus: "ok",
+  });
+
+  // Public profile answers (Vazio and Vitrine have no row: never asked).
+  const decided = new Date(now.getTime() - 86_400_000);
+  const allOn = { showRank: true, showOverview: true, showAgents: true, showMaps: true, showMatches: true };
+  await database.insert(profileSettings).values([
+    { userId: E2E.userId, ...allOn, isPublic: false, decidedAt: decided },
+    { userId: E2E.thirdUserId, ...allOn, isPublic: false, decidedAt: decided },
+    { userId: E2E.friendUserId, ...allOn, showOverview: false, showMaps: false, isPublic: true, decidedAt: decided },
+    { userId: E2E.sessionUserId, ...allOn, isPublic: true, decidedAt: decided },
+  ]);
 
   const { matchRows, playerRows } = buildMatches(now);
   const week = buildWeekMatches(now);
@@ -605,5 +652,6 @@ export async function seed(): Promise<{
     friend: await login(E2E.friendUserId),
     third: await login(E2E.thirdUserId),
     session: await login(E2E.sessionUserId),
+    showcase: await login(E2E.showcaseUserId),
   };
 }

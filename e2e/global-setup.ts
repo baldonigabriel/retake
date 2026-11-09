@@ -12,6 +12,7 @@ export const EMPTY_STATE = path.join(AUTH_DIR, "empty.json");
 export const FRIEND_STATE = path.join(AUTH_DIR, "friend.json");
 export const THIRD_STATE = path.join(AUTH_DIR, "third.json");
 export const SESSION_STATE = path.join(AUTH_DIR, "session.json");
+export const SHOWCASE_STATE = path.join(AUTH_DIR, "showcase.json");
 
 function storageState(session: SeededSession, baseURL: string) {
   const { hostname } = new URL(baseURL);
@@ -34,7 +35,7 @@ function storageState(session: SeededSession, baseURL: string) {
 
 export default async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0]?.use.baseURL ?? "http://localhost:3000";
-  const { onboarded, fresh, empty, friend, third, session } = await seed();
+  const { onboarded, fresh, empty, friend, third, session, showcase } = await seed();
   await mkdir(AUTH_DIR, { recursive: true });
   await writeFile(ONBOARDED_STATE, JSON.stringify(storageState(onboarded, baseURL)));
   await writeFile(FRESH_STATE, JSON.stringify(storageState(fresh, baseURL)));
@@ -42,4 +43,5 @@ export default async function globalSetup(config: FullConfig) {
   await writeFile(FRIEND_STATE, JSON.stringify(storageState(friend, baseURL)));
   await writeFile(THIRD_STATE, JSON.stringify(storageState(third, baseURL)));
   await writeFile(SESSION_STATE, JSON.stringify(storageState(session, baseURL)));
+  await writeFile(SHOWCASE_STATE, JSON.stringify(storageState(showcase, baseURL)));
 }
