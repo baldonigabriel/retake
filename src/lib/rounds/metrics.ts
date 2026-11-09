@@ -1,11 +1,14 @@
 /** Pure Phase 9 metrics. Every percentage carries its explicit sample size. */
 
+import { shopWeapon } from "./weapons";
+
 export interface RoundContext {
   matchId: string;
   round: number;
   winningTeam: string | null;
   attackingTeam: string | null;
   mapName: string | null;
+  mapId?: string | null;
   queueId: string;
 }
 
@@ -59,12 +62,13 @@ export interface EconomyMetric {
 
 export interface SideMetric {
   mapName: string;
+  mapId: string | null;
   attack: RateMetric;
   defense: RateMetric;
 }
 
 export interface WeaponMetric {
-  weaponId: string | null;
+  weaponId: string;
   weaponName: string;
   kills: number;
   headshots: number;
@@ -72,7 +76,6 @@ export interface WeaponMetric {
   hsRate: number | null;
   shotSampleRounds: number;
   matches: number;
-  prominent: boolean;
 }
 
 export interface PlayerRoundMetrics {
@@ -151,7 +154,7 @@ export function calculatePlayerRoundMetrics(input: {
   const multiKills = { three: 0, four: 0, ace: 0 };
   const clutch = blankClutches();
   const economy = new Map<EconomyMetric["band"], { wins: number; rounds: number; score: number; scoreSample: number }>();
-  const sides = new Map<string, { attackWins: number; attack: number; defenseWins: number; defense: number }>();
+  const sides = new Map<string, { mapId: string | null; attackWins: number; attack: number; defenseWins: number; defense: number }>();
 
   for (const playerRound of playerRounds) {
     const key = keyOf(playerRound.matchId, playerRound.round);
@@ -225,7 +228,7 @@ export function calculatePlayerRoundMetrics(input: {
     }
 
     if (context?.attackingTeam && context.mapName) {
-      const entry = sides.get(context.mapName) ?? { attackWins: 0, attack: 0, defenseWins: 0, defense: 0 };
+      const entry = sides.get(context.mapName) ?? { mapId: context.mapId ?? null, attackWins: 0, attack: 0, defenseWins: 0, defense: 0 };
       const won = context.winningTeam === playerRound.team;
       if (playerRound.team === context.attackingTeam) {
         entry.attack++;
@@ -242,13 +245,16 @@ export function calculatePlayerRoundMetrics(input: {
 
   const weaponMap = new Map<
     string,
-    { id: string | null; name: string; kills: number; headshots: number; shots: number; rounds: number; matches: Set<string> }
+    { id: string; name: string; kills: number; headshots: number; shots: number; rounds: number; matches: Set<string> }
   >();
+  // Only weapons from the buy menu: abilities, ultimates and the knife stay out.
   for (const kill of input.kills.filter((row) => row.killerPuuid === input.puuid)) {
-    const weaponKey = kill.weaponId ?? `name:${kill.weaponName ?? "Desconhecida"}`;
+    const weapon = shopWeapon(kill.weaponId, kill.weaponName);
+    if (!weapon) continue;
+    const weaponKey = weapon.id;
     const entry = weaponMap.get(weaponKey) ?? {
-      id: kill.weaponId,
-      name: kill.weaponName ?? "Desconhecida",
+      id: weapon.id,
+      name: weapon.name,
       kills: 0,
       headshots: 0,
       shots: 0,
@@ -260,12 +266,13 @@ export function calculatePlayerRoundMetrics(input: {
     weaponMap.set(weaponKey, entry);
   }
   for (const row of playerRounds) {
-    if (!row.weaponId && !row.weaponName) continue;
+    const weapon = shopWeapon(row.weaponId, row.weaponName);
+    if (!weapon) continue;
     if (row.headshots === null || row.bodyshots === null || row.legshots === null) continue;
-    const weaponKey = row.weaponId ?? `name:${row.weaponName}`;
+    const weaponKey = weapon.id;
     const entry = weaponMap.get(weaponKey) ?? {
-      id: row.weaponId,
-      name: row.weaponName ?? "Desconhecida",
+      id: weapon.id,
+      name: weapon.name,
       kills: 0,
       headshots: 0,
       shots: 0,
@@ -304,6 +311,7 @@ export function calculatePlayerRoundMetrics(input: {
     sides: [...sides.entries()]
       .map(([mapName, entry]) => ({
         mapName,
+        mapId: entry.mapId,
         attack: rate(entry.attackWins, entry.attack),
         defense: rate(entry.defenseWins, entry.defense),
       }))
@@ -318,7 +326,6 @@ export function calculatePlayerRoundMetrics(input: {
         hsRate: entry.shots > 0 ? entry.headshots / entry.shots : null,
         shotSampleRounds: entry.rounds,
         matches: entry.matches.size,
-        prominent: entry.kills >= 10 || entry.shots >= 100,
       }))
       .sort((a, b) => b.kills - a.kills || b.shots - a.shots || a.weaponName.localeCompare(b.weaponName, "pt-BR")),
   };

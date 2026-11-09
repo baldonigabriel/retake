@@ -18,3 +18,6 @@ export const mapThumbUrl = (mapId: string | null | undefined) => asset("maps", m
 
 /** Large map splash (match header background). */
 export const mapSplashUrl = (mapId: string | null | undefined) => asset("maps", mapId, "splash.png");
+
+/** White weapon silhouette (kill feed icon), reads well on the dark surfaces. */
+export const weaponIconUrl = (weaponId: string | null | undefined) => asset("weapons", weaponId, "killstreamicon.png");

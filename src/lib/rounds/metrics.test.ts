@@ -121,4 +121,17 @@ describe("economyBand", () => {
     expect(economyBand(1, 3_899)).toBe("force");
     expect(economyBand(1, 3_900)).toBe("full");
   });
+  it("keeps only buy-menu weapons: abilities, ultimates and the knife stay out", () => {
+    const ability = { ...kill(0, 1_000, me, "e1"), weaponId: null, weaponName: "Not Dead Yet", weaponType: "Ability" };
+    const knife = { ...kill(1, 2_000, me, "e2"), weaponId: "2f59173c-4bed-b6c3-2191-dea9b58be9c7", weaponName: "Melee" };
+    const ghost = { ...kill(2, 3_000, me, "e3"), weaponId: "1BAA85B4-4C70-1284-64BB-6481DFC3BB4E", weaponName: "Ghost" };
+    const metrics = calculatePlayerRoundMetrics({
+      puuid: me,
+      rounds: [context],
+      players: [player(me, "Blue", { weaponId: null, weaponName: "Not Dead Yet" })],
+      kills: [ability, knife, ghost],
+    });
+    expect(metrics.weapons.map((w) => w.weaponName)).toEqual(["Ghost"]);
+    expect(metrics.weapons[0]?.weaponId).toBe("1baa85b4-4c70-1284-64bb-6481dfc3bb4e");
+  });
 });

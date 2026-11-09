@@ -26,6 +26,7 @@ export async function getRoundDataset(matchIds: readonly string[]): Promise<Roun
         winningTeam: matchRounds.winningTeam,
         attackingTeam: matchRounds.attackingTeam,
         mapName: matches.mapName,
+        mapId: matches.mapId,
         queueId: matches.queueId,
       })
       .from(matchRounds)

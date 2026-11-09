@@ -29,17 +29,18 @@ const metrics: PlayerRoundMetrics = {
 describe("round breakdown UI", () => {
   it("shows rates with an explicit round sample", () => {
     render(<RoundsPanel metrics={metrics} />);
-    expect(screen.getByText("3 · 15,0%")).toBeInTheDocument();
-    expect(screen.getAllByText("amostra: 20 rounds").length).toBeGreaterThan(0);
-    expect(screen.getByText("1v2:")).toBeInTheDocument();
+    expect(screen.getByText("15,0%")).toBeInTheDocument();
+    expect(screen.getByText("Métricas calculadas de 20 rounds")).toBeInTheDocument();
+    expect(screen.getByText("1v2")).toBeInTheDocument();
+    expect(screen.getAllByText("1/2")).toHaveLength(2);
   });
 
-  it("labels weapon HS as approximate and flags a small sample", () => {
+  it("labels weapon HS as approximate and shows the weapon art", () => {
     render(
       <WeaponsPanel
         weapons={[
           {
-            weaponId: "vandal",
+            weaponId: "9c82e19d-4575-0200-1a81-3eacf00cf872",
             weaponName: "Vandal",
             kills: 4,
             headshots: 8,
@@ -47,12 +48,12 @@ describe("round breakdown UI", () => {
             hsRate: 0.2,
             shotSampleRounds: 3,
             matches: 2,
-            prominent: false,
           },
         ]}
       />,
     );
     expect(screen.getByText(/HS% aproximado/)).toBeInTheDocument();
-    expect(screen.getAllByText(/amostra pequena/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/amostra pequena/i)).toBeNull();
+    expect(document.querySelector("img")?.getAttribute("src")).toContain("/weapons/9c82e19d-4575-0200-1a81-3eacf00cf872/");
   });
 });
