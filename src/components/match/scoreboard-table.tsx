@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { RrDelta, TierIcon } from "@/components/history/history-row";
 import { AgentAvatar } from "@/components/match/agent-avatar";
 import { ResultChip } from "@/components/stats/result-chip";
@@ -24,6 +26,11 @@ export type ScoreboardPlayer = {
   legshots: number;
   isYou?: boolean;
   inGroup?: boolean;
+  /**
+   * Profile link for the name (SPEC §6.5): member profile for group mates,
+   * /u/... for public profiles; absent for everyone else.
+   */
+  href?: string | null;
   /** Rank in this match; undefined hides the rank column (sample data) */
   tier?: number | null;
   /**
@@ -162,7 +169,16 @@ export function ScoreboardTable({
                         ) : null}
                       </span>
                       <span className="flex min-w-0 items-baseline gap-1">
-                        <span className="max-w-[9rem] truncate font-medium text-fg">{p.name}</span>
+                        {p.href ? (
+                          <Link
+                            href={p.href}
+                            className="max-w-[9rem] truncate font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg"
+                          >
+                            {p.name}
+                          </Link>
+                        ) : (
+                          <span className="max-w-[9rem] truncate font-medium text-fg">{p.name}</span>
+                        )}
                         <span className="font-mono text-label text-fg-muted">#{p.tag}</span>
                       </span>
                       {p.isYou ? <span className="sr-only">(você)</span> : null}

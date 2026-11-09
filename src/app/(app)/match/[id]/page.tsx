@@ -9,6 +9,8 @@ import { requireViewer } from "@/lib/auth/session";
 import { getGroupMatePuuids } from "@/lib/groups/queries";
 import { getMatchForViewer, getMatchRrForUsers } from "@/lib/match/queries";
 import { buildScoreboard } from "@/lib/match/scoreboard";
+import { playerProfileHref } from "@/lib/profile/links";
+import { getMateProfilePaths, getPublicProfilePaths } from "@/lib/profile/queries";
 import { calculatePlayerRoundMetrics } from "@/lib/rounds";
 import { getRoundDataset } from "@/lib/rounds/queries";
 
@@ -25,6 +27,11 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
     getGroupMatePuuids(user.id),
   ]);
   if (!detail) notFound();
+  // SPEC §6.5: names link only for Retake users: mates to their member profile, others only if public.
+  const [matePaths, publicPaths] = await Promise.all([
+    getMateProfilePaths(user.id),
+    getPublicProfilePaths(detail.players.map((p) => p.puuid)),
+  ]);
   const roundDataset = await getRoundDataset([detail.match.id]);
   const roundStats = new Map(
     detail.players.map((player) => [player.puuid, calculatePlayerRoundMetrics({ puuid: player.puuid, ...roundDataset })]),
@@ -45,6 +52,7 @@ export default async function MatchPage({ params }: PageProps<"/match/[id]">) {
       return {
         ...p,
         inGroup: !p.isYou && mates.has(p.id),
+        href: playerProfileHref(p.id, { viewerPuuid: account.puuid, mates: matePaths, publicProfiles: publicPaths }),
         rr: rr.has(p.id) ? rr.get(p.id) : undefined,
         roundStats:
           stats && stats.rounds > 0

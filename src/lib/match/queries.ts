@@ -2,8 +2,9 @@
  * Reads for /match/[id].
  *
  * Privacy (CLAUDE.md): the page is only shown to users who played the
- * match. Other players appear only on this scoreboard: no links, no
- * profiles, no search.
+ * match. Players who aren't Retake users appear only on this scoreboard: no
+ * links, no profiles, no search. Users link to their member profile (group
+ * mates) or their opt-in public profile (src/lib/profile/links.ts).
  */
 import "server-only";
 
