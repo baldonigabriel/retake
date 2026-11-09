@@ -10,6 +10,7 @@
 import { ALL_MODES, DEFAULT_MODE, filterByMode, matchResult, summarize, type StatSummary } from "@/lib/stats/aggregate";
 import { playerScore, type DashboardLine } from "@/lib/stats/breakdown";
 import { acs, type MatchResult } from "@/lib/stats/metrics";
+import type { PlayerRoundMetrics } from "@/lib/rounds";
 
 import { inWeek, type WeekRange } from "./week";
 
@@ -30,7 +31,7 @@ export interface GroupLine extends DashboardLine {
 
 /* -------------------------------------------------------------- ranking -- */
 
-export const RANKING_METRICS = ["acs", "kd", "winrate", "matches"] as const;
+export const RANKING_METRICS = ["acs", "kd", "winrate", "matches", "firstbloods", "clutches", "aces"] as const;
 export type RankingMetric = (typeof RANKING_METRICS)[number];
 export const DEFAULT_METRIC: RankingMetric = "acs";
 
@@ -39,13 +40,16 @@ export const METRIC_LABEL: Record<RankingMetric, string> = {
   kd: "K/D",
   winrate: "Vitórias",
   matches: "Partidas",
+  firstbloods: "First bloods",
+  clutches: "Clutches",
+  aces: "Ases",
 };
 
 export function parseMetric(value: unknown): RankingMetric {
   return RANKING_METRICS.includes(value as RankingMetric) ? (value as RankingMetric) : DEFAULT_METRIC;
 }
 
-export function metricValue(summary: StatSummary, metric: RankingMetric): number {
+export function metricValue(summary: StatSummary, metric: RankingMetric, rounds?: PlayerRoundMetrics): number {
   switch (metric) {
     case "acs":
       return summary.acs;
@@ -55,6 +59,12 @@ export function metricValue(summary: StatSummary, metric: RankingMetric): number
       return summary.winRate.rate;
     case "matches":
       return summary.matches;
+    case "firstbloods":
+      return rounds?.firstBlood.successes ?? 0;
+    case "clutches":
+      return rounds ? Object.values(rounds.clutch).reduce((sum, value) => sum + value.wins, 0) : 0;
+    case "aces":
+      return rounds?.multiKills.ace ?? 0;
   }
 }
 
@@ -64,6 +74,7 @@ export interface RankingEntry {
   value: number;
   /** Same metric and mode last week; null when they didn't play then. */
   previous: number | null;
+  roundSample: number | null;
 }
 
 export interface Ranking {
@@ -87,7 +98,14 @@ function linesOf(lines: readonly GroupLine[], puuid: string, week: WeekRange, mo
 export function buildRanking(
   members: readonly GroupMember[],
   lines: readonly GroupLine[],
-  opts: { week: WeekRange; previousWeek: WeekRange; mode?: string; metric?: RankingMetric },
+  opts: {
+    week: WeekRange;
+    previousWeek: WeekRange;
+    mode?: string;
+    metric?: RankingMetric;
+    roundMetrics?: ReadonlyMap<string, PlayerRoundMetrics>;
+    previousRoundMetrics?: ReadonlyMap<string, PlayerRoundMetrics>;
+  },
 ): Ranking {
   const mode = opts.mode ?? DEFAULT_MODE;
   const metric = opts.metric ?? DEFAULT_METRIC;
@@ -102,11 +120,18 @@ export function buildRanking(
     }
     const summary = summarize(mine, { mode });
     const before = linesOf(lines, member.puuid!, opts.previousWeek, mode);
+    const currentRounds = opts.roundMetrics?.get(member.puuid!);
+    const previousRounds = opts.previousRoundMetrics?.get(member.puuid!);
+    const isRoundMetric = metric === "firstbloods" || metric === "clutches" || metric === "aces";
     ranked.push({
       member,
       summary,
-      value: metricValue(summary, metric),
-      previous: before.length > 0 ? metricValue(summarize(before, { mode }), metric) : null,
+      value: metricValue(summary, metric, currentRounds),
+      previous:
+        before.length > 0 && (!isRoundMetric || (previousRounds?.rounds ?? 0) > 0)
+          ? metricValue(summarize(before, { mode }), metric, previousRounds)
+          : null,
+      roundSample: isRoundMetric ? (currentRounds?.rounds ?? 0) : null,
     });
   }
 

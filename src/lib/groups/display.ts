@@ -17,6 +17,10 @@ export function metricNumber(metric: RankingMetric, value: number): ShownNumber 
       return { value: value * 100, digits: 0, suffix: "%" };
     case "matches":
       return { value, digits: 0 };
+    case "firstbloods":
+    case "clutches":
+    case "aces":
+      return { value, digits: 0 };
   }
 }
 

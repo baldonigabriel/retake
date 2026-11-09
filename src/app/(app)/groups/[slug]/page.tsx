@@ -34,8 +34,10 @@ import {
   weekModes,
   weekMvp,
 } from "@/lib/groups/ranking";
-import { formatWeek, parseWeek, previousWeek, weekRange } from "@/lib/groups/week";
+import { formatWeek, inWeek, parseWeek, previousWeek, weekRange } from "@/lib/groups/week";
 import { modeAdjective, modeLabel } from "@/lib/modes";
+import { calculatePlayerRoundMetrics } from "@/lib/rounds";
+import { getRoundDataset } from "@/lib/rounds/queries";
 import { ALL_MODES, DEFAULT_MODE } from "@/lib/stats/aggregate";
 import { cn } from "@/lib/utils";
 
@@ -76,7 +78,23 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
   const modes = weekModes(lines, week);
   const mode = typeof query.mode === "string" && modes.includes(query.mode) ? query.mode : DEFAULT_MODE;
   const metric = parseMetric(query.metric);
-  const ranking = buildRanking(members, lines, { week, previousWeek: before, mode, metric });
+  const inSelectedMode = (line: (typeof lines)[number]) => mode === ALL_MODES || line.queueId === mode;
+  const [weekRounds, previousRounds] = await Promise.all([
+    getRoundDataset(lines.filter((line) => inWeek(line.startedAt, week) && inSelectedMode(line)).map((line) => line.matchId)),
+    getRoundDataset(lines.filter((line) => inWeek(line.startedAt, before) && inSelectedMode(line)).map((line) => line.matchId)),
+  ]);
+  const roundMetrics = new Map(puuids.map((puuid) => [puuid, calculatePlayerRoundMetrics({ puuid, ...weekRounds })]));
+  const previousRoundMetrics = new Map(
+    puuids.map((puuid) => [puuid, calculatePlayerRoundMetrics({ puuid, ...previousRounds })]),
+  );
+  const ranking = buildRanking(members, lines, {
+    week,
+    previousWeek: before,
+    mode,
+    metric,
+    roundMetrics,
+    previousRoundMetrics,
+  });
   const mvp = weekMvp(members, lines, week);
   const together = togetherMatches(members, togetherLines);
   const weekLabel = formatWeek(week);
@@ -194,10 +212,18 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
                   name: e.member.name,
                   tag: e.member.tag,
                   image: e.member.image,
-                  value: <AnimatedNumber {...metricNumber(metric, e.value)} kind={metric} align="end" />,
+                  value:
+                    e.roundSample === 0 ? (
+                      <span aria-label="sem rounds processados">—</span>
+                    ) : (
+                      <AnimatedNumber {...metricNumber(metric, e.value)} kind={metric} align="end" />
+                    ),
                   delta: metricDelta(metric, e.value, e.previous).delta,
                   matches: e.summary.matches,
-                  detail: recordLine(e.summary),
+                  detail:
+                    e.roundSample === null
+                      ? recordLine(e.summary)
+                      : `${recordLine(e.summary)} · amostra: ${e.roundSample} rounds`,
                   isYou: e.member.isYou,
                 }))}
               />
@@ -209,7 +235,7 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
               </p>
             ) : null}
             <p className="border-t border-line px-4 py-3 text-label font-normal text-fg-muted">
-              Variação em relação à semana anterior. Médias ponderadas por round, como no seu painel.
+              Variação em relação à semana anterior. Métricas de round mostram a amostra processada; “—” significa que o backfill ainda não chegou nessas partidas.
             </p>
           </section>
           <section

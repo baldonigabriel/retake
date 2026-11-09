@@ -126,6 +126,7 @@ describe("buildRanking", () => {
 
   it("parses the metric from the URL", () => {
     expect(parseMetric("kd")).toBe("kd");
+    expect(parseMetric("clutches")).toBe("clutches");
     expect(parseMetric("hs")).toBe("acs");
   });
 });
