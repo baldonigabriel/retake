@@ -20,6 +20,8 @@ import { BreakNote } from "@/components/session/break-note";
 import { BREAK_DISMISSED_COOKIE } from "@/components/session/break-cookie";
 import { SessionCard, SessionCardSkeleton } from "@/components/session/session-card";
 import { TrendChart } from "@/components/stats/trend-chart";
+import { RoundsPanel } from "@/components/rounds/rounds-panel";
+import { WeaponsPanel } from "@/components/rounds/weapons-panel";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/states";
@@ -50,6 +52,8 @@ import {
 import { filterHistory, historyOptions, historySummary, parseHistoryFilter, parseShow, HISTORY_SUMMARY_WINDOW } from "@/lib/stats/history";
 import { buildInsights } from "@/lib/stats/insights";
 import { getBreakReminder } from "@/lib/preferences/queries";
+import { calculatePlayerRoundMetrics } from "@/lib/rounds";
+import { getRoundDataset } from "@/lib/rounds/queries";
 import { currentSession, shouldSuggestBreak, summarizeSession } from "@/lib/stats/session";
 import { cn } from "@/lib/utils";
 
@@ -82,6 +86,8 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const period = parsePeriod(params.period);
   const periodLines = filterByPeriod(allLines, period, now);
   const lines = filterByMode(periodLines, mode);
+  const roundDataset = await getRoundDataset(lines.map((line) => line.matchId));
+  const roundMetrics = calculatePlayerRoundMetrics({ puuid: account.puuid, ...roundDataset });
 
   const cmp = compareRecent(lines, mode);
   const trend = trendSeries(lines);
@@ -250,6 +256,10 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
                 </Suspense>
 
                 <InsightsPanel result={insights} mode={mode} />
+
+                <RoundsPanel metrics={roundMetrics} />
+
+                <WeaponsPanel weapons={roundMetrics.weapons} />
 
                 <AgentsPanel
                   agents={agents}

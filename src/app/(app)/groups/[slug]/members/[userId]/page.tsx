@@ -9,6 +9,8 @@ import { GroupFilter } from "@/components/groups/group-filters";
 import { HistoryPanel } from "@/components/history/history-panel";
 import { Avatar } from "@/components/layout/account-menu";
 import { BackLink } from "@/components/match/back-link";
+import { RoundsPanel } from "@/components/rounds/rounds-panel";
+import { WeaponsPanel } from "@/components/rounds/weapons-panel";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/states";
 import { db } from "@/db";
@@ -19,6 +21,8 @@ import { getPlayerLines } from "@/lib/dashboard/queries";
 import { getGroupMember, getMembership } from "@/lib/groups/queries";
 import { getMatchesPlayedBy } from "@/lib/match/queries";
 import { modeLabel } from "@/lib/modes";
+import { calculatePlayerRoundMetrics } from "@/lib/rounds";
+import { getRoundDataset } from "@/lib/rounds/queries";
 import { filterBySeason, parseSeason, seasonOptions } from "@/lib/seasons";
 import { getSeasonCatalog } from "@/lib/seasons-api";
 import { ALL_MODES, DEFAULT_MODE, filterByMode } from "@/lib/stats/aggregate";
@@ -99,6 +103,8 @@ export default async function MemberProfilePage({ params, searchParams }: PagePr
   const seasons = seasonOptions(lines, catalog);
   const season = parseSeason(query.season, seasons);
   const agents = agentStats(filterBySeason(lines, season));
+  const roundDataset = await getRoundDataset(lines.map((line) => line.matchId));
+  const roundMetrics = calculatePlayerRoundMetrics({ puuid: member.puuid, ...roundDataset });
 
   const filters = historyOptions(lines);
   const agent = parseHistoryFilter(query.agent, filters.agents);
@@ -147,6 +153,8 @@ export default async function MemberProfilePage({ params, searchParams }: PagePr
             ) : (
               <>
                 <AgentsPanel agents={agents} seasons={seasons} season={season} modeName={modeLabel(mode)} />
+                <RoundsPanel metrics={roundMetrics} />
+                <WeaponsPanel weapons={roundMetrics.weapons} />
                 <HistoryPanel
                   summary={historySummary(historyLines)}
                   summaryCaption={`${historyLines.length > HISTORY_SUMMARY_WINDOW ? `Últimas ${HISTORY_SUMMARY_WINDOW}` : historyLines.length === 1 ? "1 partida" : `${historyLines.length} partidas`} · ${modeLabel(mode)}`}

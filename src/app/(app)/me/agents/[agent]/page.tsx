@@ -12,6 +12,8 @@ import { BackLink } from "@/components/match/back-link";
 import { AnimatedNumber } from "@/components/stats/animated-number";
 import { KpiCard } from "@/components/stats/kpi-card";
 import { TrendChart } from "@/components/stats/trend-chart";
+import { RoundsPanel } from "@/components/rounds/rounds-panel";
+import { WeaponsPanel } from "@/components/rounds/weapons-panel";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/states";
@@ -23,6 +25,8 @@ import { formatHours } from "@/lib/format";
 import { modeAdjective, modeLabel } from "@/lib/modes";
 import { ALL_SEASONS, filterBySeason, parseSeason, seasonOptions } from "@/lib/seasons";
 import { getSeasonCatalog } from "@/lib/seasons-api";
+import { calculatePlayerRoundMetrics } from "@/lib/rounds";
+import { getRoundDataset } from "@/lib/rounds/queries";
 import { ALL_MODES, DEFAULT_MODE, filterByMode } from "@/lib/stats/aggregate";
 import { BEST_MAP_MIN_MATCHES, bestMap, linesForAgent, mapStats, performance } from "@/lib/stats/agents";
 import { modeOptions, parseMode, trendSeries } from "@/lib/stats/breakdown";
@@ -55,6 +59,8 @@ export default async function AgentPage({ params, searchParams }: PageProps<"/me
   const seasons = seasonOptions(inMode, catalog);
   const season = parseSeason(query.season, seasons);
   const lines = filterBySeason(inMode, season);
+  const roundDataset = await getRoundDataset(lines.map((line) => line.matchId));
+  const roundMetrics = calculatePlayerRoundMetrics({ puuid: account.puuid, ...roundDataset });
 
   // Same mode and season with every agent: "am I better with this one?"
   const overall = performance(filterBySeason(filterByMode(allLines, mode), season));
@@ -211,6 +217,10 @@ export default async function AgentPage({ params, searchParams }: PageProps<"/me
                 </header>
                 <AgentMapTable maps={maps} bestKey={best?.key ?? null} />
               </section>
+
+              <RoundsPanel metrics={roundMetrics} />
+
+              <WeaponsPanel weapons={roundMetrics.weapons} />
 
               <HistoryPanel
                 title={`Partidas com ${name}`}
