@@ -179,7 +179,10 @@ export function calculatePlayerRoundMetrics(input: {
       const traded = kills.some((death) => {
         if (death.victimPuuid !== input.puuid || !death.killerPuuid) return false;
         return kills.some((trade) => {
-          if (trade.timeInRoundMs < death.timeInRoundMs || trade.timeInRoundMs - death.timeInRoundMs > 5_000) {
+          const afterDeath =
+            trade.timeInRoundMs > death.timeInRoundMs ||
+            (trade.timeInRoundMs === death.timeInRoundMs && trade.seq > death.seq);
+          if (!afterDeath || trade.timeInRoundMs - death.timeInRoundMs > 5_000) {
             return false;
           }
           if (trade.victimPuuid !== death.killerPuuid || !trade.killerPuuid) return false;
