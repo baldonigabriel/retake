@@ -31,6 +31,7 @@ export type ScoreboardPlayer = {
    * shown), null = a user whose RR the API didn't report ("—").
    */
   rr?: number | null;
+  roundStats?: { firstBloods: number; firstDeaths: number; kast: number | null; multiKills: string };
 };
 
 export type ScoreboardTeam = {
@@ -62,6 +63,7 @@ export function ScoreboardTable({
   showRr?: boolean;
 }) {
   const showRank = team.players.some((p) => p.tier !== undefined);
+  const showRounds = team.players.some((p) => p.roundStats !== undefined);
   const Heading = headingLevel;
   const sorted = [...team.players].sort((a, b) => b.score - a.score);
   const headingId = `team-${team.name.replace(/\s+/g, "-").toLowerCase()}`;
@@ -84,7 +86,7 @@ export function ScoreboardTable({
         role="region"
         aria-label={`Placar do ${team.name}, role para o lado para ver todas as colunas`}
       >
-        <table className={cn("num w-full table-fixed border-separate border-spacing-0 text-table [&_tbody_tr:last-child>*:first-child]:rounded-bl-card [&_tbody_tr:last-child>*:last-child]:rounded-br-card", showRank && showRr ? "sm:min-w-[820px]" : showRank ? "sm:min-w-[740px]" : "", "min-w-[640px]")}>
+        <table className={cn("num w-full table-fixed border-separate border-spacing-0 text-table [&_tbody_tr:last-child>*:first-child]:rounded-bl-card [&_tbody_tr:last-child>*:last-child]:rounded-br-card", showRounds ? "min-w-[980px]" : "min-w-[640px]", showRank && showRr ? "sm:min-w-[1120px]" : showRank && showRounds ? "sm:min-w-[1040px]" : showRank ? "sm:min-w-[740px]" : "")}>
           <thead>
             <tr>
               <th
@@ -122,6 +124,9 @@ export function ScoreboardTable({
                   {col}
                 </th>
               ))}
+              {showRounds ? ["FB", "FD", "KAST", "Multi"].map((col) => (
+                <th key={col} scope="col" className="z-10 bg-surface-1 px-3 py-2 text-right text-label text-fg-secondary sm:sticky sm:top-14">{col}</th>
+              )) : null}
             </tr>
           </thead>
           <tbody>
@@ -189,6 +194,14 @@ export function ScoreboardTable({
                       {v}
                     </td>
                   ))}
+                  {showRounds ? (
+                    <>
+                      <td className={cn("border-t border-line px-3 py-2 text-right text-fg-secondary", rowBg)}>{p.roundStats?.firstBloods ?? "—"}</td>
+                      <td className={cn("border-t border-line px-3 py-2 text-right text-fg-secondary", rowBg)}>{p.roundStats?.firstDeaths ?? "—"}</td>
+                      <td className={cn("border-t border-line px-3 py-2 text-right text-fg-secondary", rowBg)}>{p.roundStats?.kast == null ? "—" : formatPercent(p.roundStats.kast, 0)}</td>
+                      <td className={cn("border-t border-line px-3 py-2 text-right text-fg-secondary", rowBg)}>{p.roundStats?.multiKills || "—"}</td>
+                    </>
+                  ) : null}
                 </tr>
               );
             })}
