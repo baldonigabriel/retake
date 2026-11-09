@@ -162,12 +162,12 @@ export default async function GroupPage({ params, searchParams }: PageProps<"/gr
           Desktop: ranking + together form one left item spanning two rows, so
           the right column (MVP on row 1, members on row 2) never leaves gaps.
         */}
-        <FilteredContent className="grid gap-4 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:items-start">
-          <div className="flex flex-col gap-4 lg:col-span-5 lg:col-start-8 lg:row-start-1">
+        <FilteredContent className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:items-start">
+          <div className="flex min-w-0 flex-col gap-4 lg:col-span-5 lg:col-start-8 lg:row-start-1">
             <MvpCard mvp={mvp} weekLabel={weekChoice === "last" ? "semana passada" : "esta semana"} />
             {bagre ? <BagreCard href={`/groups/${group.slug}/bagre`} teaser={bagre} /> : null}
           </div>
-          <div className="flex flex-col gap-4 lg:col-span-7 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+          <div className="flex min-w-0 flex-col gap-4 lg:col-span-7 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <section
             aria-labelledby="ranking-title"
             className="overflow-hidden rounded-card bg-surface-1 shadow-hairline"
