@@ -21,15 +21,14 @@ async function noHorizontalScroll(page: Page) {
 }
 
 /**
- * The visible 404 copy and the document title are the same for every kind of
- * "no". (The page streams behind loading.tsx, so the HTTP status may be 200;
- * what matters is that every kind of "no" looks the same.)
+ * The visible 404 copy is the same for every kind of "no", and the tab title
+ * comes from the address only. (The page streams behind loading.tsx, so the
+ * HTTP status may be 200; what matters is that nothing tells them apart.)
  */
 async function expectNotFound(page: Page, path: string) {
   const response = await page.goto(path);
   expect([200, 404]).toContain(response?.status());
-  await expect(page.getByRole("heading", { name: NOT_FOUND })).toBeVisible();
-  await expect(page).toHaveTitle(/Perfil não encontrado/);
+  await expect(page.locator("main").getByText(NOT_FOUND, { exact: true })).toBeVisible();
   return (await page.locator("main").innerText()).trim();
 }
 
@@ -157,7 +156,7 @@ test.describe("going public and back to private", () => {
     await page.goto("/me");
     const card = page.locator("section", { has: page.getByRole("heading", { name: "Seu perfil pode ser público?" }) });
     await card.getByText("Público", { exact: true }).click();
-    await card.getByText("Mapas", { exact: true }).click();
+    await card.getByRole("checkbox", { name: /^Mapas/ }).uncheck({ force: true });
     await card.getByRole("button", { name: "Salvar escolha" }).click();
     await expect(page.getByRole("heading", { name: "Seu perfil pode ser público?" })).toHaveCount(0);
 
@@ -182,7 +181,9 @@ test.describe("going public and back to private", () => {
     // Public with every section unchecked is private too, and the screen says so.
     await page.reload();
     await section.getByText("Público", { exact: true }).click();
-    for (const label of ["Rank e RR", "Visão geral", "Agentes", "Armas", "Últimas partidas"]) await section.getByText(label, { exact: true }).click();
+    for (const label of ["Rank e RR", "Visão geral", "Agentes", "Armas", "Últimas partidas"]) {
+      await section.getByRole("checkbox", { name: new RegExp(`^${label}`) }).uncheck({ force: true });
+    }
     await expect(section.getByText("Sem nenhuma seção marcada, seu perfil fica privado.")).toBeVisible();
     await section.getByRole("button", { name: "Salvar escolha" }).click();
     await expect(section.getByText("Salvo. Seu perfil está privado.")).toBeVisible();
