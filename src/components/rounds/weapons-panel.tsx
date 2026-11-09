@@ -28,9 +28,9 @@ export function WeaponsPanel({ weapons }: { weapons: readonly WeaponMetric[] }) 
           </div>
           <ul className="divide-y divide-line sm:hidden">
             {weapons.map((weapon) => (
-              <li key={weapon.weaponId ?? weapon.weaponName} className={cn("grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 px-4 py-3", !weapon.prominent && "opacity-60")}>
-                <span className="font-medium text-fg">{weapon.weaponName}</span>
-                <span className="stat num text-[22px] leading-none font-semibold text-fg">{weapon.kills} abates</span>
+              <li key={weapon.weaponId ?? weapon.weaponName} className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 px-4 py-3">
+                <span className={cn("font-medium", weapon.prominent ? "text-fg" : "text-fg-secondary")}>{weapon.weaponName}</span>
+                <span className={cn("stat num text-[22px] leading-none font-semibold", weapon.prominent ? "text-fg" : "text-fg-secondary")}>{weapon.kills} abates</span>
                 <span className="num text-label text-fg-secondary">HS {weapon.hsRate === null ? "—" : formatPercent(weapon.hsRate, 1)}</span>
                 <span className="num text-right text-label text-fg-muted">{weapon.matches} {weapon.matches === 1 ? "partida" : "partidas"}</span>
                 {!weapon.prominent ? <span className="col-span-2 text-label text-fg-muted">Amostra pequena: menos de 10 abates e 100 tiros.</span> : null}
@@ -45,8 +45,8 @@ export function WeaponsPanel({ weapons }: { weapons: readonly WeaponMetric[] }) 
 
 function WeaponRow({ weapon }: { weapon: WeaponMetric }) {
   return (
-    <tr className={cn("border-t border-line", !weapon.prominent && "opacity-60")}>
-      <th className="px-4 py-2 text-left font-normal text-fg">
+    <tr className="border-t border-line">
+      <th className={cn("px-4 py-2 text-left font-normal", weapon.prominent ? "text-fg" : "text-fg-secondary")}>
         {weapon.weaponName}
         {!weapon.prominent ? <span className="ml-2 text-label text-fg-muted">amostra pequena</span> : null}
       </th>
