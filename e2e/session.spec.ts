@@ -35,7 +35,7 @@ test.describe("today's session", () => {
   });
 
   test("shows the empty duo state when you share no group with another Retake user", async ({ page }) => {
-    await page.goto("/me");
+    await page.goto("/me?tab=duos");
     const duos = page.locator("section", { has: page.getByRole("heading", { name: "Com quem você joga melhor" }) });
     await expect(duos.getByText("Nenhum amigo do Retake nos seus grupos ainda")).toBeVisible(STREAMED);
     await expect(duos.getByRole("link", { name: "Ver meus grupos" })).toHaveAttribute("href", "/groups");

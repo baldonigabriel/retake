@@ -61,8 +61,7 @@ export function RoundsPanel({ metrics }: { metrics: PlayerRoundMetrics }) {
         />
         <Metric
           label="First death"
-          tone={opening === "good" ? "good" : opening === "bad" ? "bad" : "neutral"}
-          srText={opening === "good" ? "menos que seus first bloods" : opening === "bad" ? "mais que seus first bloods" : undefined}
+          tone="neutral"
           value={rateText(metrics.firstDeath)}
           detail={`${formatNumber(metrics.firstDeath.successes)} mortes · saldo ${signed(openingDiff)}`}
         />
@@ -195,19 +194,17 @@ function Metric({
   value,
   detail,
   tone,
-  srText,
 }: {
   label: string;
   value: string;
   detail: string;
   tone: Tone;
-  srText?: string;
 }) {
   return (
     <div className="bg-surface-1 p-4">
       <dt className="text-label font-medium text-fg-secondary">{label}</dt>
       <dd className="stat num mt-1 text-[28px] leading-none font-semibold">
-        <ToneValue tone={tone} srText={srText}>{value}</ToneValue>
+        <ToneValue tone={tone}>{value}</ToneValue>
       </dd>
       <dd className="num mt-1 text-label font-normal text-fg-muted">{detail}</dd>
     </div>

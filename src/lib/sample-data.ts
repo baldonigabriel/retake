@@ -3,6 +3,7 @@
  * Map and agent names are game facts; no official art is used.
  */
 import type { MatchResult } from "@/lib/stats/metrics";
+import type { PlayerRoundMetrics } from "@/lib/rounds";
 
 /** Fixed "now" so relative times are deterministic (and prerender-safe). */
 export const SAMPLE_NOW = new Date("2026-11-05T21:00:00-03:00");
@@ -153,3 +154,41 @@ export const sampleTrend: TrendPoint[] = [
   own: acsValue >= 240 ? 13 : 9,
   enemy: acsValue >= 240 ? 9 : 13,
 }));
+
+/** Round breakdown for the design system (shaped like a real account with ~640 rounds). */
+export const sampleRoundMetrics: PlayerRoundMetrics = {
+  rounds: 643,
+  firstBlood: { value: 67 / 643, successes: 67, sample: 643 },
+  firstDeath: { value: 48 / 643, successes: 48, sample: 643 },
+  multiKills: { three: 43, four: 13, ace: 3 },
+  clutch: {
+    1: { situations: 9, wins: 6, rate: 6 / 9 },
+    2: { situations: 14, wins: 5, rate: 5 / 14 },
+    3: { situations: 16, wins: 4, rate: 4 / 16 },
+    4: { situations: 19, wins: 0, rate: 0 },
+    5: { situations: 6, wins: 0, rate: 0 },
+  },
+  kast: { value: 0.736, successes: 473, sample: 643 },
+  economy: [
+    { band: "pistol", wins: 27, rounds: 60, winRate: 0.45, acs: 251, acsSample: 60 },
+    { band: "eco", wins: 9, rounds: 68, winRate: 9 / 68, acs: 155, acsSample: 68 },
+    { band: "force", wins: 76, rounds: 152, winRate: 0.5, acs: 238, acsSample: 152 },
+    { band: "full", wins: 200, rounds: 363, winRate: 200 / 363, acs: 305, acsSample: 363 },
+  ],
+  sides: [
+    { mapName: "Abyss", mapId: "224b0a95-48b9-f703-1bd8-67aca101a61f", attack: { value: 0.489, successes: 22, sample: 45 }, defense: { value: 0.378, successes: 17, sample: 45 } },
+    { mapName: "Bind", mapId: "2c9d57ec-4431-9c5e-2939-8f9ef6dd5cba", attack: { value: 0.466, successes: 27, sample: 58 }, defense: { value: 0.651, successes: 28, sample: 43 } },
+    { mapName: "Haven", mapId: "2bee0dc9-4ffe-519b-1cbd-7fbe763a6047", attack: { value: 0.524, successes: 22, sample: 42 }, defense: { value: 0.514, successes: 19, sample: 37 } },
+    { mapName: "Lotus", mapId: "2fe4ed3a-450a-948b-6d6b-e89a78e680a9", attack: { value: 0.425, successes: 17, sample: 40 }, defense: { value: 0.256, successes: 10, sample: 39 } },
+    { mapName: "Sunset", mapId: "92584fbe-486a-b1b2-9faa-39b0f486b498", attack: { value: 0.455, successes: 5, sample: 11 }, defense: { value: 0.5, successes: 4, sample: 8 } },
+  ],
+  weapons: [
+    { weaponId: "ee8e8d15-496b-07ac-e5f6-8fae5d4c7b1a", weaponName: "Phantom", kills: 299, headshots: 250, shots: 1000, hsRate: 0.25, shotSampleRounds: 260, matches: 30 },
+    { weaponId: "9c82e19d-4575-0200-1a81-3eacf00cf872", weaponName: "Vandal", kills: 155, headshots: 130, shots: 500, hsRate: 0.26, shotSampleRounds: 140, matches: 27 },
+    { weaponId: "1baa85b4-4c70-1284-64bb-6481dfc3bb4e", weaponName: "Ghost", kills: 51, headshots: 38, shots: 200, hsRate: 0.19, shotSampleRounds: 70, matches: 26 },
+    { weaponId: "ae3de142-4d85-2547-dd26-4e90bed35cf7", weaponName: "Bulldog", kills: 35, headshots: 24, shots: 101, hsRate: 0.238, shotSampleRounds: 30, matches: 19 },
+    { weaponId: "462080d1-4035-2937-7c09-27aa2a5c27a7", weaponName: "Spectre", kills: 22, headshots: 15, shots: 100, hsRate: 0.15, shotSampleRounds: 25, matches: 16 },
+    { weaponId: "29a0cfab-485b-f5d5-779a-b59f85e204a8", weaponName: "Classic", kills: 11, headshots: 20, shots: 81, hsRate: 0.247, shotSampleRounds: 40, matches: 25 },
+    { weaponId: "a03b24d3-4319-996d-0f8c-94bbfba1dfc7", weaponName: "Operator", kills: 4, headshots: 1, shots: 6, hsRate: 1 / 6, shotSampleRounds: 4, matches: 2 },
+  ],
+};

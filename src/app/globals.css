@@ -224,6 +224,14 @@
 }
 
 /* Numbers never dance: tabular figures for every stat */
+/* Sideways rows (tabs on phones) scroll without a visible bar. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility num {
   font-variant-numeric: tabular-nums;
 }

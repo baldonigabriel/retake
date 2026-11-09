@@ -30,7 +30,7 @@ test.describe("signed in", () => {
   test.use({ storageState: ONBOARDED_STATE });
 
   test("the agents section lists agents by matches, with a season filter and highlighted bests", async ({ page, isMobile }) => {
-    await page.goto("/me");
+    await page.goto("/me?tab=agents");
     const section = page.locator("section[aria-labelledby=agents-title]");
     await expect(section.getByText("Competitivo · todas as temporadas")).toBeVisible();
     if (isMobile) {
@@ -67,7 +67,7 @@ test.describe("signed in", () => {
   });
 
   test("the match history groups by day, shows RR with sign or '—', filters and loads more", async ({ page }) => {
-    await page.goto("/me");
+    await page.goto("/me?tab=matches");
     const list = page.getByRole("list", { name: "Últimas partidas" });
     await expect(list.getByRole("link")).toHaveCount(20);
     await expect(list.getByRole("heading", { level: 3 }).first()).toBeVisible();

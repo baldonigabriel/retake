@@ -1,4 +1,4 @@
-import { CircleAlert, Swords } from "lucide-react";
+import { ChevronRight, CircleAlert, Swords } from "lucide-react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -8,10 +8,13 @@ import { AgentsPanel } from "@/components/agents/agents-panel";
 import { DuosPanel, DuosPanelSkeleton } from "@/components/duos/duos-panel";
 import { WithMateChip } from "@/components/duos/with-mate-chip";
 import { HistoryPanel } from "@/components/history/history-panel";
+import { MatchHistory } from "@/components/history/match-history";
 import { FilterBar, FilteredContent, FilterProvider } from "@/components/dashboard/dashboard-filters";
+import { DashboardTabs } from "@/components/dashboard/dashboard-tabs";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
 import { KpiRow } from "@/components/dashboard/kpi-row";
 import { MapGrid } from "@/components/dashboard/map-grid";
+import { OverviewHighlights } from "@/components/dashboard/overview-highlights";
 import { RankHeader } from "@/components/dashboard/rank-header";
 import { SyncNowButton } from "@/components/dashboard/sync-now-button";
 import { GoalsPanel, GoalsPanelSkeleton } from "@/components/goals/goals-panel";
@@ -51,6 +54,7 @@ import {
 } from "@/lib/stats/breakdown";
 import { filterHistory, historyOptions, historySummary, parseHistoryFilter, parseShow, HISTORY_SUMMARY_WINDOW } from "@/lib/stats/history";
 import { buildInsights } from "@/lib/stats/insights";
+import { DASHBOARD_TABS, DEFAULT_TAB, bestMaps, parseTab, type DashboardTab } from "@/lib/stats/overview";
 import { getBreakReminder } from "@/lib/preferences/queries";
 import { calculatePlayerRoundMetrics } from "@/lib/rounds";
 import { getRoundDataset } from "@/lib/rounds/queries";
@@ -70,7 +74,17 @@ const PERIOD_OPTIONS: readonly { value: Period; label: string }[] = [
   { value: "all", label: "Tudo" },
 ];
 const PERIOD_PHRASE: Record<Period, string> = { "30d": "nos últimos 30 dias", "90d": "nos últimos 90 dias", all: "" };
+/** Matches in the overview's "Partidas recentes". */
+const RECENT_PREVIEW = 5;
+/** Anchor of the tab row: links into a tab land on it, not at the top of the page. */
+const TABS_ANCHOR = "secoes";
 
+/**
+ * "Estou melhorando?" The dashboard is split in tabs (?tab=) so each answer
+ * is one click away instead of a long scroll: the overview keeps the summary
+ * (rank, goals, KPIs, trend, highlights, insights and the last matches); the
+ * other tabs hold the full sections. Only the data a tab shows is loaded.
+ */
 export default async function MePage({ searchParams }: PageProps<"/me">) {
   const { user, account } = await requireViewer("/me");
   const [params, allLines, rank, catalog] = await Promise.all([
@@ -86,8 +100,14 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const period = parsePeriod(params.period);
   const periodLines = filterByPeriod(allLines, period, now);
   const lines = filterByMode(periodLines, mode);
-  const roundDataset = await getRoundDataset(lines.map((line) => line.matchId));
-  const roundMetrics = calculatePlayerRoundMetrics({ puuid: account.puuid, ...roundDataset });
+  // ?with=<userId>: matches on the same team as a mate from your groups (validated here, never trusted).
+  const withParam = typeof params.with === "string" && params.with.length <= 200 ? params.with : null;
+  const tab = parseTab(params.tab, { withMate: withParam !== null });
+  const show = (t: DashboardTab | readonly DashboardTab[]) => (typeof t === "string" ? tab === t : t.includes(tab));
+
+  const roundMetrics = show(["overview", "combat"])
+    ? calculatePlayerRoundMetrics({ puuid: account.puuid, ...(await getRoundDataset(lines.map((line) => line.matchId))) })
+    : null;
 
   const cmp = compareRecent(lines, mode);
   const trend = trendSeries(lines);
@@ -96,23 +116,32 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const seasons = seasonOptions(lines, catalog);
   const season = parseSeason(params.season, seasons);
   const agents = agentStats(filterBySeason(lines, season));
+  const maps = byMap(lines, mode);
   // "Últimas partidas": its own agent/map filters and page size, on top of mode and period.
   const historyFilters = historyOptions(lines);
   const historyAgent = parseHistoryFilter(params.agent, historyFilters.agents);
   const historyMap = parseHistoryFilter(params.map, historyFilters.maps);
-  // ?with=<userId>: matches on the same team as a mate from your groups (validated here, never trusted).
-  const withMate = typeof params.with === "string" && params.with.length <= 200 ? await resolveMate(user.id, account.puuid, params.with) : null;
+  const withMate = withParam && show("matches") ? await resolveMate(user.id, account.puuid, withParam) : null;
   const historyLines = filterHistory(lines, { agent: historyAgent, map: historyMap }).filter(
     (l) => !withMate || withMate.matchIds.has(l.matchId),
   );
-  const historyItems = await withExtras(account.puuid, historyLines.slice(0, parseShow(params.show)));
-  const keep = (extra: Record<string, string | string[] | undefined>) =>
+  const historyItems = show("matches") ? await withExtras(account.puuid, historyLines.slice(0, parseShow(params.show))) : [];
+  const recentItems = show("overview") ? await withExtras(account.puuid, lines.slice(0, RECENT_PREVIEW)) : [];
+
+  // Filters (mode, period, season) follow you across tabs; the history's own filters don't.
+  const query = (extra: Record<string, string | string[] | undefined>) =>
     new URLSearchParams(
       Object.entries({ mode: params.mode, period: params.period, season: params.season, ...extra }).flatMap(([k, v]) =>
         typeof v === "string" ? [[k, v]] : [],
       ),
     );
-  const clearHistory = new URLSearchParams(Object.entries({ mode: params.mode, period: params.period, season: params.season }).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : [])));
+  const href = (extra: Record<string, string | string[] | undefined>, hash = "") => {
+    const q = query(extra).toString();
+    return `/me${q ? `?${q}` : ""}${hash}`;
+  };
+  const tabHref = (t: DashboardTab, hash = "") => href({ tab: t === DEFAULT_TAB ? undefined : t }, hash);
+  const tabs = DASHBOARD_TABS.map((t) => ({ value: t.value, label: t.label, href: tabHref(t.value) }));
+
   const cooldownUntil = account.lastSyncedAt ? account.lastSyncedAt.getTime() + SYNC_NOW_COOLDOWN_MS : null;
   const mixed = mode === ALL_MODES;
   // Goals always use this São Paulo week, whatever the filters say.
@@ -174,31 +203,40 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
         </Suspense>
       ) : null}
 
-      <RankHeader history={rank} />
-
-      {allLines.length > 0 ? (
-        <Suspense fallback={<GoalsPanelSkeleton />}>
-          <GoalsPanel
-            userId={user.id}
-            weekLines={allLines.filter((l) => inWeek(l.startedAt, week))}
-            lastWeekLines={allLines.filter((l) => inWeek(l.startedAt, lastWeek))}
-            weekLabel={formatWeek(week)}
-          />
-        </Suspense>
-      ) : null}
-
       {allLines.length === 0 ? (
-        <Panel>
-          <EmptyState
-            icon={Swords}
-            title="Ainda não temos partidas suas"
-            description="Jogue uma partida e ela aparece aqui em até 15 minutos. Se você acabou de jogar, sincronize agora."
-            action={<SyncNowButton cooldownUntil={cooldownUntil} variant="default" />}
-          />
-        </Panel>
+        <>
+          <RankHeader history={rank} />
+          <Panel>
+            <EmptyState
+              icon={Swords}
+              title="Ainda não temos partidas suas"
+              description="Jogue uma partida e ela aparece aqui em até 15 minutos. Se você acabou de jogar, sincronize agora."
+              action={<SyncNowButton cooldownUntil={cooldownUntil} variant="default" />}
+            />
+          </Panel>
+        </>
       ) : (
         <FilterProvider>
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+          <div id={TABS_ANCHOR} className="scroll-mt-20">
+            <DashboardTabs tabs={tabs} active={tab} />
+          </div>
+
+          {/* Rank and goals don't follow the filters: they sit above them. */}
+          {tab === "overview" ? (
+            <>
+              <RankHeader history={rank} />
+              <Suspense fallback={<GoalsPanelSkeleton />}>
+                <GoalsPanel
+                  userId={user.id}
+                  weekLines={allLines.filter((l) => inWeek(l.startedAt, week))}
+                  lastWeekLines={allLines.filter((l) => inWeek(l.startedAt, lastWeek))}
+                  weekLabel={formatWeek(week)}
+                />
+              </Suspense>
+            </>
+          ) : null}
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <FilterBar
               modes={options.map((o) => ({ value: o.value, label: modeLabel(o.value) }))}
               mode={mode}
@@ -207,9 +245,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
               period={period}
               defaultPeriod={DEFAULT_PERIOD}
             />
-            {mixed ? (
-              <Badge variant="outline">Médias misturam todos os modos</Badge>
-            ) : null}
+            {mixed ? <Badge variant="outline">Médias misturam todos os modos</Badge> : null}
           </div>
 
           <FilteredContent className="flex flex-col gap-4">
@@ -220,13 +256,16 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
                   title={`Nenhuma partida ${modeAdjective(mode)} ${PERIOD_PHRASE[period]}`.replace(/\s+/g, " ").trim()}
                   description="Troque o modo ou o período para ver suas outras partidas."
                   action={
-                    <Link href={period !== DEFAULT_PERIOD ? `/me${mode !== DEFAULT_MODE ? `?mode=${mode}` : ""}` : "/me?mode=all"} className={buttonVariants()}>
+                    <Link
+                      href={href({ tab: params.tab, mode: period !== DEFAULT_PERIOD ? params.mode : "all", period: undefined, season: undefined })}
+                      className={buttonVariants()}
+                    >
                       {period !== DEFAULT_PERIOD ? "Ver todo o período" : "Ver todos os modos"}
                     </Link>
                   }
                 />
               </Panel>
-            ) : (
+            ) : tab === "overview" ? (
               <>
                 <section aria-labelledby="kpi-title" className="flex flex-col gap-3">
                   <h2 id="kpi-title" className="text-eyebrow text-fg-muted uppercase">
@@ -244,61 +283,96 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
                   </Panel>
                 ) : null}
 
-                <Suspense fallback={<DuosPanelSkeleton />}>
-                  <DuosPanel
-                    viewerId={user.id}
-                    viewerPuuid={account.puuid}
-                    lines={lines}
-                    mode={mode}
-                    scope="groups"
-                    hrefFor={(mate) => `/me?${keep({ with: mate.userId })}#history-title`}
-                  />
-                </Suspense>
+                <OverviewHighlights
+                  agents={agents}
+                  weapons={roundMetrics?.weapons ?? []}
+                  maps={bestMaps(maps)}
+                  rounds={roundMetrics!}
+                  hrefs={{
+                    agents: tabHref("agents", `#${TABS_ANCHOR}`),
+                    combat: tabHref("combat", `#${TABS_ANCHOR}`),
+                    maps: tabHref("maps", `#${TABS_ANCHOR}`),
+                  }}
+                  agentHref={(a) => (a.slug ? `/me/agents/${a.slug}` : null)}
+                />
 
                 <InsightsPanel result={insights} mode={mode} />
 
-                <RoundsPanel metrics={roundMetrics} />
-
-                <WeaponsPanel weapons={roundMetrics.weapons} />
-
-                <AgentsPanel
-                  agents={agents}
-                  seasons={seasons}
-                  season={season}
-                  modeName={modeLabel(mode)}
-                  hrefFor={(a) => (a.slug ? `/me/agents/${a.slug}` : null)}
-                />
-
-                <Panel title="Por mapa" id="maps-title">
-                  <MapGrid maps={byMap(lines, mode)} className="lg:grid-cols-4" />
-                </Panel>
-
-                <HistoryPanel
-                  summary={historySummary(historyLines)}
-                  summaryCaption={`${historyLines.length > HISTORY_SUMMARY_WINDOW ? `Últimas ${HISTORY_SUMMARY_WINDOW}` : historyLines.length === 1 ? "1 partida" : `${historyLines.length} partidas`} · ${modeLabel(mode)}`}
-                  items={historyItems}
-                  total={historyLines.length}
-                  now={now}
-                  hrefFor={(item) => `/match/${item.matchId}`}
-                  agents={historyFilters.agents}
-                  maps={historyFilters.maps}
-                  agent={historyAgent}
-                  map={historyMap}
-                  toolbarExtra={
-                    withMate ? <WithMateChip name={withMate.name} clearHref={`/me?${keep({ agent: params.agent, map: params.map })}#history-title`} /> : undefined
-                  }
-                  emptyDescription={
-                    withMate
-                      ? `Nenhuma partida no mesmo time que ${withMate.name} com esses filtros. Troque o modo, o período, o agente ou o mapa.`
-                      : undefined
-                  }
-                  emptyAction={
-                    <Link href={`/me${clearHistory.size ? `?${clearHistory}` : ""}`} className={buttonVariants()}>
-                      Ver todas as partidas
+                <Panel
+                  title="Partidas recentes"
+                  id="recent-title"
+                  aside={
+                    <Link
+                      href={tabHref("matches", `#${TABS_ANCHOR}`)}
+                      className="hover-layer press relative -mr-2 inline-flex min-h-11 items-center gap-1 rounded-control px-2 text-label text-fg-secondary hover:text-fg focus-visible:text-fg sm:min-h-8"
+                    >
+                      Ver todas
+                      <ChevronRight aria-hidden="true" className="size-3.5" />
                     </Link>
                   }
-                />
+                >
+                  <MatchHistory items={recentItems} now={now} hrefFor={(item) => `/match/${item.matchId}`} label="Partidas recentes" />
+                </Panel>
               </>
+            ) : tab === "matches" ? (
+              <HistoryPanel
+                summary={historySummary(historyLines)}
+                summaryCaption={`${historyLines.length > HISTORY_SUMMARY_WINDOW ? `Últimas ${HISTORY_SUMMARY_WINDOW}` : historyLines.length === 1 ? "1 partida" : `${historyLines.length} partidas`} · ${modeLabel(mode)}`}
+                items={historyItems}
+                total={historyLines.length}
+                now={now}
+                hrefFor={(item) => `/match/${item.matchId}`}
+                agents={historyFilters.agents}
+                maps={historyFilters.maps}
+                agent={historyAgent}
+                map={historyMap}
+                toolbarExtra={
+                  withMate ? (
+                    <WithMateChip
+                      name={withMate.name}
+                      clearHref={href({ tab: "matches", agent: params.agent, map: params.map }, "#history-title")}
+                    />
+                  ) : undefined
+                }
+                emptyDescription={
+                  withMate
+                    ? `Nenhuma partida no mesmo time que ${withMate.name} com esses filtros. Troque o modo, o período, o agente ou o mapa.`
+                    : undefined
+                }
+                emptyAction={
+                  <Link href={href({ tab: "matches" })} className={buttonVariants()}>
+                    Ver todas as partidas
+                  </Link>
+                }
+              />
+            ) : tab === "agents" ? (
+              <AgentsPanel
+                agents={agents}
+                seasons={seasons}
+                season={season}
+                modeName={modeLabel(mode)}
+                hrefFor={(a) => (a.slug ? `/me/agents/${a.slug}` : null)}
+              />
+            ) : tab === "maps" ? (
+              <Panel title="Por mapa" id="maps-title">
+                <MapGrid maps={maps} className="lg:grid-cols-4" />
+              </Panel>
+            ) : tab === "combat" ? (
+              <>
+                <RoundsPanel metrics={roundMetrics!} />
+                <WeaponsPanel weapons={roundMetrics!.weapons} />
+              </>
+            ) : (
+              <Suspense fallback={<DuosPanelSkeleton />}>
+                <DuosPanel
+                  viewerId={user.id}
+                  viewerPuuid={account.puuid}
+                  lines={lines}
+                  mode={mode}
+                  scope="groups"
+                  hrefFor={(mate) => href({ tab: "matches", with: mate.userId }, "#history-title")}
+                />
+              </Suspense>
             )}
           </FilteredContent>
         </FilterProvider>

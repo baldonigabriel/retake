@@ -5,13 +5,18 @@ import { GoalsPanelSkeleton } from "@/components/goals/goals-panel";
 import { RoundBreakdownsSkeleton } from "@/components/rounds/rounds-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** Same shape as /me: header, rank card, filters, KPIs, chart, tables, list. */
+/** Same shape as /me (overview tab): header, tabs, rank card, goals, filters, KPIs, chart, highlights, list. */
 export default function Loading() {
   return (
     <div className="flex flex-col gap-4 py-8 sm:py-10" aria-busy="true" aria-label="Carregando seu painel">
       <div className="flex flex-col gap-2">
         <Skeleton className="h-8 w-56" />
         <Skeleton className="h-4 w-full max-w-md" />
+      </div>
+      <div className="flex gap-2 overflow-hidden border-b border-line pb-3">
+        {[88, 64, 64, 56, 112, 56].map((w, i) => (
+          <Skeleton key={i} className="h-5 shrink-0" style={{ width: w }} />
+        ))}
       </div>
       <div className="flex h-[112px] items-center gap-4 rounded-card bg-surface-1 p-4 shadow-hairline sm:p-5">
         <Skeleton className="size-12 rounded-full sm:size-14" />

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { CloudOff, Plus, RefreshCw, Swords, Trophy } from "lucide-react";
 
 import { RankingList } from "@/components/groups/ranking-list";
+import { RoundsPanel } from "@/components/rounds/rounds-panel";
+import { WeaponsPanel } from "@/components/rounds/weapons-panel";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteNav } from "@/components/layout/site-nav";
 import { MatchRow, MatchRowSkeleton } from "@/components/match/match-row";
@@ -22,6 +24,7 @@ import {
   sampleKpis,
   sampleMatches,
   sampleRanking,
+  sampleRoundMetrics,
   sampleScoreboard,
   sampleTrend,
 } from "@/lib/sample-data";
@@ -440,6 +443,16 @@ export default function DesignSystemPage() {
                   <RankingList entries={sampleRanking} metric="ACS" />
                 </Panel>
               </div>
+            </Section>
+
+            {/* Rounds e armas */}
+            <Section
+              id="rounds"
+              title="Rounds e armas"
+              description="Métricas por round com ▲ ▼ em verde e vermelho contra uma referência (amostras pequenas ficam neutras), imagem do mapa em cada lado e a silhueta de cada arma da loja."
+            >
+              <RoundsPanel metrics={sampleRoundMetrics} />
+              <WeaponsPanel weapons={sampleRoundMetrics.weapons} />
             </Section>
 
             {/* Estados */}

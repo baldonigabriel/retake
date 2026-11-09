@@ -24,7 +24,7 @@ test.describe("duo synergy", () => {
   test.use({ storageState: ONBOARDED_STATE });
 
   test("ranks Retake mates from shared groups, with the trend against your average", async ({ page }) => {
-    await page.goto("/me");
+    await page.goto("/me?tab=duos");
     const panel = duos(page);
     await expect(panel).toBeVisible(STREAMED);
     await expect(panel.getByText(/sua média \d+%/)).toBeVisible();
@@ -43,7 +43,7 @@ test.describe("duo synergy", () => {
   });
 
   test("links to the matches played together, and the filter can be removed", async ({ page }) => {
-    await page.goto("/me");
+    await page.goto("/me?tab=duos");
     await duos(page).getByRole("link", { name: /Parceiro.*Ver as partidas/ }).click(STREAMED);
     await expect(page).toHaveURL((url) => url.searchParams.get("with") === E2E.friendUserId);
 
@@ -52,7 +52,7 @@ test.describe("duo synergy", () => {
     await expect(history.getByText("7 partidas", { exact: true })).toBeVisible();
 
     await history.getByRole("link", { name: "Tirar o filtro: partidas com Parceiro" }).click();
-    await expect(page).toHaveURL((url) => !url.searchParams.has("with"));
+    await expect(page).toHaveURL((url) => !url.searchParams.has("with"), STREAMED);
     await expect(history.getByText("No mesmo time que")).toHaveCount(0);
   });
 

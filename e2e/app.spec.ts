@@ -99,10 +99,16 @@ test.describe("onboarded user", () => {
     for (const kpi of ["ACS", "K/D", "HS%", "ADR", "Vitórias"]) {
       await expect(page.locator("p", { hasText: new RegExp(`^${kpi.replace("/", "\\/")}`) }).first()).toBeVisible();
     }
-    await expect(page.getByRole("heading", { name: "Agentes", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Por mapa" })).toBeVisible();
-    await expect(page.getByRole("list", { name: "Últimas partidas" }).getByRole("link")).toHaveCount(20);
     await expect(page.locator("[data-slot=chamfer-card]")).toHaveCount(1);
+    // The overview sums up; each tab holds the full section.
+    await expect(page.getByRole("heading", { name: "Destaques" })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Partidas recentes" }).getByRole("link")).toHaveCount(5);
+    const tabs = page.getByRole("navigation", { name: "Seções do painel" });
+    await expect(tabs.getByRole("link", { name: "Visão geral" })).toHaveAttribute("aria-current", "page");
+    await tabs.getByRole("link", { name: "Mapas" }).click();
+    await expect(page).toHaveURL(/tab=maps/);
+    await expect(page.getByRole("heading", { name: "Por mapa" })).toBeVisible();
+    await expect(tabs.getByRole("link", { name: "Mapas" })).toHaveAttribute("aria-current", "page");
     await noHorizontalScroll(page);
   });
 
@@ -138,7 +144,7 @@ test.describe("onboarded user", () => {
 
   test("a match opens with the full scoreboard and the user's row highlighted", async ({ page }) => {
     await page.goto("/me");
-    await page.getByRole("list", { name: "Últimas partidas" }).getByRole("link").first().click();
+    await page.getByRole("list", { name: "Partidas recentes" }).getByRole("link").first().click();
     // The newest match is a seeded group match of this week (or match 0 right after Monday 00:00).
     await expect(page).toHaveURL(new RegExp(`/match/${E2E.matchPrefix}`));
 

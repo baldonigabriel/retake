@@ -26,7 +26,7 @@ export function WeaponsPanel({ weapons }: { weapons: readonly WeaponMetric[] }) 
         <>
           <div
             aria-hidden="true"
-            className="hidden grid-cols-[8rem_minmax(0,1fr)_5rem_5.5rem_4.5rem] gap-4 border-b border-line px-4 py-2 text-label font-medium text-fg-secondary sm:grid"
+            className="hidden grid-cols-[12rem_minmax(0,1fr)_5rem_5.5rem_4.5rem] gap-4 border-b border-line px-4 py-2 text-label font-medium text-fg-secondary sm:grid"
           >
             <span>Arma</span>
             <span />
@@ -49,12 +49,12 @@ function WeaponRow({ weapon, share }: { weapon: WeaponMetric; share: number }) {
   const icon = weaponIconUrl(weapon.weaponId);
   const hs = weapon.hsRate === null ? "—" : formatPercent(weapon.hsRate, 1);
   return (
-    <li className="num grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 py-3 sm:grid-cols-[8rem_minmax(0,1fr)_5rem_5.5rem_4.5rem]">
-      <div className="flex min-w-0 flex-col gap-1.5">
-        <span className="flex h-7 items-center">
+    <li className="num grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 py-2.5 sm:grid-cols-[12rem_minmax(0,1fr)_5rem_5.5rem_4.5rem]">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex h-6 w-20 shrink-0 items-center">
           {icon ? (
             // eslint-disable-next-line @next/next/no-img-element -- community weapon asset
-            <img src={icon} alt="" width={112} height={28} loading="lazy" className="h-full w-auto max-w-28 object-contain opacity-90" />
+            <img src={icon} alt="" width={80} height={20} loading="lazy" className="max-h-5 w-auto max-w-20 object-contain opacity-90" />
           ) : null}
         </span>
         <span className="truncate font-medium text-fg">{weapon.weaponName}</span>

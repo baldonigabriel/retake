@@ -46,7 +46,7 @@ export function MvpCard({ mvp, weekLabel, href }: { mvp: Mvp | null; weekLabel: 
               {href ? (
                 <Link
                   href={href}
-                  className="truncate text-subheading text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg"
+                  className="inline-flex min-h-11 min-w-0 items-center truncate text-subheading text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg sm:min-h-0"
                 >
                   {member.name}
                 </Link>
