@@ -35,7 +35,7 @@ STORY: A pessoa reconhece o Retake, entende que Google e Discord são opções i
 
 FIRST VIEWPORT: Logo acima de um card único e estreito, centralizado no espaço disponível. O card abre com título e uma explicação curta, mostra o alerta quando necessário, apresenta os dois botões empilhados com a mesma altura e encerra com uma nota breve sobre vinculação e dados lidos.
 
-FORM: Extensão precisa de uma superfície estabelecida, estrutura direta escolhida sem rodada de conceitos porque a spec fixa conteúdo, hierarquia e equivalência. seed: none (unavailable).
+FORM: Extensão precisa de uma superfície estabelecida, estrutura direta escolhida sem rodada de conceitos porque a spec fixa conteúdo, hierarquia e equivalência. seed:54414b90ea4ed618.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
