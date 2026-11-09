@@ -114,6 +114,14 @@ export const verifications = pgTable(
 
 /* ---------------------------------------------------------------- game -- */
 
+/**
+ * Case- and accent-insensitive form of a name, used by the public profile
+ * search (SPEC §6.4). `retake_fold` is an IMMUTABLE SQL function created in
+ * migration 0013 (lower + translate of the common Latin accents, no
+ * extension needed); src/lib/profile/search.ts folds the query the same way.
+ */
+export const foldName = (column: AnyPgColumn) => sql`retake_fold(${column})`;
+
 export const riotAccounts = pgTable("riot_accounts", {
   id: uuid("id").primaryKey().defaultRandom(),
   /**
@@ -138,7 +146,10 @@ export const riotAccounts = pgTable("riot_accounts", {
   syncStatus: syncStatus("sync_status").notNull().default("pending"),
   syncError: text("sync_error"),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
-});
+}, (t) => [
+  // Public profile search and /u/[riotId] lookups by the current Riot ID.
+  index("riot_accounts_name_fold_idx").using("btree", sql`retake_fold(${t.gameName}) text_pattern_ops`),
+]);
 
 export const matches = pgTable(
   "matches",
@@ -400,6 +411,33 @@ export const awardRounds = pgTable(
 );
 
 /**
+ * Opt-in public profile (SPEC §6). No row = private and never asked.
+ * `decidedAt` is set the first time the user answers (onboarding, the /me
+ * card or Ajustes). The show_* flags only matter while `isPublic`; a public
+ * profile with nothing to show is treated as private (src/lib/profile).
+ * `showWeapons` waits for Phase 9 (round and weapon stats).
+ */
+export const profileSettings = pgTable(
+  "profile_settings",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    isPublic: boolean("is_public").notNull().default(false),
+    showRank: boolean("show_rank").notNull().default(true),
+    showOverview: boolean("show_overview").notNull().default(true),
+    showAgents: boolean("show_agents").notNull().default(true),
+    showMaps: boolean("show_maps").notNull().default(true),
+    showMatches: boolean("show_matches").notNull().default(true),
+    showWeapons: boolean("show_weapons").notNull().default(true),
+    decidedAt: timestamptz("decided_at"),
+    updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  },
+  // Search only ever scans public profiles.
+  (t) => [index("profile_settings_public_idx").on(t.userId).where(sql`${t.isPublic}`)],
+);
+
+/**
  * A member nominated in a period, tied to one match of theirs in it (SPEC
  * §5.3). One nomination per nominee per period (unique), never yourself
  * (CHECK). A future award_clips table hangs off `id` (SPEC §9).
@@ -473,6 +511,7 @@ export type DiscordPost = typeof discordPosts.$inferSelect;
 export type NewMmrSnapshot = typeof mmrSnapshots.$inferInsert;
 export type Goal = typeof goals.$inferSelect;
 export type UserPreferences = typeof userPreferences.$inferSelect;
+export type ProfileSettingsRow = typeof profileSettings.$inferSelect;
 export type WeeklySummary = typeof weeklySummaries.$inferSelect;
 export type AwardRound = typeof awardRounds.$inferSelect;
 export type AwardNomination = typeof awardNominations.$inferSelect;
