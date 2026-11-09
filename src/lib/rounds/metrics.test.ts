@@ -10,7 +10,6 @@ import {
 
 const me = "me";
 const ally = "ally";
-const enemies = ["e1", "e2", "e3"];
 const context: RoundContext = {
   matchId: "m1",
   round: 1,
