@@ -92,7 +92,8 @@ test.describe("signed in", () => {
     await expect(mine).toContainText(/[+−]\d+\s*RR/);
     // Parceiro uses Retake but has no RR for this match: "—", never an estimate.
     const friend = page.locator("tr", { hasText: E2E.friendName });
-    await expect(friend.getByText("RR indisponível")).toBeAttached();
+    // Once in the RR column (desktop) and once under the name (phone); only one is displayed.
+    await expect(friend.getByText("RR indisponível").first()).toBeAttached();
     // Players who aren't users: a rank, no RR and no link.
     const stranger = page.locator("tbody tr").filter({ hasText: "Jogador 2" }).first();
     await expect(stranger.getByRole("img", { name: /Platina|Diamante|Ouro|Prata|Bronze|Ferro|Ascendente|Imortal|Radiante/ }).first()).toBeAttached();

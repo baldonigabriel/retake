@@ -50,8 +50,9 @@ export function RankHeader({
           />
           <div className="flex flex-col gap-1.5">
             <p className="text-eyebrow text-fg-muted uppercase">Rank competitivo</p>
-            <p className="flex items-baseline gap-3">
-              <span className="stat text-stat-lg text-fg">{label}</span>
+            {/* The tier name never breaks ("Ascendente 1"); on narrow screens the RR drops below it. */}
+            <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="stat text-[40px] leading-none whitespace-nowrap text-fg sm:text-stat-lg">{label}</span>
               <span className="stat text-[24px] leading-none font-semibold text-fg-secondary">
                 {formatNumber(current.rr)} <span className="text-[18px]">RR</span>
               </span>

@@ -54,7 +54,9 @@ const NUM_COLS = ["ACS", "K", "D", "A", "K/D", "HS%", "ADR"] as const;
  * DESIGN.md › Placar da partida: one table per team, header with team name,
  * result and rounds; 13px tabular cells, numeric columns right-aligned, sticky
  * header; the user's row gets accent-tint + a 2px accent left border.
- * On narrow screens the table scrolls sideways with the player column pinned.
+ * On narrow screens the table scrolls sideways with the player column pinned;
+ * that column stays narrow there: the tag and the RR go on a second line
+ * under the name, so ACS and K/D/A are visible without scrolling.
  */
 export function ScoreboardTable({
   team,
@@ -96,13 +98,13 @@ export function ScoreboardTable({
         role="region"
         aria-label={`Placar do ${team.name}, role para o lado para ver todas as colunas`}
       >
-        <table className={cn("num w-full table-fixed border-separate border-spacing-0 text-table [&_tbody_tr:last-child>*:first-child]:rounded-bl-card [&_tbody_tr:last-child>*:last-child]:rounded-br-card", showRounds ? "min-w-[980px]" : "min-w-[640px]", showRank && showRr ? "sm:min-w-[1120px]" : showRank && showRounds ? "sm:min-w-[1040px]" : showRank ? "sm:min-w-[740px]" : "")}>
+        <table className={cn("num w-full table-fixed border-separate border-spacing-0 text-table [&_tbody_tr:last-child>*:first-child]:rounded-bl-card [&_tbody_tr:last-child>*:last-child]:rounded-br-card", showRounds ? "min-w-[780px]" : "min-w-[500px]", showRank && showRr ? "sm:min-w-[1120px]" : showRank && showRounds ? "sm:min-w-[1040px]" : showRank ? "sm:min-w-[740px]" : "")}>
           <thead>
             <tr>
               <th
                 scope="col"
                 className={cn(
-                  "sticky left-0 z-20 w-[220px] bg-surface-1 px-4 py-2 text-left text-label text-fg-secondary sm:z-10 sm:w-[30%]",
+                  "sticky left-0 z-20 w-[152px] bg-surface-1 py-2 pr-2 pl-3 text-left text-label text-fg-secondary sm:z-10 sm:w-[30%] sm:px-4",
                   "sm:top-14",
                 )}
               >
@@ -116,7 +118,7 @@ export function ScoreboardTable({
               {showRr ? (
                 <th
                   scope="col"
-                  className="z-10 w-[88px] bg-surface-1 px-3 py-2 text-right text-label text-fg-secondary sm:sticky sm:top-14"
+                  className="z-10 hidden w-[88px] bg-surface-1 px-3 py-2 text-right text-label text-fg-secondary sm:sticky sm:top-14 sm:table-cell"
                   title="RR ganho ou perdido; só aparece para quem usa o Retake"
                 >
                   RR
@@ -127,7 +129,7 @@ export function ScoreboardTable({
                   key={col}
                   scope="col"
                   className={cn(
-                    "z-10 bg-surface-1 px-3 py-2 text-right text-label text-fg-secondary last:pr-4 sm:sticky",
+                    "z-10 bg-surface-1 px-2 py-2 text-right text-label text-fg-secondary last:pr-3 sm:sticky sm:px-3 sm:last:pr-4",
                     "sm:top-14",
                   )}
                 >
@@ -156,7 +158,7 @@ export function ScoreboardTable({
                   <th
                     scope="row"
                     className={cn(
-                      "sticky left-0 z-10 border-t border-line px-4 py-2 text-left font-normal",
+                      "sticky left-0 z-10 border-t border-line py-2 pr-2 pl-3 text-left font-normal sm:px-4",
                       rowBg,
                       p.isYou && "shadow-[inset_2px_0_0_var(--color-primary)]",
                     )}
@@ -171,21 +173,30 @@ export function ScoreboardTable({
                           </span>
                         ) : null}
                       </span>
-                      <span className="flex min-w-0 items-baseline gap-1">
+                      <span className="flex min-w-0 flex-col sm:flex-row sm:items-baseline sm:gap-1">
                         {p.href ? (
                           <Link
                             href={p.href}
-                            className="max-w-[9rem] truncate font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg"
+                            className="max-w-[6.5rem] truncate font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg sm:max-w-[9rem]"
                           >
                             {p.name}
                           </Link>
                         ) : (
-                          <span className="max-w-[9rem] truncate font-medium text-fg">{p.name}</span>
+                          <span className="max-w-[6.5rem] truncate font-medium text-fg sm:max-w-[9rem]">{p.name}</span>
                         )}
-                        <span className="font-mono text-label text-fg-muted">#{p.tag}</span>
+                        {/* Phone: tag, RR and the group badge share a second line. */}
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <span className="truncate font-mono text-label text-fg-muted">#{p.tag}</span>
+                          {showRr && p.rr !== undefined ? (
+                            <span className="shrink-0 text-label sm:hidden">
+                              <RrDelta value={p.rr} />
+                            </span>
+                          ) : null}
+                          {p.inGroup ? <Badge variant="outline" className="shrink-0 sm:hidden">grupo</Badge> : null}
+                        </span>
                       </span>
                       {p.isYou ? <span className="sr-only">({highlightLabel})</span> : null}
-                      {p.inGroup ? <Badge variant="outline">grupo</Badge> : null}
+                      {p.inGroup ? <Badge variant="outline" className="hidden sm:inline-flex">grupo</Badge> : null}
                     </span>
                   </th>
                   {showRank ? (
@@ -197,7 +208,7 @@ export function ScoreboardTable({
                     </td>
                   ) : null}
                   {showRr ? (
-                    <td className={cn("border-t border-line px-3 py-2 text-right whitespace-nowrap", rowBg)}>
+                    <td className={cn("hidden border-t border-line px-3 py-2 text-right whitespace-nowrap sm:table-cell", rowBg)}>
                       {p.rr === undefined ? null : <RrDelta value={p.rr} />}
                     </td>
                   ) : null}
@@ -205,7 +216,7 @@ export function ScoreboardTable({
                     <td
                       key={NUM_COLS[i]}
                       className={cn(
-                        "border-t border-line px-3 py-2 text-right text-fg-secondary last:pr-4",
+                        "border-t border-line px-2 py-2 text-right text-fg-secondary last:pr-3 sm:px-3 sm:last:pr-4",
                         i === 0 && "font-medium text-fg",
                         rowBg,
                       )}
