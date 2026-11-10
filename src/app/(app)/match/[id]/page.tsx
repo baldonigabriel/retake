@@ -65,7 +65,7 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/ma
     players: t.players.map((p) => {
       const stats = roundStats.get(p.id);
       const multi = stats
-        ? [stats.multiKills.three ? `${stats.multiKills.three}×3K` : "", stats.multiKills.four ? `${stats.multiKills.four}×4K` : "", stats.multiKills.ace ? `${stats.multiKills.ace}×Ás` : ""].filter(Boolean).join(" · ")
+        ? [stats.multiKills.three ? `${stats.multiKills.three}×3K` : "", stats.multiKills.four ? `${stats.multiKills.four}×4K` : "", stats.multiKills.ace ? `${stats.multiKills.ace}×Ace` : ""].filter(Boolean).join(" · ")
         : "";
       return {
         ...p,

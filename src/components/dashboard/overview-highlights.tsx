@@ -142,7 +142,7 @@ export function OverviewHighlights({
                   {clutchWins}/{clutchSituations}
                 </ToneValue>
               </RoundStat>
-              <RoundStat label="Ases">
+              <RoundStat label="Aces">
                 <span className="text-fg">{rounds.multiKills.ace}</span>
               </RoundStat>
             </dl>

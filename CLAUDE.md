@@ -94,7 +94,7 @@ DESIGN.md                          fonte da verdade visual
 Métricas por round (Fase 9, SPEC §7), calculadas a partir de `match_rounds`, `match_round_players` e `match_kills`:
 
 - First blood / first death = primeiro abate do round (pelo `time_in_round`) e quem morreu nele. FB% = rounds com first blood / rounds jogados
-- Multi-kill = 3, 4 ou 5 abates do mesmo jogador num round (3K, 4K, ás)
+- Multi-kill = 3, 4 ou 5 abates do mesmo jogador num round (3K, 4K, ace)
 - Clutch 1vX = o jogador fica como último vivo do time com X adversários vivos e o time ganha o round. Taxa = clutches ganhos / situações de clutch
 - KAST = % de rounds em que o jogador teve abate, assistência, sobreviveu ou foi trocado (o assassino morreu para um aliado em até 5 s)
 - Economia do round = pelo valor médio do equipamento do time no início do round (faixas no SPEC §7); win rate por faixa

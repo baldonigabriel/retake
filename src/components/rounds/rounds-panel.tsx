@@ -81,7 +81,7 @@ export function RoundsPanel({ metrics }: { metrics: PlayerRoundMetrics }) {
             <div className="num mt-3 grid grid-cols-3 gap-3">
               <SmallStat label="3K" value={metrics.multiKills.three} />
               <SmallStat label="4K" value={metrics.multiKills.four} />
-              <SmallStat label="Ás" value={metrics.multiKills.ace} />
+              <SmallStat label="Ace" value={metrics.multiKills.ace} />
             </div>
           </div>
           <div>

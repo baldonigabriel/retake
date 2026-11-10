@@ -266,7 +266,7 @@ Os dados já vêm na resposta da partida v4 (§1); o que muda é gravar e calcul
 - **`/me`**: seção "Armas" (tabela: arma, abates, HS% aproximado, partidas; em 390px vira lista) e seção "Rounds" (FB/FD, KAST, multi-kills, clutches, ataque × defesa, economia). Mesmos filtros de modo e período.
 - **Agente e perfil de membro**: as mesmas métricas filtradas, onde couberem sem poluir.
 - **Partida**: colunas FB, FD, KAST e multi-kill no placar; uma faixa com os rounds (vitória/derrota com ícone e texto, lado, tipo de compra) e, ao abrir um round, os abates em ordem.
-- **Grupo**: o ranking semanal ganha as métricas first bloods, clutches e ases.
+- **Grupo**: o ranking semanal ganha as métricas first bloods, clutches e aces.
 - **Perfil público**: a seção "Armas" quando `show_weapons`.
 - Cards do Discord ficam para depois (fase própria).
 

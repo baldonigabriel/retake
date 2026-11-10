@@ -42,7 +42,7 @@ export const METRIC_LABEL: Record<RankingMetric, string> = {
   matches: "Partidas",
   firstbloods: "First bloods",
   clutches: "Clutches",
-  aces: "Ases",
+  aces: "Aces",
 };
 
 export function parseMetric(value: unknown): RankingMetric {
