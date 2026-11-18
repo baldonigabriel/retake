@@ -1,6 +1,6 @@
 # Deploy do Retake
 
-Passo a passo para publicar na Vercel com banco no Neon, login pelo Discord e sincronização pelo cron-job.org. Leva uns 20 minutos.
+Passo a passo para publicar na Vercel com banco no Neon, login pelo Google e pelo Discord e sincronização pelo cron-job.org. Leva uns 30 minutos.
 
 Troque `retake-xyz.vercel.app` pelo endereço que a Vercel der ao projeto (ou pelo seu domínio).
 
@@ -33,10 +33,10 @@ Use valores **novos** em produção, diferentes dos do `.env.local`. Atenção: 
 ## 2. GitHub
 
 ```
-gh repo create retake --private --source . --remote origin --push
+gh repo create retake --public --source . --remote origin --push
 ```
 
-(ou crie o repositório pelo site e rode `git remote add origin <url>` e `git push -u origin master`).
+(ou crie o repositório pelo site e rode `git remote add origin <url>` e `git push -u origin master`). Use `--private` no lugar de `--public` se não quiser o código aberto. Nos dois casos, os segredos ficam só no `.env.local` e na Vercel: o `.gitignore` ignora todo `.env*` menos o `.env.example`, que vai sem valores.
 
 ## 3. Vercel
 
@@ -51,6 +51,8 @@ gh repo create retake --private --source . --remote origin --push
    | `BETTER_AUTH_URL` | `https://retake-xyz.vercel.app` (sem barra no fim) |
    | `DISCORD_CLIENT_ID` | do app do Discord (passo 4) |
    | `DISCORD_CLIENT_SECRET` | do app do Discord (passo 4) |
+   | `GOOGLE_CLIENT_ID` | do cliente OAuth do Google (passo 4.1) |
+   | `GOOGLE_CLIENT_SECRET` | do cliente OAuth do Google (passo 4.1) |
    | `HENRIK_API_KEY` | sua chave do HenrikDev |
    | `CRON_SECRET` | segredo gerado no passo 0 |
    | `ENCRYPTION_KEY` | segredo gerado no passo 0 |
@@ -67,6 +69,20 @@ No [portal de desenvolvedores do Discord](https://discord.com/developers/applica
 2. Copie **Client ID** e **Client Secret** (Reset Secret, se precisar) para as variáveis da Vercel.
 
 O redirect de `http://localhost:3000/api/auth/callback/discord` pode continuar lá para o desenvolvimento.
+
+## 4.1 Google (login)
+
+No [Google Cloud Console](https://console.cloud.google.com), em **APIs e serviços**:
+
+1. **Tela de consentimento OAuth**: configure o nome do app, o e-mail de suporte e o domínio (`retake-xyz.vercel.app`). Os escopos padrão (`openid`, `email`, `profile`) bastam. Depois, em **Público-alvo**, clique em **Publicar app**: enquanto o app estiver em "Teste", só os usuários de teste cadastrados conseguem entrar.
+2. **Credenciais › Criar credenciais › ID do cliente OAuth**, tipo **Aplicativo da Web**:
+   - **Origens JavaScript autorizadas:** `https://retake-xyz.vercel.app`
+   - **URIs de redirecionamento autorizados:** `https://retake-xyz.vercel.app/api/auth/callback/google`
+3. Copie o **ID do cliente** e a **chave secreta do cliente** para `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` na Vercel e faça **Redeploy**.
+
+Para o desenvolvimento, adicione também `http://localhost:3000` e `http://localhost:3000/api/auth/callback/google` (no mesmo cliente ou num separado).
+
+As duas contas podem apontar para o mesmo usuário: quem entrou por um provedor vincula o outro em **Ajustes › Contas de login**.
 
 ## 5. Agendador (cron-job.org)
 
@@ -117,13 +133,14 @@ pnpm bagre:once <slug-do-grupo> --webhook <url>      # manda o card para um webh
 
 ## 6. Conferir
 
-1. Abra o site, entre com o Discord e vincule seu Riot ID.
+1. Abra o site numa guia anônima, entre com o Google e depois com o Discord (os dois devem funcionar) e vincule seu Riot ID.
 2. Crie um grupo, vá em **Ajustes do grupo › Discord**, cole o webhook do canal (Editar canal › Integrações › Webhooks) e clique em **Enviar mensagem de teste**: aparece "Canal conectado ao Retake" no canal.
 3. Jogue uma partida. Em até ~15 minutos chega o card no canal. Na Vercel, **Logs** mostra uma linha `[cron] sync` a cada rodada, com `newMatches` e `discord.sent`.
 
 ## Problemas comuns
 
-- **Login volta com erro:** o redirect do Discord não bate exatamente com `BETTER_AUTH_URL` + `/api/auth/callback/discord` (confira https e barra no fim).
+- **Login volta com erro:** o redirect cadastrado não bate exatamente com `BETTER_AUTH_URL` + `/api/auth/callback/discord` (ou `/google`). Confira https e barra no fim.
+- **Google diz "acesso bloqueado" ou "app não verificado" para outras pessoas:** a tela de consentimento ainda está em "Teste". Publique o app (passo 4.1).
 - **Cron responde 401:** o header precisa ser `Authorization: Bearer <CRON_SECRET>`, com o mesmo valor da Vercel.
 - **Resumo da semana não chegou:** ele sai a partir de segunda às 9h, só para grupos com webhook e com pelo menos uma partida na semana. Na Vercel, **Logs** mostra `summaries` na linha `[cron] sync`; `pnpm summary:once <slug>` mostra o que seria enviado.
 - **Card não chegou:** o card só sai para partidas que começaram nas últimas 6 horas e para grupos com webhook salvo. Se o webhook foi apagado no Discord, a mensagem de teste avisa; salve um novo.
